@@ -7,6 +7,8 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
+Full Video Guide: https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8
+
 ## ✨ Features
 
 - 🔐 Authentication with Supabase
@@ -34,7 +36,7 @@ A production-ready Next.js template featuring authentication, dark mode support,
 1. Clone the template:
 
 ```bash
-git clone https://github.com/ShenSeanChen/temp-stripe-nextjs-supabase my-full-stack-app
+git clone https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase my-full-stack-app
 cd my-full-stack-app
 rm -rf .git
 git init
@@ -244,7 +246,7 @@ Discord - [@Sean's Stories](https://discord.gg/TKKPzZheua)
 
 Instagram - [@SeanTechStories](https://www.instagram.com/sean_tech_stories )
 
-Project Link: [https://github.com/ShenSeanChen/temp-stripe-nextjs-supabase](https://github.com/ShenSeanChen/temp-stripe-nextjs-supabase)
+Project Link: [https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase](https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase)
 
 ## 🚀 Deploy
 
