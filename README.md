@@ -7,6 +7,8 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
+[VideoModal](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
+
 ## ✨ Features
 
 - 🔐 Authentication with Supabase
