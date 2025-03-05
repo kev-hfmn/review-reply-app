@@ -131,6 +131,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       ```
 
 6. Set up Stripe:
+   
    a. Create a live account and configure:
       - Create product in Product Catalog
       - Create promotional coupon codes
@@ -146,7 +147,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       - Subscribe to events: customer.subscription.*, checkout.session.*, invoice.*, payment_intent.*
       - Copy Signing Secret → STRIPE_WEBHOOK_SECRET
 
-7. Start the development server:
+8. Start the development server:
 ```bash
 npm run dev
 ```
