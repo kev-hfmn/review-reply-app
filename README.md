@@ -37,7 +37,7 @@ A production-ready Next.js template featuring authentication, dark mode support,
 1. Clone the template:
 
 ```bash
-git clone https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase my-full-stack-app
+git clone https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase my-full-stack-app
 cd my-full-stack-app
 rm -rf .git
 git init
@@ -249,7 +249,7 @@ Discord - [@Sean's Stories](https://discord.gg/TKKPzZheua)
 
 Instagram - [@SeanTechStories](https://www.instagram.com/sean_tech_stories )
 
-Project Link: [https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase](https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase)
+Project Link: [https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase](https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase)
 
 ## 🚀 Deploy
 
