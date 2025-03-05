@@ -8,6 +8,7 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
 📹 Full Video Guide: https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8
+
 ☕️ Buy me a coffee: https://buy.stripe.com/5kA176bA895ggog4gh
 
 ## ✨ Features
