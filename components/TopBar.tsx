@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
+import { BuyMeCoffee } from './BuyMeCoffee';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -56,17 +57,18 @@ export default function TopBar() {
           <span className="font-sans">NextTemp</span>
         </Link>
 
-        
-
         <div className="flex items-center gap-4">
           {!user ? (
-            // Show login button for unauthenticated users
-            <Link
-              href="/login"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors shadow-subtle hover:shadow-hover"
-            >
-              Sign in
-            </Link>
+            <>
+              <BuyMeCoffee />
+              {/* Show login button for unauthenticated users */}
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors shadow-subtle hover:shadow-hover"
+              >
+                Sign in
+              </Link>
+            </>
           ) : (
             // Show subscription and profile for authenticated users
             <>
@@ -77,18 +79,19 @@ export default function TopBar() {
               ) && (
                 <button
                   onClick={() => router.push('/profile')}
-                  className="hidden sm:block bg-primary hover:bg-primary-dark text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg transition-colors text-sm sm:text-base"
+                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
                   View Subscription
                 </button>
               )}
+              <BuyMeCoffee />
 
               {!isLoadingSubscription && (
                 subscription || isInTrial
               ) && pathname !== '/dashboard' && (
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="hidden sm:block bg-primary hover:bg-primary-dark text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg transition-colors text-sm sm:text-base"
+                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
                   {isInTrial ? "Start Free Trial" : "Start Building"}
                 </button>
