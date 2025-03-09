@@ -7,7 +7,9 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
-Full Video Guide: https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8
+📹 Full Video Guide: [youtube link](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
+
+☕️ Buy me a coffee: [Cafe Latte](https://buy.stripe.com/5kA176bA895ggog4gh)
 
 ## ✨ Features
 
@@ -36,13 +38,14 @@ Full Video Guide: https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmp
 1. Clone the template:
 
 ```bash
-git clone https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase my-full-stack-app
+git clone https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase my-full-stack-app
 cd my-full-stack-app
 rm -rf .git
 git init
 git add .
 git commit -m "Initial commit"
-git remote add origin https://github.com/ShenSeanChen/my-full-stack-app.git
+# git remote add origin https://github.com/ShenSeanChen/my-full-stack-app.git
+git remote add origin https://github.com/USE_YOUR_OWN_GITHUB_NAME/my-full-stack-app.git
 git push -u origin main
 ```
 
@@ -129,6 +132,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       ```
 
 6. Set up Stripe:
+   
    a. Create a live account and configure:
       - Create product in Product Catalog
       - Create promotional coupon codes
@@ -144,7 +148,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       - Subscribe to events: customer.subscription.*, checkout.session.*, invoice.*, payment_intent.*
       - Copy Signing Secret → STRIPE_WEBHOOK_SECRET
 
-7. Start the development server:
+8. Start the development server:
 ```bash
 npm run dev
 ```
@@ -246,7 +250,7 @@ Discord - [@Sean's Stories](https://discord.gg/TKKPzZheua)
 
 Instagram - [@SeanTechStories](https://www.instagram.com/sean_tech_stories )
 
-Project Link: [https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase](https://github.com/ShenSeanChen/yt-stripe-nextjs-supabase)
+Project Link: [https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase](https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase)
 
 ## 🚀 Deploy
 
