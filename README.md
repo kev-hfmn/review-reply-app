@@ -8,7 +8,9 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
 📹 Full YouTube Guide: [Youtube link](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
+
 🚀 X Post: [X link](https://x.com/ShenSeanChen/status/1895163913161109792)
+
 💡 Try the App: [App link](https://mvp.seanchen.io)
 
 ☕️ Buy me a coffee: [Cafe Latte](https://buy.stripe.com/5kA176bA895ggog4gh)
