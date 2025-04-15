@@ -7,7 +7,11 @@ A production-ready Next.js template featuring authentication, dark mode support,
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
-📹 Full Video Guide: [youtube link](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
+📹 Full YouTube Guide: [Youtube link](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
+
+🚀 X Post: [X link](https://x.com/ShenSeanChen/status/1895163913161109792)
+
+💡 Try the App: [App link](https://mvp.seanchen.io)
 
 ☕️ Buy me a coffee: [Cafe Latte](https://buy.stripe.com/5kA176bA895ggog4gh)
 
@@ -22,6 +26,7 @@ A production-ready Next.js template featuring authentication, dark mode support,
 - 🛡️ TypeScript support
 - 📊 Error boundary implementation
 - 🔍 SEO optimized
+- 🤖 MCP integration for AI-powered development
 
 ## 🚀 Getting Started
 
@@ -159,6 +164,169 @@ yarn dev
 
 8. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## 🛠️ MCP Integration Setup
+
+### What is MCP?
+
+MCP (Model Control Protocol) enables enhanced AI assistant capabilities for this project, allowing the AI to interact directly with your Stripe and Supabase accounts to help with debugging, configuring, and managing your application.
+
+For a comprehensive demonstration of MCP capabilities, check out our dedicated demo repository:
+- 🔗 [launch-mcp-demo](https://github.com/ShenSeanChen/launch-mcp-demo) - Collection of powerful MCP tools
+- 📹 [Full YouTube Guide](https://www.youtube.com/watch?v=sfCBCyNyw7U&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=10)
+- 🚀 [X Post](https://x.com/ShenSeanChen/status/1910057838032097688)
+
+### Setting up MCP
+
+1. Create an `mcp.json` file:
+   
+   Copy the example file to create your own configuration:
+   
+   ```bash
+   cp .cursor/mcp.json.example .cursor/mcp.json
+   ```
+
+2. Configure your credentials:
+
+   a. Stripe Integration:
+      - Get your Stripe API key from the Stripe Dashboard
+      - Replace `your_stripe_test_key_here` with your actual test key
+
+   b. Supabase Integration:
+      - Generate a Supabase access token from your Supabase dashboard (Project Settings > API)
+      - Replace `your_supabase_access_token_here` with your actual token
+
+   c. GitHub Integration (optional):
+      - Create a GitHub Personal Access Token with appropriate permissions
+      - Replace `your_github_personal_access_token_here` with your actual token
+
+3. Example of a completed `mcp.json` file:
+
+   ```json
+   {
+     "mcpServers": {
+       "stripe": {
+         "command": "npx",
+         "args": [
+           "-y", 
+           "@stripe/mcp"
+         ],
+         "env": {
+           "STRIPE_SECRET_KEY": "sk_test_51ABC123..."
+         }
+       },
+       "supabase": {
+         "command": "npx",
+         "args": [
+           "-y",
+           "@supabase/mcp-server-supabase@latest",
+           "--access-token",
+           "sbp_1234abcd5678efgh..."
+         ]
+       }
+     }
+   }
+   ```
+
+4. Using MCP with AI assistants:
+   
+   After configuring `mcp.json`, the AI assistant within the Cursor editor will be able to:
+   - Query and manage your Stripe subscriptions
+   - Interact with your Supabase database
+   - Help troubleshoot integration issues
+   - Provide contextual help based on your actual configuration
+
+5. Security Considerations:
+   
+   - Never commit your `mcp.json` file to version control
+   - Use test credentials during development
+   - Limit access tokens to only the permissions needed
+
+### Extending MCP with Additional Tools
+
+The MCP framework can be extended with various tools beyond Stripe and Supabase. Our [launch-mcp-demo](https://github.com/ShenSeanChen/launch-mcp-demo) repository demonstrates how to integrate basic MCP examples.
+
+To integrate these additional tools with your project:
+
+1. Clone the demo repository:
+   ```bash
+   git clone https://github.com/ShenSeanChen/launch-mcp-demo.git
+   ```
+
+2. Follow the installation instructions in the repository's README
+
+3. Update your `.cursor/mcp.json` to include the additional tools:
+   ```json
+   {
+     "mcpServers": {
+       "stripe": {
+         // Your existing Stripe configuration
+       },
+       "supabase": {
+         // Your existing Supabase configuration
+       },
+       "weather": {
+         "command": "/path/to/your/python/environment",
+         "args": [
+           "--directory",
+           "/path/to/launch-mcp-demo/weather",
+           "run",
+           "weather.py"
+         ]
+       },
+       "files": {
+         "command": "/path/to/your/python/environment",
+         "args": [
+           "--directory",
+           "/path/to/launch-mcp-demo/files",
+           "run",
+           "files.py"
+         ]
+       }
+     }
+   }
+   ```
+
+4. Restart your Cursor editor to apply the changes
+
+These additional tools can help enhance your development workflow and provide more capabilities to the AI assistant when working with your project.
+
+### Claude Desktop Integration
+
+If you're using Claude Desktop instead of Cursor editor, you can also integrate MCP tools by creating a configuration file at:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+Example configuration for Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "stripe": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@stripe/mcp"
+      ],
+      "env": {
+        "STRIPE_SECRET_KEY": "your_stripe_test_key_here"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "your_supabase_access_token_here"
+      ]
+    }
+  }
+}
+```
+
+For more detailed instructions on Claude Desktop integration, check our [launch-mcp-demo repository](https://github.com/ShenSeanChen/launch-mcp-demo).
+
 ## 📖 Project Structure
 
 ```
@@ -182,7 +350,10 @@ yarn dev
 ├── utils/                # Utility functions
 ├── types/                # TypeScript type definitions
 ├── public/               # Static assets
-└── styles/               # Global styles
+├── styles/               # Global styles
+└── .cursor/              # Cursor editor and MCP configurations
+    ├── mcp.json.example  # Example MCP configuration
+    └── mcp.json          # Your custom MCP configuration (gitignored)
 ```
 
 ## 🛠️ Built With
@@ -239,6 +410,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Tailwind CSS team for the utility-first CSS framework
 - Supabase team for the backend platform
 - Stripe team for the payment infrastructure
+- Cursor team for the AI-powered editor and MCP capabilities
+- Anthropic for Claude AI and Claude Desktop integration
+- MCP framework developers for enabling extended AI capabilities
 
 ## 📫 Contact
 
