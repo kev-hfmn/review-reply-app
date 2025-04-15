@@ -72,3 +72,6 @@ logs
 # Cache directories
 .cache/
 .next/cache/
+
+# Cursor
+.cursor/mcp.json
