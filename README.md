@@ -290,43 +290,6 @@ To integrate these additional tools with your project:
 
 These additional tools can help enhance your development workflow and provide more capabilities to the AI assistant when working with your project.
 
-### Claude Desktop Integration
-
-If you're using Claude Desktop instead of Cursor editor, you can also integrate MCP tools by creating a configuration file at:
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
-
-Example configuration for Claude Desktop:
-
-```json
-{
-  "mcpServers": {
-    "stripe": {
-      "command": "npx",
-      "args": [
-        "-y", 
-        "@stripe/mcp"
-      ],
-      "env": {
-        "STRIPE_SECRET_KEY": "your_stripe_test_key_here"
-      }
-    },
-    "supabase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--access-token",
-        "your_supabase_access_token_here"
-      ]
-    }
-  }
-}
-```
-
-For more detailed instructions on Claude Desktop integration, check our [launch-mcp-demo repository](https://github.com/ShenSeanChen/launch-mcp-demo).
-
 ## 📖 Project Structure
 
 ```
