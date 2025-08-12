@@ -47,6 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
+      // TEMPORARY: Skip subscription checks for MVP development
+      // TODO: Re-enable subscription checks in production
+      if (process.env.NODE_ENV === 'development') {
+        setIsSubscriber(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
@@ -61,15 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // console.log("AuthContext - subscription data: ", data)
-
       const isValid = data && 
         ['active', 'trialing'].includes(data.status) && 
         new Date(data.current_period_end) > new Date();
-      // console.log("AuthContext -  isValid: ", data)
 
       setIsSubscriber(!!isValid);
-      console.log("AuthContext -  set isSubscriber: ", isSubscriber)
     } catch (error) {
       console.error('Subscription check error:', error);
       setIsSubscriber(false);
