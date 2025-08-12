@@ -3,7 +3,7 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
-import TopBar from '../components/TopBar';
+
 import ProtectedRoute from '@/contexts/ProtectedRoute';
 import { Analytics } from "@vercel/analytics/react"
 // import { PostHogProvider } from '@/contexts/PostHogContext';
@@ -22,9 +22,9 @@ export default function RootLayout({
         <Analytics mode="auto" />
         {/* <PostHogErrorBoundary>
           <PostHogProvider> */}
-            <AuthProvider>   
+            <AuthProvider>
                 <ProtectedRoute>
-                  <TopBar />    
+
                   <main>{children}</main>
                 </ProtectedRoute>
             </AuthProvider>
