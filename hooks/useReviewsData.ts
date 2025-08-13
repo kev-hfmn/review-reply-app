@@ -403,7 +403,7 @@ export function useReviewsData() {
       }
     },
 
-    regenerateReply: async (reviewId: string, tone = 'friendly') => {
+    regenerateReply: async (reviewId: string, tone?: string) => {
       try {
         setIsUpdating(true);
 
@@ -434,10 +434,11 @@ export function useReviewsData() {
           throw new Error('Could not retrieve business settings');
         }
 
-        // Override tone if specified
+        // Use brand voice settings from business configuration
+        // Only override preset if explicitly provided (for regeneration with different tone)
         const brandVoice = {
           ...settings,
-          preset: tone as 'friendly' | 'professional' | 'playful' | 'custom' || settings.preset
+          ...(tone && { preset: tone as 'friendly' | 'professional' | 'playful' | 'custom' })
         };
 
         // Generate AI reply
@@ -457,7 +458,7 @@ export function useReviewsData() {
           .from('reviews')
           .update({
             ai_reply: result.reply,
-            reply_tone: tone,
+            reply_tone: brandVoice.preset,
             updated_at: new Date().toISOString()
           })
           .eq('id', reviewId);
@@ -465,15 +466,15 @@ export function useReviewsData() {
         if (error) throw error;
 
         // Update local state immediately to preserve scroll position
-        updateReviewInState(reviewId, { ai_reply: result.reply, reply_tone: tone });
+        updateReviewInState(reviewId, { ai_reply: result.reply, reply_tone: brandVoice.preset });
 
         // Show success message (with warning if fallback was used)
         showToast({
           type: result.error ? 'warning' : 'success',
           title: result.error ? 'Reply generated with fallback' : 'Reply regenerated',
           message: result.error ?
-            `AI service unavailable, used template reply with ${tone} tone.` :
-            `A new ${tone} AI reply has been generated.`
+            `AI service unavailable, used template reply with ${brandVoice.preset} tone.` :
+            `A new ${brandVoice.preset} AI reply has been generated.`
         });
       } catch (err) {
         console.error('Failed to regenerate reply:', err);

@@ -125,6 +125,7 @@ export interface ReviewTableProps {
   onReviewClick: (review: Review) => void;
   onInlineEdit: (reviewId: string, reply: string) => void;
   onQuickAction: (reviewId: string, action: 'approve' | 'post' | 'skip') => void;
+  onGenerateReply: (reviewId: string) => Promise<void>;
 }
 
 export interface ReviewFiltersProps {

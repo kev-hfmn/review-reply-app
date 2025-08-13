@@ -8,6 +8,7 @@ export function validateEnv() {
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
     'NEXT_PUBLIC_APP_URL',
+    'CREDENTIALS_ENCRYPTION_KEY',
   ];
 
   for (const envVar of requiredEnvVars) {
