@@ -7,7 +7,13 @@ import { syncReviews, testConnection } from '@/lib/services/googleBusinessServic
  */
 export async function POST(request: NextRequest) {
   try {
-    const { businessId, userId, action = 'sync' } = await request.json();
+    const { 
+      businessId, 
+      userId, 
+      action = 'sync',
+      timePeriod = '30days',
+      reviewCount = 50
+    } = await request.json();
 
     if (!businessId || !userId) {
       return NextResponse.json(
@@ -24,9 +30,12 @@ export async function POST(request: NextRequest) {
 
     // Handle full sync
     if (action === 'sync') {
-      console.log(`Starting review sync for business ${businessId}`);
+      console.log(`Starting review sync for business ${businessId} (${timePeriod}, ${reviewCount} reviews)`);
       
-      const syncResult = await syncReviews(businessId, userId);
+      const syncResult = await syncReviews(businessId, userId, {
+        timePeriod,
+        reviewCount
+      });
       
       const statusCode = syncResult.success ? 200 : 207; // 207 = Multi-Status (partial success)
       
