@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/utils/supabase';
 
 interface BusinessProfile {
   name: string;
@@ -33,6 +34,7 @@ interface BrandVoice {
   formality: number;
   warmth: number;
   brevity: number;
+  customInstruction?: string;
 }
 
 interface ApprovalSettings {
@@ -65,6 +67,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
 
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>({
     name: '',
@@ -76,7 +79,8 @@ export default function SettingsPage() {
     preset: 'friendly',
     formality: 5,
     warmth: 7,
-    brevity: 5
+    brevity: 5,
+    customInstruction: ''
   });
 
   const [approvalSettings, setApprovalSettings] = useState<ApprovalSettings>({
@@ -100,35 +104,97 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const loadSettings = async () => {
+      if (!user) return;
+
       setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // First, get the user's business
+        const { data: businesses, error: businessError } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(1);
 
-        setBusinessProfile({
-          name: 'Acme Coffee Shop',
-          location: 'San Francisco, CA',
-          industry: 'Food & Beverage',
-          googleBusinessId: 'ChIJd8BlQ2BZwokRAFUEcm_qrcA'
-        });
+        if (businessError) throw businessError;
 
-        setIntegrations({
-          googleBusiness: {
-            connected: true,
-            status: 'approved',
-            lastSync: '2025-08-12T15:30:00Z'
-          },
-          makeWebhook: {
-            connected: true,
-            url: 'https://hook.make.com/abc123def456',
-            lastTest: '2025-08-10T10:15:00Z'
+        if (businesses && businesses.length > 0) {
+          const business = businesses[0];
+          setCurrentBusinessId(business.id);
+
+          setBusinessProfile({
+            name: business.name,
+            location: business.location || '',
+            industry: business.industry || '',
+            googleBusinessId: business.google_business_id || ''
+          });
+
+          // Get business settings
+          const { data: settings, error: settingsError } = await supabase
+            .from('business_settings')
+            .select('*')
+            .eq('business_id', business.id)
+            .single();
+
+          if (settingsError && settingsError.code === 'PGRST116') {
+            // No settings exist, create default ones
+            const { data: newSettings, error: createError } = await supabase
+              .from('business_settings')
+              .insert({
+                business_id: business.id,
+                brand_voice_preset: 'friendly',
+                formality_level: 5,
+                warmth_level: 7,
+                brevity_level: 5,
+                approval_mode: 'manual'
+              })
+              .select()
+              .single();
+
+            if (createError) throw createError;
+
+            setBrandVoice({
+              preset: 'friendly',
+              formality: 5,
+              warmth: 7,
+              brevity: 5,
+              customInstruction: ''
+            });
+
+            setApprovalSettings({
+              mode: 'manual'
+            });
+          } else if (settings) {
+            setBrandVoice({
+              preset: settings.brand_voice_preset as 'friendly' | 'professional' | 'playful' | 'custom',
+              formality: settings.formality_level,
+              warmth: settings.warmth_level,
+              brevity: settings.brevity_level,
+              customInstruction: settings.custom_instruction || ''
+            });
+
+            setApprovalSettings({
+              mode: settings.approval_mode as 'manual' | 'auto_4_plus' | 'auto_except_low'
+            });
           }
-        });
 
-        setBilling({
-          plan: 'trial',
-          status: 'active',
-          trialEnds: '2025-08-26T23:59:59Z'
-        });
+          // Mock integration and billing data
+          setIntegrations({
+            googleBusiness: {
+              connected: false,
+              status: 'not_connected'
+            },
+            makeWebhook: {
+              connected: false,
+              url: settings?.make_webhook_url || ''
+            }
+          });
+
+          setBilling({
+            plan: 'trial',
+            status: 'active',
+            trialEnds: '2025-08-26T23:59:59Z'
+          });
+        }
       } catch (error) {
         console.error('Error loading settings:', error);
       } finally {
@@ -154,24 +220,50 @@ export default function SettingsPage() {
   };
 
   const handleSaveBrandVoice = async () => {
+    if (!currentBusinessId) return;
+
     setIsSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          brand_voice_preset: brandVoice.preset,
+          formality_level: brandVoice.formality,
+          warmth_level: brandVoice.warmth,
+          brevity_level: brandVoice.brevity,
+          custom_instruction: brandVoice.customInstruction || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('business_id', currentBusinessId);
+
+      if (error) throw error;
+
       console.log('Brand voice settings saved successfully!');
-    } catch {
-      console.error('Failed to save brand voice settings.');
+    } catch (error) {
+      console.error('Failed to save brand voice settings:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleSaveApproval = async () => {
+    if (!currentBusinessId) return;
+
     setIsSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          approval_mode: approvalSettings.mode,
+          updated_at: new Date().toISOString()
+        })
+        .eq('business_id', currentBusinessId);
+
+      if (error) throw error;
+
       console.log('Approval settings saved successfully!');
-    } catch {
-      console.error('Failed to save approval settings.');
+    } catch (error) {
+      console.error('Failed to save approval settings:', error);
     } finally {
       setIsSaving(false);
     }
@@ -282,7 +374,7 @@ export default function SettingsPage() {
       >
         {/* Business Profile Tab */}
         {activeTab === 'profile' && (
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className=" border-slate-200 dark:border-slate-700">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
@@ -364,7 +456,7 @@ export default function SettingsPage() {
 
         {/* Brand Voice Tab */}
         {activeTab === 'voice' && (
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="text-card-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -449,6 +541,23 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Custom Instruction */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Custom Instructions
+                </label>
+                <textarea
+                  value={brandVoice.customInstruction || ''}
+                  onChange={(e) => setBrandVoice(prev => ({ ...prev, customInstruction: e.target.value }))}
+                  placeholder="Add specific instructions for AI reply generation (e.g., 'Always mention our 24/7 customer service', 'Include a call to action', 'Use our brand terminology')..."
+                  className="w-full min-h-[100px] px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  rows={4}
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
+                </p>
+              </div>
+
               <div className="flex justify-end">
                 <Button onClick={handleSaveBrandVoice} disabled={isSaving}>
                   <Save className="h-4 w-4 mr-2" />
@@ -461,7 +570,7 @@ export default function SettingsPage() {
 
         {/* Approval Mode Tab */}
         {activeTab === 'approval' && (
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="text-card-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <SettingsIcon className="h-5 w-5" />
@@ -507,7 +616,7 @@ export default function SettingsPage() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-medium text-slate-900 dark:text-white">{mode.title}</h3>
+                        <h3 className="font-medium text-card-foreground">{mode.title}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{mode.description}</p>
                       </div>
                     </div>
@@ -528,7 +637,7 @@ export default function SettingsPage() {
         {/* Integrations Tab */}
         {activeTab === 'integrations' && (
           <div className="space-y-6">
-            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <Card className="text-card-foreground">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
                   <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -631,7 +740,7 @@ export default function SettingsPage() {
 
         {/* Billing Tab */}
         {activeTab === 'billing' && (
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="text-card-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />

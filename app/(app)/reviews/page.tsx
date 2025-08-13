@@ -105,11 +105,24 @@ export default function ReviewsPage() {
     setDrawerData(prev => ({ ...prev, isLoading: true }));
     try {
       await reviewActions.regenerateReply(reviewId, tone);
-      // The drawer data will be updated automatically through the refetch
+      
+      // Update drawer data with refreshed review from the reviews array
+      const updatedReview = allReviews.find(r => r.id === reviewId);
+      
+      if (updatedReview) {
+        setDrawerData(prev => ({
+          ...prev,
+          review: { ...updatedReview }, // Force new object reference
+          isLoading: false
+        }));
+      } else {
+        setDrawerData(prev => ({ ...prev, isLoading: false }));
+      }
     } catch (error) {
+      console.error('Error in handleDrawerRegenerate:', error);
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
-  }, [reviewActions]);
+  }, [reviewActions, allReviews, drawerData.review]);
 
   // Handle inline editing
   const handleInlineEdit = useCallback(async (reviewId: string, reply: string) => {
@@ -188,10 +201,10 @@ export default function ReviewsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Reviews
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage and respond to customer reviews
           </p>
         </div>
@@ -200,7 +213,7 @@ export default function ReviewsPage() {
           <button
             onClick={() => refetch()}
             disabled={isLoading}
-            className="flex items-center space-x-2 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -208,7 +221,7 @@ export default function ReviewsPage() {
           
           <button
             onClick={handleExport}
-            className="flex items-center space-x-2 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <Download className="h-4 w-4" />
             <span>Export</span>

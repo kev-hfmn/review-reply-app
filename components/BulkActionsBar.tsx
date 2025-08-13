@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, Send, SkipForward, X, Loader2 } from 'lucide-react';
 import type { BulkActionsBarProps } from '@/types/reviews';
+import { Button } from '@/components/ui/button';
 
 export default function BulkActionsBar({
   selection,
@@ -40,10 +41,11 @@ export default function BulkActionsBar({
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
-            <button
+            <Button
               onClick={onApprove}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white"
+              size="sm"
               title="Approve selected reviews"
             >
               {isLoading ? (
@@ -52,12 +54,13 @@ export default function BulkActionsBar({
                 <Check className="h-4 w-4" />
               )}
               <span>Approve</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={onPost}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white"
+              size="sm"
               title="Post selected replies"
             >
               {isLoading ? (
@@ -66,12 +69,13 @@ export default function BulkActionsBar({
                 <Send className="h-4 w-4" />
               )}
               <span>Post</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={onSkip}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white"
+              size="sm"
               title="Skip selected reviews"
             >
               {isLoading ? (
@@ -80,21 +84,23 @@ export default function BulkActionsBar({
                 <SkipForward className="h-4 w-4" />
               )}
               <span>Skip</span>
-            </button>
+            </Button>
           </div>
 
           {/* Divider */}
           <div className="w-px h-6 bg-slate-200 dark:bg-slate-700" />
 
           {/* Clear Selection */}
-          <button
+          <Button
             onClick={onClearSelection}
             disabled={isLoading}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500"
+            variant="ghost"
+            size="sm"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 p-2"
             title="Clear selection"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Progress indicator for bulk actions */}

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import type { 
-  ReviewFilters, 
-  ReviewTableItem, 
-  ReviewsPageData,
+import { generateReply, getBusinessSettings, getBusinessInfo } from '@/lib/services/aiReplyService';
+import type {
+  ReviewFilters,
+  ReviewTableItem,
   ReviewActions,
   BulkActions,
   PaginationData,
@@ -50,7 +50,7 @@ export function useReviewsData() {
       ...toast
     };
     setToasts(prev => [...prev, newToast]);
-    
+
     // Auto-remove toast
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
@@ -61,14 +61,14 @@ export function useReviewsData() {
   const transformReviewForTable = useCallback((review: Review): ReviewTableItem => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
       });
     };
 
-    const truncateText = (text: string, maxLength: number = 100) => {
+    const truncateText = (text: string, maxLength: number = 160) => {
       return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
     };
 
@@ -123,8 +123,8 @@ export function useReviewsData() {
       setError(null);
 
       // Get business IDs for the user
-      const businessIds = businesses.length > 0 
-        ? businesses.map(b => b.id) 
+      const businessIds = businesses.length > 0
+        ? businesses.map(b => b.id)
         : (await supabase
             .from('businesses')
             .select('id')
@@ -168,7 +168,7 @@ export function useReviewsData() {
         query = query.lte('review_date', filters.dateRange.to.toISOString());
       }
 
-      const { data, error, count } = await query;
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -186,10 +186,10 @@ export function useReviewsData() {
       }
 
       setReviews(processedReviews);
-      
+
       // Transform for table display
       const tableReviews = processedReviews.map(transformReviewForTable);
-      
+
       // Apply pagination
       const totalItems = tableReviews.length;
       const totalPages = Math.ceil(totalItems / PAGE_SIZE);
@@ -225,6 +225,22 @@ export function useReviewsData() {
     }
   }, [fetchReviews, businesses]);
 
+  // Helper function to update a review in local state
+  const updateReviewInState = useCallback((reviewId: string, updates: Partial<Review>) => {
+    setReviews(prev => prev.map(review =>
+      review.id === reviewId
+        ? { ...review, ...updates, updated_at: new Date().toISOString() }
+        : review
+    ));
+
+    // Also update the filtered/transformed reviews for immediate UI update
+    setFilteredReviews(prev => prev.map(review =>
+      review.id === reviewId
+        ? transformReviewForTable({ ...review, ...updates, updated_at: new Date().toISOString() })
+        : review
+    ));
+  }, [transformReviewForTable]);
+
   // Review actions
   const reviewActions: ReviewActions = useMemo(() => ({
     approve: async (reviewId: string) => {
@@ -232,13 +248,16 @@ export function useReviewsData() {
         setIsUpdating(true);
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'approved',
             updated_at: new Date().toISOString()
           })
           .eq('id', reviewId);
 
         if (error) throw error;
+
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { status: 'approved' });
 
         // Add activity
         const review = reviews.find(r => r.id === reviewId);
@@ -258,8 +277,6 @@ export function useReviewsData() {
           title: 'Review approved',
           message: 'The reply has been approved and is ready to post.'
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to approve review:', err);
         showToast({
@@ -275,16 +292,20 @@ export function useReviewsData() {
     post: async (reviewId: string) => {
       try {
         setIsUpdating(true);
+        const postedAt = new Date().toISOString();
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'posted',
-            posted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            posted_at: postedAt,
+            updated_at: postedAt
           })
           .eq('id', reviewId);
 
         if (error) throw error;
+
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { status: 'posted', posted_at: postedAt });
 
         // Add activity
         const review = reviews.find(r => r.id === reviewId);
@@ -304,8 +325,6 @@ export function useReviewsData() {
           title: 'Reply posted',
           message: 'The reply has been posted successfully.'
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to post reply:', err);
         showToast({
@@ -323,7 +342,7 @@ export function useReviewsData() {
         setIsUpdating(true);
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'skipped',
             updated_at: new Date().toISOString()
           })
@@ -331,13 +350,14 @@ export function useReviewsData() {
 
         if (error) throw error;
 
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { status: 'skipped' });
+
         showToast({
           type: 'info',
           title: 'Review skipped',
           message: 'The review has been marked as skipped.'
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to skip review:', err);
         showToast({
@@ -355,7 +375,7 @@ export function useReviewsData() {
         setIsUpdating(true);
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             ai_reply: reply,
             updated_at: new Date().toISOString()
           })
@@ -363,13 +383,14 @@ export function useReviewsData() {
 
         if (error) throw error;
 
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { ai_reply: reply });
+
         showToast({
           type: 'success',
           title: 'Reply updated',
           message: 'The AI reply has been updated.'
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to update reply:', err);
         showToast({
@@ -385,47 +406,57 @@ export function useReviewsData() {
     regenerateReply: async (reviewId: string, tone = 'friendly') => {
       try {
         setIsUpdating(true);
-        
-        // For now, we'll simulate AI reply generation with template responses
-        // TODO: Replace with actual AI integration
+
+        // Find the review
         const review = reviews.find(r => r.id === reviewId);
         if (!review) throw new Error('Review not found');
 
-        const generateMockReply = (rating: number, customerName: string, tone: string) => {
-          const toneTemplates = {
-            friendly: {
-              5: `Thank you so much, ${customerName}! We're thrilled you had such a wonderful experience with us. Your kind words truly make our day! 😊`,
-              4: `Thank you for the great review, ${customerName}! We're so glad you enjoyed your experience. We appreciate your feedback and hope to see you again soon!`,
-              3: `Hi ${customerName}, thank you for taking the time to share your feedback. We're glad you had a decent experience and would love to make it even better next time!`,
-              2: `Hi ${customerName}, thank you for your honest feedback. We're sorry we didn't meet your expectations and would love the opportunity to improve your experience.`,
-              1: `${customerName}, we're truly sorry about your experience. This isn't the standard we strive for. Please contact us directly so we can make this right.`
-            },
-            professional: {
-              5: `Dear ${customerName}, we sincerely appreciate your excellent review. Your satisfaction is our top priority, and we look forward to serving you again.`,
-              4: `Dear ${customerName}, thank you for your positive feedback. We value your business and appreciate you taking the time to share your experience.`,
-              3: `Dear ${customerName}, we appreciate your feedback. We strive for excellence and would welcome the opportunity to exceed your expectations in the future.`,
-              2: `Dear ${customerName}, thank you for bringing this to our attention. We take all feedback seriously and are committed to improving our service.`,
-              1: `Dear ${customerName}, we apologize for not meeting your expectations. Please contact our management team so we can address your concerns properly.`
-            },
-            playful: {
-              5: `Wow, ${customerName}! You just made our whole team do a happy dance! 🎉 Thanks for the amazing review - you're absolutely wonderful!`,
-              4: `Hey ${customerName}! Thanks for the awesome review! We're doing a little celebration dance over here 💃 Hope to see you again soon!`,
-              3: `Hi ${customerName}! Thanks for the feedback - we're pretty good, but we know we can be GREAT! Can't wait to wow you next time! ⭐`,
-              2: `Hey ${customerName}, oops! Looks like we missed the mark this time. We promise we're usually more awesome than this! Let us make it up to you! 😅`,
-              1: `Oh no, ${customerName}! We really dropped the ball here 😔 This is definitely not our usual style - please let us make this right!`
-            }
-          };
+        // Get the current user's business settings directly
+        if (!user) throw new Error('User not authenticated');
 
-          const templates = toneTemplates[tone as keyof typeof toneTemplates] || toneTemplates.friendly;
-          return templates[rating as keyof typeof templates] || templates[3];
+        // Get user's business
+        const { data: businesses, error: businessError } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (businessError) throw businessError;
+        if (!businesses || businesses.length === 0) throw new Error('No business found for user');
+
+        const business = businesses[0];
+
+        // Get business settings
+        const settings = await getBusinessSettings(business.id);
+        const businessInfo = await getBusinessInfo(business.id);
+
+        if (!settings || !businessInfo) {
+          throw new Error('Could not retrieve business settings');
+        }
+
+        // Override tone if specified
+        const brandVoice = {
+          ...settings,
+          preset: tone as 'friendly' | 'professional' | 'playful' | 'custom' || settings.preset
         };
 
-        const newReply = generateMockReply(review.rating, review.customer_name, tone);
+        // Generate AI reply
+        const result = await generateReply(
+          {
+            id: review.id,
+            rating: review.rating,
+            text: review.review_text,
+            customerName: review.customer_name
+          },
+          brandVoice,
+          businessInfo
+        );
 
+        // Update in Supabase
         const { error } = await supabase
           .from('reviews')
-          .update({ 
-            ai_reply: newReply,
+          .update({
+            ai_reply: result.reply,
             reply_tone: tone,
             updated_at: new Date().toISOString()
           })
@@ -433,13 +464,17 @@ export function useReviewsData() {
 
         if (error) throw error;
 
-        showToast({
-          type: 'success',
-          title: 'Reply regenerated',
-          message: `A new ${tone} reply has been generated.`
-        });
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { ai_reply: result.reply, reply_tone: tone });
 
-        await fetchReviews();
+        // Show success message (with warning if fallback was used)
+        showToast({
+          type: result.error ? 'warning' : 'success',
+          title: result.error ? 'Reply generated with fallback' : 'Reply regenerated',
+          message: result.error ?
+            `AI service unavailable, used template reply with ${tone} tone.` :
+            `A new ${tone} AI reply has been generated.`
+        });
       } catch (err) {
         console.error('Failed to regenerate reply:', err);
         showToast({
@@ -455,7 +490,7 @@ export function useReviewsData() {
     updateStatus: async (reviewId: string, status: Review['status']) => {
       try {
         setIsUpdating(true);
-        const updates: any = { 
+        const updates: Partial<Review> = {
           status,
           updated_at: new Date().toISOString()
         };
@@ -471,13 +506,14 @@ export function useReviewsData() {
 
         if (error) throw error;
 
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, updates);
+
         showToast({
           type: 'success',
           title: 'Status updated',
           message: `Review status changed to ${status}.`
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to update status:', err);
         showToast({
@@ -489,7 +525,23 @@ export function useReviewsData() {
         setIsUpdating(false);
       }
     }
-  }), [reviews, fetchReviews, showToast]);
+  }), [reviews, showToast, updateReviewInState, user]);
+
+  // Helper function to update multiple reviews in local state
+  const updateMultipleReviewsInState = useCallback((reviewIds: string[], updates: Partial<Review>) => {
+    setReviews(prev => prev.map(review =>
+      reviewIds.includes(review.id)
+        ? { ...review, ...updates, updated_at: new Date().toISOString() }
+        : review
+    ));
+
+    // Also update the filtered/transformed reviews for immediate UI update
+    setFilteredReviews(prev => prev.map(review =>
+      reviewIds.includes(review.id)
+        ? transformReviewForTable({ ...review, ...updates, updated_at: new Date().toISOString() })
+        : review
+    ));
+  }, [transformReviewForTable]);
 
   // Bulk actions
   const bulkActions: BulkActions = useMemo(() => ({
@@ -498,7 +550,7 @@ export function useReviewsData() {
         setIsUpdating(true);
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'approved',
             updated_at: new Date().toISOString()
           })
@@ -506,13 +558,14 @@ export function useReviewsData() {
 
         if (error) throw error;
 
+        // Update local state immediately to preserve scroll position
+        updateMultipleReviewsInState(reviewIds, { status: 'approved' });
+
         showToast({
           type: 'success',
           title: 'Reviews approved',
           message: `${reviewIds.length} review${reviewIds.length > 1 ? 's' : ''} approved successfully.`
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to approve reviews:', err);
         showToast({
@@ -528,24 +581,26 @@ export function useReviewsData() {
     post: async (reviewIds: string[]) => {
       try {
         setIsUpdating(true);
+        const postedAt = new Date().toISOString();
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'posted',
-            posted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            posted_at: postedAt,
+            updated_at: postedAt
           })
           .in('id', reviewIds);
 
         if (error) throw error;
+
+        // Update local state immediately to preserve scroll position
+        updateMultipleReviewsInState(reviewIds, { status: 'posted', posted_at: postedAt });
 
         showToast({
           type: 'success',
           title: 'Replies posted',
           message: `${reviewIds.length} repl${reviewIds.length > 1 ? 'ies' : 'y'} posted successfully.`
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to post replies:', err);
         showToast({
@@ -563,7 +618,7 @@ export function useReviewsData() {
         setIsUpdating(true);
         const { error } = await supabase
           .from('reviews')
-          .update({ 
+          .update({
             status: 'skipped',
             updated_at: new Date().toISOString()
           })
@@ -571,13 +626,14 @@ export function useReviewsData() {
 
         if (error) throw error;
 
+        // Update local state immediately to preserve scroll position
+        updateMultipleReviewsInState(reviewIds, { status: 'skipped' });
+
         showToast({
           type: 'info',
           title: 'Reviews skipped',
-          message: `${reviewIds.length} review${reviewIds.length > 1 ? 's' : ''} marked as skipped.`
+          message: `${reviewIds.length} review${reviewIds.length > 1 ? 's' : ''} skipped successfully.`
         });
-
-        await fetchReviews();
       } catch (err) {
         console.error('Failed to skip reviews:', err);
         showToast({
@@ -588,37 +644,8 @@ export function useReviewsData() {
       } finally {
         setIsUpdating(false);
       }
-    },
-
-    delete: async (reviewIds: string[]) => {
-      try {
-        setIsUpdating(true);
-        const { error } = await supabase
-          .from('reviews')
-          .delete()
-          .in('id', reviewIds);
-
-        if (error) throw error;
-
-        showToast({
-          type: 'success',
-          title: 'Reviews deleted',
-          message: `${reviewIds.length} review${reviewIds.length > 1 ? 's' : ''} deleted successfully.`
-        });
-
-        await fetchReviews();
-      } catch (err) {
-        console.error('Failed to delete reviews:', err);
-        showToast({
-          type: 'error',
-          title: 'Failed to delete reviews',
-          message: err instanceof Error ? err.message : 'Please try again.'
-        });
-      } finally {
-        setIsUpdating(false);
-      }
     }
-  }), [fetchReviews, showToast]);
+  }), [showToast, updateMultipleReviewsInState]);
 
   // Filter functions
   const updateFilters = useCallback((newFilters: Partial<ReviewFilters>) => {
@@ -649,7 +676,7 @@ export function useReviewsData() {
     businesses,
     reviews: filteredReviews,
     allReviews: reviews,
-    
+
     // State
     filters,
     pagination,
@@ -657,16 +684,16 @@ export function useReviewsData() {
     isUpdating,
     error,
     toasts,
-    
+
     // Actions
     reviewActions,
     bulkActions,
-    
+
     // Filters & Pagination
     updateFilters,
     resetFilters,
     goToPage,
-    
+
     // Utils
     refetch,
     removeToast,

@@ -11,13 +11,63 @@ body {
   .recipe-card {
     @apply bg-white dark:bg-neutral-dark rounded-lg shadow-sm border border-primary/10 dark:border-primary/20 transition-all duration-300 hover:shadow-md;
   }
-  
+
   .cooking-button {
     @apply bg-primary hover:bg-primary-dark text-white rounded-lg transition-all duration-300 transform hover:scale-102 active:scale-98;
   }
-  
+
   .accent-button {
     @apply bg-secondary hover:bg-secondary-dark text-white rounded-lg transition-all duration-300;
+  }
+
+  /* Badge status variants with high specificity */
+  .badge-pending {
+    background-color: #FEF3C7 !important; /* amber-100 */
+    color: #92400E !important; /* amber-800 */
+    border-color: #FCD34D !important; /* amber-300 */
+  }
+
+  .badge-approved {
+    background-color: #DBEAFE !important; /* blue-100 */
+    color: #1E40AF !important; /* blue-800 */
+    border-color: #93C5FD !important; /* blue-300 */
+  }
+
+  .badge-posted {
+    background-color: #D1FAE5 !important; /* green-100 */
+    color: #065F46 !important; /* green-800 */
+    border-color: #6EE7B7 !important; /* green-300 */
+  }
+
+  .badge-needs-edit {
+    background-color: #FEE2E2 !important; /* red-100 */
+    color: #991B1B !important; /* red-800 */
+    border-color: #FCA5A5 !important; /* red-300 */
+  }
+
+  /* Dark mode variants */
+  .dark .badge-pending {
+    background-color: rgba(146, 64, 14, 0.2) !important;
+    color: #FCD34D !important;
+    border-color: #78350F !important;
+  }
+
+  .dark .badge-approved {
+    background-color: rgba(30, 64, 175, 0.2) !important;
+    color: #93C5FD !important;
+    border-color: #1E3A8A !important;
+  }
+
+  .dark .badge-posted {
+    background-color: rgba(6, 95, 70, 0.2) !important;
+    color: #6EE7B7 !important;
+    border-color: #064E3B !important;
+  }
+
+  .dark .badge-needs-edit {
+    background-color: rgba(153, 27, 27, 0.2) !important;
+    color: #FCA5A5 !important;
+    border-color: #7F1D1D !important;
   }
 }
 
@@ -37,7 +87,7 @@ body {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 0 0% 98%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -64,7 +114,7 @@ body {
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 84% 7ai reply%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;

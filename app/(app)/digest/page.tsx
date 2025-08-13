@@ -187,9 +187,9 @@ export default function DigestPage() {
   };
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4) return 'text-green-600 dark:text-green-400';
-    if (rating >= 3) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (rating >= 4) return 'text-green-600';
+    if (rating >= 3) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   const getChangeIcon = (change: number) => {
@@ -202,7 +202,7 @@ export default function DigestPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Weekly Digest
           </h1>
         </div>
@@ -210,7 +210,7 @@ export default function DigestPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4 mx-auto"></div>
-            <p className="text-slate-600 dark:text-slate-400">Loading weekly digest...</p>
+            <p className="text-muted-foreground">Loading weekly digest...</p>
           </div>
         </div>
       </div>
@@ -221,18 +221,18 @@ export default function DigestPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Weekly Digest
           </h1>
         </div>
 
         <Card>
           <CardContent className="py-12 text-center">
-            <BarChart3 className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               No digest data available
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Weekly digests will appear here once you have review data.
             </p>
           </CardContent>
@@ -246,10 +246,10 @@ export default function DigestPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Weekly Digest
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             {new Date(digest.week_start).toLocaleDateString()} - {new Date(digest.week_end).toLocaleDateString()}
           </p>
         </div>
@@ -291,14 +291,14 @@ export default function DigestPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <CardContent className="p-6">
+          <Card>
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Total Reviews
                   </p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <p className="text-2xl font-bold text-foreground">
                     {stats.totalReviews}
                   </p>
                 </div>
@@ -306,7 +306,7 @@ export default function DigestPage() {
                   {getChangeIcon(stats.weekOverWeekChange)}
                   <span className={`text-sm font-medium ${
                     stats.weekOverWeekChange > 0 ? 'text-green-600' :
-                    stats.weekOverWeekChange < 0 ? 'text-red-600' : 'text-slate-600'
+                    stats.weekOverWeekChange < 0 ? 'text-red-600' : 'text-muted-foreground'
                   }`}>
                     {stats.weekOverWeekChange > 0 ? '+' : ''}{stats.weekOverWeekChange}%
                   </span>
@@ -321,11 +321,11 @@ export default function DigestPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <CardContent className="p-6">
+          <Card>
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Average Rating
                   </p>
                   <div className="flex items-center gap-2">
@@ -345,14 +345,15 @@ export default function DigestPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <CardContent className="p-6">
+          <Card>
+
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Response Rate
                   </p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <p className="text-2xl font-bold text-foreground">
                     {stats.responseRate}%
                   </p>
                 </div>
@@ -367,14 +368,14 @@ export default function DigestPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <CardContent className="p-6">
+          <Card>
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Unique Customers
                   </p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <p className="text-2xl font-bold text-foreground">
                     {Math.floor(stats.totalReviews * 0.8)}
                   </p>
                 </div>
@@ -391,7 +392,7 @@ export default function DigestPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
@@ -411,14 +412,14 @@ export default function DigestPage() {
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       </div>
                       <div className="flex-1">
-                        <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                        <div className="bg-secondary rounded-full h-2">
                           <div
                             className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right">
+                      <div className="text-sm text-muted-foreground w-16 text-right">
                         {count} ({percentage.toFixed(0)}%)
                       </div>
                     </div>
@@ -436,9 +437,9 @@ export default function DigestPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-600">
+              <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
                 Positive Themes
               </CardTitle>
@@ -448,8 +449,8 @@ export default function DigestPage() {
                 {digest.positive_themes.map((theme, index) => (
                   <Badge
                     key={index}
-                    variant="secondary"
-                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    variant="positive"
+
                   >
                     {theme}
                   </Badge>
@@ -464,9 +465,9 @@ export default function DigestPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-600">
+              <CardTitle className="flex items-center gap-2">
                 <TrendingDown className="h-5 w-5" />
                 Areas for Improvement
               </CardTitle>
@@ -476,8 +477,8 @@ export default function DigestPage() {
                 {digest.improvement_themes.map((theme, index) => (
                   <Badge
                     key={index}
-                    variant="secondary"
-                    className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                    variant="negative"
+                    className="text-orange-950 bg-orange-200 border-orange-300 font-medium"
                   >
                     {theme}
                   </Badge>
@@ -494,7 +495,7 @@ export default function DigestPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
       >
-        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+        <Card>
           <CardHeader>
             <CardTitle>Review Highlights</CardTitle>
           </CardHeader>
@@ -513,7 +514,7 @@ export default function DigestPage() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900 dark:text-white">
+                      <span className="font-medium text-foreground">
                         {highlight.customer_name}
                       </span>
                       <div className="flex items-center gap-1">
@@ -530,7 +531,7 @@ export default function DigestPage() {
                        highlight.type === 'worst' ? 'Needs Attention' : 'Notable'}
                     </Badge>
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                  <p className="text-foreground text-sm leading-relaxed">
                     &ldquo;{highlight.review_text}&rdquo;
                   </p>
                 </div>

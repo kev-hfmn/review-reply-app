@@ -32,7 +32,6 @@ export interface BulkActions {
   approve: (reviewIds: string[]) => Promise<void>;
   post: (reviewIds: string[]) => Promise<void>;
   skip: (reviewIds: string[]) => Promise<void>;
-  delete: (reviewIds: string[]) => Promise<void>;
 }
 
 export interface ReviewActions {
