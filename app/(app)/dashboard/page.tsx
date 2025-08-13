@@ -8,13 +8,15 @@ import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
-import { 
-  createMetrics, 
-  convertActivitiesToDashboard, 
-  getEmptyStateMetrics 
+import { Button } from '@/components/ui/button';
+import {
+  createMetrics,
+  convertActivitiesToDashboard,
+  getEmptyStateMetrics
 } from '@/utils/dashboard';
 import OnboardingCard from '@/components/OnboardingCard';
 import ReviewsChart from '@/components/ReviewsChart';
+import { Card, CardContent } from '@/components/ui/card';
 
 const AUTH_TIMEOUT = 15000; // 15 seconds
 
@@ -25,14 +27,14 @@ export default function Dashboard() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const { isInTrial, isLoading: isTrialLoading } = useTrialStatus();
   const [authTimeout, setAuthTimeout] = useState(false);
-  
+
   // Fetch dashboard data
-  const { 
-    businesses, 
-    stats, 
-    chartData, 
-    onboardingSteps, 
-    isLoading: isDashboardLoading, 
+  const {
+    businesses,
+    stats,
+    chartData,
+    onboardingSteps,
+    isLoading: isDashboardLoading,
     error: dashboardError,
     refetch
   } = useDashboardData();
@@ -46,7 +48,7 @@ export default function Dashboard() {
       await fetchSubscription();
       setHasCheckedSubscription(true);
     };
-    
+
     if (user?.id) {
       refreshSubscription();
     }
@@ -61,10 +63,10 @@ export default function Dashboard() {
           .select('has_completed_onboarding')
           .eq('user_id', user.id)
           .single();
-        
+
         setHasCompletedOnboarding(!!data?.has_completed_onboarding);
       };
-      
+
       checkOnboarding();
     }
   }, [user?.id]);
@@ -75,7 +77,7 @@ export default function Dashboard() {
         setAuthTimeout(true);
       }
     }, AUTH_TIMEOUT);
-    
+
     return () => clearTimeout(timer);
   }, [user, isAuthLoading, isTrialLoading]);
 
@@ -86,7 +88,7 @@ export default function Dashboard() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-4 mx-auto"></div>
           <p className="text-foreground">
-            {authTimeout ? 
+            {authTimeout ?
               "Taking longer than usual? Try refreshing the page 😊." :
               "Verifying access..."}
           </p>
@@ -96,7 +98,7 @@ export default function Dashboard() {
   }
 
   // Get metrics data - use stats if available, otherwise show empty state
-  const dashboardMetrics = stats 
+  const dashboardMetrics = stats
     ? createMetrics(
         stats.reviewsThisWeek,
         stats.reviewsThisWeekChange,
@@ -110,7 +112,7 @@ export default function Dashboard() {
     : getEmptyStateMetrics();
 
   // Convert activities for display
-  const recentActivity = stats?.recentActivities 
+  const recentActivity = stats?.recentActivities
     ? convertActivitiesToDashboard(stats.recentActivities)
     : [];
 
@@ -119,7 +121,7 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Flowrise Reviews
           </h1>
         </div>
@@ -127,12 +129,13 @@ export default function Dashboard() {
           <p className="text-red-800 dark:text-red-200">
             Error loading dashboard data: {dashboardError}
           </p>
-          <button 
+          <Button
             onClick={refetch}
-            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-medium text-sm"
+            variant="link"
+            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-medium text-sm p-0 h-auto"
           >
             Try again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -143,17 +146,17 @@ export default function Dashboard() {
       {/* Dashboard Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             Flowrise Reviews
           </h1>
           {businesses.length > 0 && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Managing {businesses.length} business{businesses.length > 1 ? 'es' : ''}
             </p>
           )}
         </div>
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-slate-600 dark:text-slate-300">
+          <span className="text-sm text-muted-foreground">
             {isInTrial ? "Trial Period" : "Premium Plan"}
           </span>
           {isDashboardLoading && (
@@ -165,21 +168,21 @@ export default function Dashboard() {
       {/* Show onboarding for new users */}
       {businesses.length === 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <OnboardingCard 
-            steps={onboardingSteps} 
+          <OnboardingCard
+            steps={onboardingSteps}
             onStepAction={(stepId) => {
               console.log('Onboarding step clicked:', stepId);
               // TODO: Handle onboarding step actions
             }}
           />
-          <div className="bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/5 dark:to-primary/10 rounded-xl p-6 flex flex-col justify-center">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+          <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-6 flex flex-col justify-center">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Welcome to Flowrise Reviews! 👋
             </h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Start by connecting your Google Business account to automatically manage your reviews with AI-powered replies.
             </p>
-            <div className="text-sm text-slate-500 dark:text-slate-500">
+            <div className="text-sm text-muted-foreground">
               <strong>Next:</strong> Complete the setup steps to get started
             </div>
           </div>
@@ -194,31 +197,35 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white dark:bg-neutral-dark rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700"
+c
           >
-            <div className="flex items-center justify-between">
-              <div className="p-2 bg-primary/10 dark:bg-primary-light/10 rounded-lg">
+            <Card>
+              <CardContent>
+            <div className="flex items-center justify-between pt-6">
+              <div className="p-2 bg-primary/10 rounded-lg">
                 {metric.icon}
               </div>
               <span className={`text-sm font-medium ${
-                metric.trend === 'up' ? 'text-green-500' : 
-                metric.trend === 'down' ? 'text-red-500' : 
-                'text-slate-500'
+                metric.trend === 'up' ? 'text-green-500' :
+                metric.trend === 'down' ? 'text-red-500' :
+                'text-muted-foreground'
               }`}>
                 {metric.change}
               </span>
             </div>
-            <h3 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">
+            <h3 className="mt-4 text-2xl font-bold text-foreground">
               {metric.value}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               {metric.title}
             </p>
             {metric.subtitle && (
-              <p className="text-xs text-slate-500 dark:text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {metric.subtitle}
               </p>
             )}
+            </CardContent>
+              </Card>
           </motion.div>
         ))}
       </div>
@@ -231,19 +238,19 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white dark:bg-neutral-dark rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">
+        <div className="bg-background rounded-xl p-6 shadow-sm border border-border">
+          <h3 className="text-lg font-semibold text-foreground mb-6">
             Recent Activity
           </h3>
-          
+
           {recentActivity.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-3">
-              <Activity className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <Activity className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium text-muted-foreground">
                   No activity yet
                 </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Activity will appear here as you manage reviews
                 </p>
               </div>
@@ -258,14 +265,14 @@ export default function Dashboard() {
                   transition={{ delay: index * 0.05 }}
                   className="flex items-start space-x-3 text-sm"
                 >
-                  <div className="p-2 bg-primary/10 dark:bg-primary-light/10 rounded-lg flex-shrink-0 mt-0.5">
+                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0 mt-0.5">
                     {activity.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-900 dark:text-white leading-relaxed">
+                    <p className="text-foreground leading-relaxed">
                       {activity.action}
                     </p>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                    <p className="text-muted-foreground text-xs mt-1">
                       {activity.timestamp}
                     </p>
                   </div>
@@ -278,8 +285,8 @@ export default function Dashboard() {
 
       {/* Additional Onboarding for existing users */}
       {businesses.length > 0 && onboardingSteps.some(step => !step.completed) && (
-        <OnboardingCard 
-          steps={onboardingSteps} 
+        <OnboardingCard
+          steps={onboardingSteps}
           onStepAction={(stepId) => {
             console.log('Onboarding step clicked:', stepId);
             // TODO: Handle onboarding step actions

@@ -202,7 +202,18 @@ export function useDashboardData() {
           totalReviews: 0,
           recentActivities: []
         });
-        setChartData([]);
+        // Set mock chart data for demo purposes when no businesses exist
+        const mockChartData = Array.from({ length: 14 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (13 - i));
+          const reviews = i % 4 === 0 ? 1 : 0; // Some days have 1 review, others 0
+          return {
+            date: date.toISOString().split('T')[0],
+            reviews,
+            avgRating: reviews > 0 ? 4.5 : 0
+          };
+        });
+        setChartData(mockChartData);
         setOnboardingSteps(generateOnboardingSteps([]));
         setIsLoading(false);
         return;

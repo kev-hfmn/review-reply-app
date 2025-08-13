@@ -3,6 +3,7 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 import ProtectedRoute from '@/contexts/ProtectedRoute';
 import { Analytics } from "@vercel/analytics/react"
@@ -20,16 +21,18 @@ export default function RootLayout({
     <html lang="en">
       <body className={geist.className}>
         <Analytics mode="auto" />
-        {/* <PostHogErrorBoundary>
-          <PostHogProvider> */}
-            <AuthProvider>
-                <ProtectedRoute>
+        <ThemeProvider>
+          {/* <PostHogErrorBoundary>
+            <PostHogProvider> */}
+              <AuthProvider>
+                  <ProtectedRoute>
 
-                  <main>{children}</main>
-                </ProtectedRoute>
-            </AuthProvider>
-          {/* </PostHogProvider>
-        </PostHogErrorBoundary> */}
+                    <main>{children}</main>
+                  </ProtectedRoute>
+              </AuthProvider>
+            {/* </PostHogProvider>
+          </PostHogErrorBoundary> */}
+        </ThemeProvider>
       </body>
     </html>
   );

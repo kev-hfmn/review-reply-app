@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS business_settings (
     formality_level INTEGER CHECK (formality_level >= 1 AND formality_level <= 10) DEFAULT 5,
     warmth_level INTEGER CHECK (warmth_level >= 1 AND warmth_level <= 10) DEFAULT 7,
     brevity_level INTEGER CHECK (brevity_level >= 1 AND brevity_level <= 10) DEFAULT 5,
+    custom_instruction TEXT,
     approval_mode approval_mode DEFAULT 'manual',
     make_webhook_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

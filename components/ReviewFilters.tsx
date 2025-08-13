@@ -11,6 +11,15 @@ import {
 } from 'lucide-react';
 import type { ReviewFiltersProps } from '@/types/reviews';
 import { REVIEW_STATUSES, RATING_FILTERS } from '@/types/reviews';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ReviewFilters({ 
   filters, 
@@ -77,55 +86,56 @@ export default function ReviewFilters({
   }, [onReset]);
 
   return (
-    <div className="bg-white dark:bg-neutral-dark rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+    <div className="bg-background rounded-xl p-4 shadow-sm border border-border">
       {/* Search and Filter Toggle Row */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
             type="text"
             placeholder="Search reviews, customers, or replies..."
             value={filters.search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            className="w-full pl-10 pr-4"
             disabled={isLoading}
           />
           {filters.search && (
-            <button
+            <Button
               onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Filter Controls */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>{resultCount} result{resultCount !== 1 ? 's' : ''}</span>
             {hasActiveFilters && (
               <>
                 <span>•</span>
-                <button
+                <Button
                   onClick={handleReset}
-                  className="flex items-center gap-1 text-primary hover:text-primary-dark font-medium"
+                  variant="link"
+                  size="sm"
+                  className="flex items-center gap-1 text-primary hover:text-primary-dark font-medium p-0 h-auto"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Clear filters
-                </button>
+                </Button>
               </>
             )}
           </div>
 
-          <button
+          <Button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm font-medium ${
-              hasActiveFilters
-                ? 'bg-primary text-white border-primary'
-                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-            }`}
+            variant={hasActiveFilters ? "default" : "outline"}
+            className="flex items-center gap-2"
             disabled={isLoading}
           >
             <Filter className="h-4 w-4" />
@@ -141,7 +151,7 @@ export default function ReviewFilters({
                 ].filter(Boolean).length}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -152,92 +162,102 @@ export default function ReviewFilters({
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 overflow-hidden"
+          className="mt-4 pt-4 border-t border-border overflow-hidden"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Rating Filter */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 <Star className="inline h-4 w-4 mr-1" />
                 Rating
               </label>
-              <select
+              <Select 
                 value={filters.rating === null ? 'all' : filters.rating.toString()}
-                onChange={(e) => handleRatingChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                onValueChange={handleRatingChange}
                 disabled={isLoading}
               >
-                {RATING_FILTERS.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RATING_FILTERS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Status
               </label>
-              <select
+              <Select 
                 value={filters.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                onValueChange={handleStatusChange}
                 disabled={isLoading}
               >
-                {REVIEW_STATUSES.map(status => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {REVIEW_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Business Filter */}
             {businesses.length > 1 && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   <Building2 className="inline h-4 w-4 mr-1" />
                   Business
                 </label>
-                <select
+                <Select 
                   value={filters.businessId}
-                  onChange={(e) => handleBusinessChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  onValueChange={handleBusinessChange}
                   disabled={isLoading}
                 >
-                  <option value="all">All Businesses</option>
-                  {businesses.map(business => (
-                    <option key={business.id} value={business.id}>
-                      {business.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Businesses</SelectItem>
+                    {businesses.map(business => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
             {/* Date Range */}
             <div className={businesses.length > 1 ? 'sm:col-span-2 lg:col-span-1' : 'sm:col-span-2'}>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 <Calendar className="inline h-4 w-4 mr-1" />
                 Date Range
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <input
+                <Input
                   type="date"
                   value={localDateFrom}
                   onChange={(e) => handleDateFromChange(e.target.value)}
-                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   placeholder="From"
                   disabled={isLoading}
                 />
-                <input
+                <Input
                   type="date"
                   value={localDateTo}
                   onChange={(e) => handleDateToChange(e.target.value)}
                   min={localDateFrom}
-                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   placeholder="To"
                   disabled={isLoading}
                 />

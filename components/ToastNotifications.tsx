@@ -41,7 +41,7 @@ export default function ToastNotifications({ toasts, onRemove }: ToastNotificati
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm backdrop-blur-xl">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <motion.div

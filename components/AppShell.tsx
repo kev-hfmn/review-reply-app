@@ -9,7 +9,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="h-screen bg-slate-50 dark:bg-[#0B1120] flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* TopBar */}
       <TopBar />
       
