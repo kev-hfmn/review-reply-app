@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Download, CloudDownload } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -10,6 +10,7 @@ import ReviewsTable from '@/components/ReviewsTable';
 import BulkActionsBar from '@/components/BulkActionsBar';
 import ReviewDrawer from '@/components/ReviewDrawer';
 import ToastNotifications from '@/components/ToastNotifications';
+import ReviewFetchControls, { type FetchOptions } from '@/components/ReviewFetchControls';
 import type { Review } from '@/types/dashboard';
 import type { SelectionState, ReviewDrawerData } from '@/types/reviews';
 import { REPLY_TONES } from '@/types/reviews';
@@ -191,8 +192,8 @@ export default function ReviewsPage() {
     setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
   }, []);
 
-  // Handle fetch reviews from Google Business Profile
-  const handleFetchReviews = useCallback(async () => {
+  // Handle fetch reviews from Google Business Profile with custom options
+  const handleFetchReviews = useCallback(async (options: FetchOptions) => {
     if (!user || !businesses || businesses.length === 0) {
       showToast({
         type: 'error',
@@ -220,17 +221,27 @@ export default function ReviewsPage() {
         body: JSON.stringify({
           businessId,
           userId: user.id,
-          action: 'sync'
+          action: 'sync',
+          timePeriod: options.timePeriod,
+          reviewCount: options.reviewCount
         })
       });
 
       const result = await response.json();
 
       if (result.success) {
+        const periodLabel = {
+          '7days': 'last 7 days',
+          '30days': 'last 30 days', 
+          '3months': 'last 3 months',
+          '6months': 'last 6 months',
+          'all': 'all time'
+        }[options.timePeriod];
+        
         showToast({
           type: 'success',
           title: 'Reviews fetched successfully',
-          message: `Fetched ${result.totalFetched} reviews (${result.newReviews} new, ${result.updatedReviews} updated)`
+          message: `Fetched ${result.totalFetched} reviews from ${periodLabel} (${result.newReviews} new)`
         });
         // Refresh the reviews list
         refetch();
@@ -275,16 +286,6 @@ export default function ReviewsPage() {
 
         <div className="flex items-center space-x-3">
           <Button
-            onClick={handleFetchReviews}
-            disabled={isFetchingReviews || isLoading}
-            variant="primary"
-            className="flex items-center space-x-2  transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <CloudDownload className={`h-4 w-4 ${isFetchingReviews ? 'animate-pulse' : ''}`} />
-            <span>{isFetchingReviews ? 'Fetching...' : 'Fetch Reviews'}</span>
-          </Button>
-
-          <Button
             onClick={() => refetch()}
             disabled={isLoading}
             variant="outline"
@@ -326,6 +327,13 @@ export default function ReviewsPage() {
           </button>
         </motion.div>
       )}
+
+      {/* Fetch Controls */}
+      <ReviewFetchControls
+        onFetch={handleFetchReviews}
+        isLoading={isFetchingReviews}
+        disabled={isLoading}
+      />
 
       {/* Filters */}
       <ReviewFilters
