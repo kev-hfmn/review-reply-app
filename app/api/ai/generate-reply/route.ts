@@ -36,16 +36,20 @@ export async function POST(request: Request) {
         { role: 'user', content: userPrompt }
       ],
       temperature: mapTemperature(brandVoice),
-      max_tokens: mapMaxTokens(brandVoice.brevity),
+      max_tokens: 300, // Set to a generous limit, we'll trim by words later
       n: 1,
     });
     
     // Extract and validate response
-    const reply = completion.choices[0]?.message?.content?.trim();
+    let reply = completion.choices[0]?.message?.content?.trim();
     
     if (!reply) {
       throw new Error('No reply generated');
     }
+    
+    // Trim by word count based on brevity setting
+    const maxWords = mapMaxWords(brandVoice.brevity);
+    reply = trimToWordLimit(reply, maxWords);
     
     // Return the generated reply
     return NextResponse.json({
@@ -165,7 +169,48 @@ function mapTemperature(brandVoice: { preset: string }) {
   return 0.5; // Default for friendly and custom
 }
 
-function mapMaxTokens(brevity: number) {
-  // Map brevity (1-10) to token range (50-150)
-  return Math.floor(50 + (brevity - 1) * 10);
+function mapMaxWords(brevity: number) {
+  // Map brevity (1-10) to word range
+  // Brevity 1 = most detailed, 10 = most concise
+  if (brevity <= 3) return 80; // Detailed responses (60-80 words)
+  if (brevity <= 7) return 50; // Moderate responses (40-50 words) 
+  return 30; // Concise responses (20-30 words)
+}
+
+function trimToWordLimit(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/);
+  
+  if (words.length <= maxWords) {
+    return text;
+  }
+  
+  // Trim to word limit
+  let trimmed = words.slice(0, maxWords).join(' ');
+  
+  // Ensure proper sentence ending
+  // If the trimmed text doesn't end with punctuation, try to find a good stopping point
+  if (!/[.!?]$/.test(trimmed)) {
+    // Look backwards for the last complete sentence
+    const sentences = text.match(/[^.!?]*[.!?]/g);
+    if (sentences) {
+      let combined = '';
+      for (const sentence of sentences) {
+        const testCombined = (combined + ' ' + sentence).trim();
+        const testWords = testCombined.split(/\s+/);
+        if (testWords.length <= maxWords) {
+          combined = testCombined;
+        } else {
+          break;
+        }
+      }
+      if (combined && combined.length > 0) {
+        return combined;
+      }
+    }
+    
+    // If we can't find complete sentences, add a period to complete the thought
+    trimmed += '.';
+  }
+  
+  return trimmed;
 }

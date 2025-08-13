@@ -7,12 +7,11 @@ import {
   Send,
   SkipForward,
   Edit3,
-  Eye,
   Calendar,
   User,
-  ChevronDown
+  Loader2
 } from 'lucide-react';
-import type { ReviewTableProps, SelectionState } from '@/types/reviews';
+import type { ReviewTableProps } from '@/types/reviews';
 import type { Review } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,10 +25,12 @@ export default function ReviewsTable({
   onSelectionChange,
   onReviewClick,
   onInlineEdit,
-  onQuickAction
+  onQuickAction,
+  onGenerateReply
 }: ReviewTableProps) {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [generatingReviewId, setGeneratingReviewId] = useState<string | null>(null);
 
   // Generate star display
   const renderStars = useCallback((rating: number) => {
@@ -99,6 +100,16 @@ export default function ReviewsTable({
     setEditingReviewId(null);
     setEditingText('');
   }, []);
+
+  // Handle generate reply with loading state
+  const handleGenerateReply = useCallback(async (reviewId: string) => {
+    setGeneratingReviewId(reviewId);
+    try {
+      await onGenerateReply(reviewId);
+    } finally {
+      setGeneratingReviewId(null);
+    }
+  }, [onGenerateReply]);
 
   if (isLoading) {
     return (
@@ -177,7 +188,7 @@ export default function ReviewsTable({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`p-6 hover:bg-accent/20 transition-colors cursor-pointer ${
+            className={`p-6 hover:bg-accent/5 transition-colors cursor-pointer ${
               selection.selectedIds.has(review.id) ? 'bg-primary/5' : ''
             }`}
             onClick={() => onReviewClick(review)}
@@ -233,20 +244,20 @@ export default function ReviewsTable({
                 </div>
 
                 {/* AI Reply Section - Enhanced */}
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-5 mb-5">
+                <div className="bg-gradient-to-r from-secondary/10 to-secondary/10 dark:from-secondary/10 dark:to-secondary/10 border border-secondary/50 dark:border-secondary/50 rounded-lg p-5 mb-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className="p-1.5 bg-blue-500 rounded-lg">
+                      <div className="p-1.5 bg-secondary rounded-lg">
                         <MessageSquare className="h-3 w-3 text-white" />
                       </div>
                       <span className="text-sm text-foreground/80 font-semibold">
                         AI Reply
                       </span>
-                      {review.reply_tone && (
+{/*                       {review.reply_tone && (
                         <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded-full">
                           {review.reply_tone}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <Button
                       onClick={(e) => {
@@ -305,14 +316,38 @@ export default function ReviewsTable({
 
                 {/* Action Buttons - Moved below AI reply, full width */}
                 <div className="flex items-center justify-end space-x-2 pt-3 mt-4">
-                  {review.status === 'pending' && (
+                  {/* Show Generate Reply button when no AI reply exists */}
+                  {!review.ai_reply && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGenerateReply(review.id);
+                      }}
+                      size="sm"
+                      variant="primary"
+                      title="Generate AI reply"
+                      disabled={generatingReviewId === review.id}
+                    >
+                      {generatingReviewId === review.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageSquare className="h-4 w-4" />
+                      )}
+                      <span>
+                        {generatingReviewId === review.id ? 'Generating...' : 'Generate Reply'}
+                      </span>
+                    </Button>
+                  )}
+
+                  {/* Show Approve button only when AI reply exists and status is pending */}
+                  {review.ai_reply && review.status === 'pending' && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onQuickAction(review.id, 'approve');
                       }}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                      variant="outlinePrimary"
                       title="Approve reply"
                     >
                       <Check className="h-4 w-4" />
@@ -320,14 +355,15 @@ export default function ReviewsTable({
                     </Button>
                   )}
 
-                  {(review.status === 'approved' || review.status === 'pending') && (
+                  {/* Show Post button only when AI reply exists */}
+                  {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         onQuickAction(review.id, 'post');
                       }}
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                      variant="outlinePrimary"
                       title="Post reply"
                     >
                       <Send className="h-4 w-4" />
@@ -335,6 +371,7 @@ export default function ReviewsTable({
                     </Button>
                   )}
 
+                  {/* Skip button - available when not posted or skipped */}
                   {review.status !== 'posted' && review.status !== 'skipped' && (
                     <Button
                       onClick={(e) => {

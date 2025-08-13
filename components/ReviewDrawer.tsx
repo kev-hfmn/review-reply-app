@@ -46,10 +46,11 @@ export default function ReviewDrawer({
   // Update local state when review changes
   useEffect(() => {
     if (data.review) {
+      console.log('ReviewDrawer: updating state with ai_reply:', data.review.ai_reply);
       setEditedReply(data.review.ai_reply || '');
       setSelectedTone(data.review.reply_tone || 'friendly');
     }
-  }, [data.review, data.review?.ai_reply, data.review?.reply_tone]);
+  }, [data.review?.ai_reply, data.review?.reply_tone, data.review?.id]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -81,7 +82,19 @@ export default function ReviewDrawer({
 
     setIsRegenerating(true);
     try {
+      console.log('Before regenerate - current ai_reply:', data.review.ai_reply);
+      console.log('Before regenerate - editedReply state:', editedReply);
+
       await onRegenerate(data.review.id, selectedTone);
+
+      // Force immediate update - we'll get the new data via props
+      setTimeout(() => {
+        if (data.review?.ai_reply) {
+          console.log('Forcing update with new ai_reply:', data.review.ai_reply);
+          setEditedReply(data.review.ai_reply);
+        }
+      }, 300);
+
     } finally {
       setIsRegenerating(false);
     }
@@ -199,7 +212,7 @@ export default function ReviewDrawer({
                 AI Reply
               </h3>
               <div className="flex items-center space-x-2">
-                <Select value={selectedTone} onValueChange={setSelectedTone}>
+{/*                 <Select value={selectedTone} onValueChange={setSelectedTone}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -210,19 +223,7 @@ export default function ReviewDrawer({
                       </SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
-                <Button
-                  onClick={handleRegenerate}
-                  disabled={isRegenerating || data.isLoading}
-                  className="flex items-center space-x-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  {isRegenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-4 w-4" />
-                  )}
-                  <span>Regenerate</span>
-                </Button>
+                </Select> */}
               </div>
             </div>
 
@@ -265,7 +266,43 @@ export default function ReviewDrawer({
             </div>
 
             <div className="flex items-center space-x-3">
-              {review.status === 'pending' && (
+              {/* Show Generate button when no AI reply exists */}
+              {!review.ai_reply && (
+                <Button
+                  onClick={handleRegenerate}
+                  disabled={isRegenerating || data.isLoading}
+                  className=""
+                  variant="primary"
+                >
+                  {isRegenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  <span>{isRegenerating ? 'Generating...' : 'Generate Reply'}</span>
+                </Button>
+              )}
+
+              {/* Show Regenerate button when AI reply exists */}
+              {review.ai_reply && (
+                <Button
+                  onClick={handleRegenerate}
+                  disabled={isRegenerating || data.isLoading}
+                  variant="outline"
+                  className=""
+
+                >
+                  {isRegenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  <span>{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+                </Button>
+              )}
+
+              {/* Only show Approve/Post buttons when there's an AI reply */}
+              {review.ai_reply && review.status === 'pending' && (
                 <Button
                   onClick={handleApprove}
                   disabled={data.isLoading}
@@ -276,7 +313,7 @@ export default function ReviewDrawer({
                 </Button>
               )}
 
-              {(review.status === 'approved' || review.status === 'pending') && (
+              {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                 <Button
                   onClick={handlePost}
                   disabled={data.isLoading}

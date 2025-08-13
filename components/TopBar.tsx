@@ -51,7 +51,7 @@ export default function TopBar() {
 
   return (
     <div className="w-full bg-primary/5 border-b border-border">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
+      <div className="mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-2 hover:opacity-80 transition-opacity">
           <span className="text-2xl"></span>
           <span className="font-sans">ReplyDesk</span>
@@ -86,17 +86,17 @@ export default function TopBar() {
               )}
 
 
-              {!isLoadingSubscription && (
+{/*               {!isLoadingSubscription && (
                 subscription || isInTrial
               ) && pathname !== '/dashboard' && (
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
+                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white dark:text-white  dark:bg-primary-dark rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
                   {isInTrial ? "Start Free Trial" : "Start Automating"}
                 </button>
               )}
-
+ */}
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}

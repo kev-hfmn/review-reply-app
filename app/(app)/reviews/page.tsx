@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, RefreshCw, Download } from 'lucide-react';
+import { RefreshCw, Download, CloudDownload } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
 import ReviewsTable from '@/components/ReviewsTable';
@@ -12,8 +13,10 @@ import ToastNotifications from '@/components/ToastNotifications';
 import type { Review } from '@/types/dashboard';
 import type { SelectionState, ReviewDrawerData } from '@/types/reviews';
 import { REPLY_TONES } from '@/types/reviews';
+import { Button } from '@/components/ui/button';
 
 export default function ReviewsPage() {
+  const { user } = useAuth();
   const {
     businesses,
     reviews,
@@ -33,6 +36,8 @@ export default function ReviewsPage() {
     removeToast,
     showToast
   } = useReviewsData();
+
+  const [isFetchingReviews, setIsFetchingReviews] = useState(false);
 
   // Selection state
   const [selection, setSelection] = useState<SelectionState>({
@@ -105,24 +110,26 @@ export default function ReviewsPage() {
     setDrawerData(prev => ({ ...prev, isLoading: true }));
     try {
       await reviewActions.regenerateReply(reviewId, tone);
-      
-      // Update drawer data with refreshed review from the reviews array
-      const updatedReview = allReviews.find(r => r.id === reviewId);
-      
-      if (updatedReview) {
-        setDrawerData(prev => ({
-          ...prev,
-          review: { ...updatedReview }, // Force new object reference
-          isLoading: false
-        }));
-      } else {
-        setDrawerData(prev => ({ ...prev, isLoading: false }));
-      }
+
+      // Add a small delay to ensure state is updated
+      setTimeout(() => {
+        const updatedReview = allReviews.find(r => r.id === reviewId);
+
+        if (updatedReview) {
+          setDrawerData(prev => ({
+            ...prev,
+            review: { ...updatedReview }, // Force new object reference
+            isLoading: false
+          }));
+        } else {
+          setDrawerData(prev => ({ ...prev, isLoading: false }));
+        }
+      }, 100);
     } catch (error) {
       console.error('Error in handleDrawerRegenerate:', error);
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
-  }, [reviewActions, allReviews, drawerData.review]);
+  }, [reviewActions, allReviews]);
 
   // Handle inline editing
   const handleInlineEdit = useCallback(async (reviewId: string, reply: string) => {
@@ -184,6 +191,64 @@ export default function ReviewsPage() {
     setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
   }, []);
 
+  // Handle fetch reviews from Google Business Profile
+  const handleFetchReviews = useCallback(async () => {
+    if (!user || !businesses || businesses.length === 0) {
+      showToast({
+        type: 'error',
+        title: 'Cannot fetch reviews',
+        message: 'Please ensure you have a business configured and Google Business Profile connected.'
+      });
+      return;
+    }
+
+    const businessId = businesses[0]?.id;
+    if (!businessId) {
+      showToast({
+        type: 'error',
+        title: 'No business found',
+        message: 'Please configure your business profile first.'
+      });
+      return;
+    }
+
+    setIsFetchingReviews(true);
+    try {
+      const response = await fetch('/api/reviews/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId,
+          userId: user.id,
+          action: 'sync'
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showToast({
+          type: 'success',
+          title: 'Reviews fetched successfully',
+          message: `Fetched ${result.totalFetched} reviews (${result.newReviews} new, ${result.updatedReviews} updated)`
+        });
+        // Refresh the reviews list
+        refetch();
+      } else {
+        throw new Error(result.message || 'Failed to fetch reviews');
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+      showToast({
+        type: 'error',
+        title: 'Failed to fetch reviews',
+        message: error instanceof Error ? error.message : 'Please check your Google Business Profile connection in Settings.'
+      });
+    } finally {
+      setIsFetchingReviews(false);
+    }
+  }, [user, businesses, showToast, refetch]);
+
   // Handle export (placeholder)
   const handleExport = useCallback(() => {
     showToast({
@@ -193,7 +258,6 @@ export default function ReviewsPage() {
     });
   }, [showToast]);
 
-  const totalReviews = allReviews.length;
   const filteredCount = reviews.length;
 
   return (
@@ -208,24 +272,36 @@ export default function ReviewsPage() {
             Manage and respond to customer reviews
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
-          <button
+          <Button
+            onClick={handleFetchReviews}
+            disabled={isFetchingReviews || isLoading}
+            variant="primary"
+            className="flex items-center space-x-2  transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <CloudDownload className={`h-4 w-4 ${isFetchingReviews ? 'animate-pulse' : ''}`} />
+            <span>{isFetchingReviews ? 'Fetching...' : 'Fetch Reviews'}</span>
+          </Button>
+
+          <Button
             onClick={() => refetch()}
             disabled={isLoading}
+            variant="outline"
             className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
-          </button>
-          
-          <button
+          </Button>
+
+          <Button
             onClick={handleExport}
+            variant="outline"
             className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <Download className="h-4 w-4" />
             <span>Export</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -242,7 +318,7 @@ export default function ReviewsPage() {
           <p className="text-red-600 dark:text-red-400 text-sm mt-1">
             {error}
           </p>
-          <button 
+          <button
             onClick={refetch}
             className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-medium text-sm"
           >
@@ -270,6 +346,7 @@ export default function ReviewsPage() {
         onReviewClick={handleReviewClick}
         onInlineEdit={handleInlineEdit}
         onQuickAction={handleQuickAction}
+        onGenerateReply={reviewActions.regenerateReply}
       />
 
       {/* Pagination */}
@@ -325,9 +402,9 @@ export default function ReviewsPage() {
       />
 
       {/* Toast Notifications */}
-      <ToastNotifications 
-        toasts={toasts} 
-        onRemove={removeToast} 
+      <ToastNotifications
+        toasts={toasts}
+        onRemove={removeToast}
       />
     </div>
   );
