@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 import type { 
   DashboardStats, 
   Business, 
@@ -19,82 +20,79 @@ export function useDashboardData() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const calculateStats = useCallback((reviews: Review[], activities: Activity[]): DashboardStats => {
+  const calculateStats = useCallback((
+    reviewsThisMonth: Review[], 
+    reviewsLastMonth: Review[], 
+    activities: Activity[], 
+    allReviews: Review[]
+  ): DashboardStats => {
+    // Use proper calendar months with date-fns
     const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const thisMonthStart = startOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-    // Reviews this week
-    const reviewsThisWeek = reviews.filter(r => 
-      new Date(r.review_date) >= weekAgo
-    ).length;
+    // Reviews this month (already filtered at DB level)
+    const reviewsThisMonthCount = reviewsThisMonth.length;
+    const reviewsLastMonthCount = reviewsLastMonth.length;
     
-    const reviewsLastWeek = reviews.filter(r => 
-      new Date(r.review_date) >= twoWeeksAgo && new Date(r.review_date) < weekAgo
-    ).length;
-    
-    const reviewsThisWeekChange = reviewsLastWeek > 0 
-      ? ((reviewsThisWeek - reviewsLastWeek) / reviewsLastWeek) * 100 
-      : reviewsThisWeek > 0 ? 100 : 0;
+    const reviewsThisMonthChange = reviewsLastMonthCount > 0 
+      ? ((reviewsThisMonthCount - reviewsLastMonthCount) / reviewsLastMonthCount) * 100 
+      : reviewsThisMonthCount > 0 ? 100 : 0;
 
-    // Replies posted (activities with reply_posted type)
-    const repliesThisWeek = activities.filter(a => 
-      a.type === 'reply_posted' && new Date(a.created_at) >= weekAgo
+    // Replies posted this month (activities with reply_posted type)
+    const repliesThisMonth = activities.filter(a => 
+      a.type === 'reply_posted' && new Date(a.created_at) >= thisMonthStart
     ).length;
     
-    const repliesLastWeek = activities.filter(a => 
+    const repliesLastMonth = activities.filter(a => 
       a.type === 'reply_posted' && 
-      new Date(a.created_at) >= twoWeeksAgo && 
-      new Date(a.created_at) < weekAgo
+      new Date(a.created_at) >= lastMonthStart && 
+      new Date(a.created_at) <= lastMonthEnd
     ).length;
     
-    const repliesPostedChange = repliesLastWeek > 0 
-      ? ((repliesThisWeek - repliesLastWeek) / repliesLastWeek) * 100 
-      : repliesThisWeek > 0 ? 100 : 0;
+    const repliesPostedChange = repliesLastMonth > 0 
+      ? ((repliesThisMonth - repliesLastMonth) / repliesLastMonth) * 100 
+      : repliesThisMonth > 0 ? 100 : 0;
 
-    // Average rating (last 30 days)
-    const recentReviews = reviews.filter(r => 
-      new Date(r.review_date) >= monthAgo
-    );
-    
-    const avgRating = recentReviews.length > 0
-      ? recentReviews.reduce((sum, r) => sum + r.rating, 0) / recentReviews.length
+    // Average rating (this month only - using DB-filtered reviews)
+    const avgRating = reviewsThisMonth.length > 0
+      ? reviewsThisMonth.reduce((sum, r) => sum + r.rating, 0) / reviewsThisMonth.length
       : 0;
 
-    // For comparison, get previous 30 days
-    const previousMonth = new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const previousReviews = reviews.filter(r => 
-      new Date(r.review_date) >= previousMonth && new Date(r.review_date) < monthAgo
-    );
-    
-    const previousAvgRating = previousReviews.length > 0
-      ? previousReviews.reduce((sum, r) => sum + r.rating, 0) / previousReviews.length
+    // Previous month's average (using DB-filtered reviews)
+    const previousAvgRating = reviewsLastMonth.length > 0
+      ? reviewsLastMonth.reduce((sum, r) => sum + r.rating, 0) / reviewsLastMonth.length
       : avgRating;
 
     const avgRatingChange = previousAvgRating > 0
       ? ((avgRating - previousAvgRating) / previousAvgRating) * 100
       : 0;
 
-    // Pending approvals
-    const pendingApprovals = reviews.filter(r => 
+    // Pending approvals (only true pending items - not posted ones) - use all reviews
+    const pendingApprovals = allReviews.filter(r => 
       r.status === 'pending' || r.status === 'needs_edit'
     ).length;
 
-    // For change calculation, we'll use a simple approach
-    // In a real app, you'd track this over time
-    const pendingApprovalsChange = 0; // Placeholder
+    // Calculate change in pending approvals (current vs last month)
+    const previousPendingApprovals = reviewsLastMonth.filter(r => 
+      r.status === 'pending' || r.status === 'needs_edit'
+    ).length;
+    
+    const pendingApprovalsChange = previousPendingApprovals > 0
+      ? ((pendingApprovals - previousPendingApprovals) / previousPendingApprovals) * 100
+      : pendingApprovals > 0 ? 100 : 0;
 
     return {
-      reviewsThisWeek,
-      reviewsThisWeekChange,
-      repliesPosted: repliesThisWeek,
+      reviewsThisWeek: reviewsThisMonthCount, // Keep interface but use monthly data
+      reviewsThisWeekChange: reviewsThisMonthChange,
+      repliesPosted: repliesThisMonth,
       repliesPostedChange,
       avgRating,
       avgRatingChange,
       pendingApprovals,
       pendingApprovalsChange,
-      totalReviews: reviews.length,
+      totalReviews: allReviews.length,
       recentActivities: activities.slice(0, 5) // Most recent 5 activities
     };
   }, []);
@@ -219,15 +217,58 @@ export function useDashboardData() {
         return;
       }
 
-      // Fetch reviews for all businesses
-      const { data: reviewsData, error: reviewsError } = await supabase
+      // Calculate proper calendar month ranges using date-fns
+      const now = new Date();
+      const thisMonthStart = startOfMonth(now);
+      const thisMonthEnd = endOfMonth(now);
+      const lastMonthStart = startOfMonth(subMonths(now, 1));
+      const lastMonthEnd = endOfMonth(subMonths(now, 1));
+      
+      // Format dates for DB queries (YYYY-MM-DD format)
+      const thisMonthStartStr = format(thisMonthStart, 'yyyy-MM-dd');
+      const thisMonthEndStr = format(thisMonthEnd, 'yyyy-MM-dd');
+      const lastMonthStartStr = format(lastMonthStart, 'yyyy-MM-dd');
+      const lastMonthEndStr = format(lastMonthEnd, 'yyyy-MM-dd');
+      
+      console.log('📅 Dashboard date ranges:');
+      console.log(`This month: ${thisMonthStartStr} to ${thisMonthEndStr}`);
+      console.log(`Last month: ${lastMonthStartStr} to ${lastMonthEndStr}`);
+
+      // Fetch all reviews for total count and pending approvals
+      const { data: allReviewsData, error: allReviewsError } = await supabase
         .from('reviews')
         .select('*')
         .in('business_id', businessIds)
         .order('created_at', { ascending: false });
 
-      if (reviewsError) {
-        throw new Error(`Failed to fetch reviews: ${reviewsError.message}`);
+      if (allReviewsError) {
+        throw new Error(`Failed to fetch all reviews: ${allReviewsError.message}`);
+      }
+
+      // Fetch reviews for this month (using DB-level date filtering with proper calendar months)
+      const { data: reviewsThisMonth, error: reviewsThisMonthError } = await supabase
+        .from('reviews')
+        .select('*')
+        .in('business_id', businessIds)
+        .gte('review_date', thisMonthStartStr)
+        .lte('review_date', thisMonthEndStr)
+        .order('review_date', { ascending: false });
+
+      if (reviewsThisMonthError) {
+        throw new Error(`Failed to fetch this month's reviews: ${reviewsThisMonthError.message}`);
+      }
+
+      // Fetch reviews for last month (for comparison)
+      const { data: reviewsLastMonth, error: reviewsLastMonthError } = await supabase
+        .from('reviews')
+        .select('*')
+        .in('business_id', businessIds)
+        .gte('review_date', lastMonthStartStr)
+        .lte('review_date', lastMonthEndStr)
+        .order('review_date', { ascending: false });
+
+      if (reviewsLastMonthError) {
+        throw new Error(`Failed to fetch last month's reviews: ${reviewsLastMonthError.message}`);
       }
 
       // Fetch activities for all businesses
@@ -242,12 +283,17 @@ export function useDashboardData() {
         throw new Error(`Failed to fetch activities: ${activitiesError.message}`);
       }
 
-      // Calculate stats
-      const calculatedStats = calculateStats(reviewsData || [], activitiesData || []);
+      // Calculate stats using DB-filtered data
+      const calculatedStats = calculateStats(
+        reviewsThisMonth || [], 
+        reviewsLastMonth || [], 
+        activitiesData || [], 
+        allReviewsData || []
+      );
       setStats(calculatedStats);
 
-      // Generate chart data
-      const chartData = generateChartData(reviewsData || []);
+      // Generate chart data using all reviews
+      const chartData = generateChartData(allReviewsData || []);
       setChartData(chartData);
 
       // Generate onboarding steps

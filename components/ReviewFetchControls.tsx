@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Hash, RefreshCw } from 'lucide-react';
+import { Calendar, Hash, RefreshCw, Download, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -16,10 +17,19 @@ export interface FetchOptions {
   reviewCount: 10 | 25 | 50 | 100 | 200;
 }
 
+export interface SyncStatus {
+  syncType: 'initial_backfill' | 'incremental' | null;
+  isBackfillComplete: boolean;
+  lastSyncTime: string | null;
+  totalReviews: number;
+  isFirstTime: boolean;
+}
+
 interface ReviewFetchControlsProps {
   onFetch: (options: FetchOptions) => Promise<void>;
   isLoading: boolean;
   disabled?: boolean;
+  syncStatus?: SyncStatus;
 }
 
 const TIME_PERIOD_OPTIONS = [
@@ -38,75 +48,197 @@ const REVIEW_COUNT_OPTIONS = [
   { value: 200, label: '200 reviews' },
 ] as const;
 
-export default function ReviewFetchControls({ 
-  onFetch, 
-  isLoading, 
-  disabled = false 
+export default function ReviewFetchControls({
+  onFetch,
+  isLoading,
+  disabled = false,
+  syncStatus
 }: ReviewFetchControlsProps) {
   const [timePeriod, setTimePeriod] = useState<FetchOptions['timePeriod']>('30days');
   const [reviewCount, setReviewCount] = useState<FetchOptions['reviewCount']>(50);
 
+  const isInitialBackfill = syncStatus?.syncType === 'initial_backfill' || syncStatus?.isFirstTime;
+  const isBackfillComplete = syncStatus?.isBackfillComplete ?? false;
+  const hasReviews = (syncStatus?.totalReviews ?? 0) > 0;
+
   const handleFetch = async () => {
-    await onFetch({ timePeriod, reviewCount });
+    // For initial backfill, ignore user selections and fetch everything
+    if (isInitialBackfill) {
+      await onFetch({ timePeriod: 'all', reviewCount: 200 });
+    } else {
+      // For incremental sync, use minimal settings to fetch only new reviews
+      await onFetch({ timePeriod: '30days', reviewCount: 50 });
+    }
   };
 
-  return (
-    <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <Select
-          value={timePeriod}
-          onValueChange={(value) => setTimePeriod(value as FetchOptions['timePeriod'])}
-          disabled={isLoading || disabled}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TIME_PERIOD_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  // Render different UI based on sync status
+  if (isInitialBackfill && !isBackfillComplete) {
+    return (
+      <div className="space-y-4">
+        <Alert>
+          <Download className="h-4 w-4" />
+          <AlertDescription>
+            {isLoading ? (
+              <>
+                <strong>Initial Import in Progress</strong>
+                <br />
+                Fetching your complete review history from Google Business Profile (last 2 years).
+                This may take a few minutes...
+              </>
+            ) : (
+              <>
+                <strong>Ready for Initial Import</strong>
+                <br />
+                We&apos;ll fetch all your reviews from the last 2 years to build your complete review database.
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
 
-      <div className="flex items-center gap-2">
-        <Hash className="h-4 w-4 text-muted-foreground" />
-        <Select
-          value={reviewCount.toString()}
-          onValueChange={(value) => setReviewCount(Number(value) as FetchOptions['reviewCount'])}
-          disabled={isLoading || disabled}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {REVIEW_COUNT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value.toString()}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <Download className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Initial Review Import</p>
+              <p className="text-sm text-muted-foreground">
+                Import complete review history (2 years)
+              </p>
+            </div>
+          </div>
 
-      <Button
-        onClick={handleFetch}
-        disabled={isLoading || disabled}
-        className="flex items-center gap-2"
-        variant="default"
-      >
-        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        {isLoading ? 'Fetching...' : 'Fetch Reviews'}
-      </Button>
-
-      {isLoading && (
-        <div className="text-sm text-muted-foreground">
-          Fetching reviews from Google Business Profile...
+          <Button
+            onClick={handleFetch}
+            disabled={isLoading || disabled}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Importing Reviews...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Start Initial Import
+              </>
+            )}
+          </Button>
         </div>
+      </div>
+    );
+  }
+
+  // Standard incremental sync UI (after backfill is complete)
+  return (
+    <div className="space-y-4">
+      {hasReviews && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Review Database Ready</strong>
+            <br />
+            {syncStatus?.totalReviews} reviews imported.
+            {syncStatus?.lastSyncTime && (
+              <> Last sync: {new Date(syncStatus.lastSyncTime).toLocaleDateString()}</>
+            )}
+          </AlertDescription>
+        </Alert>
       )}
+
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="h-5 w-5 text-primary" />
+          <div>
+            <p className="font-medium">Fetch New Reviews</p>
+            <p className="text-sm text-muted-foreground">
+              Check for new reviews since last sync
+            </p>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleFetch}
+          disabled={isLoading || disabled}
+          className="flex items-center gap-2"
+          variant="primary"
+        >
+          {isLoading ? (
+            <>
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4" />
+              Fetch New Reviews
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Legacy controls for manual fetch (collapsed by default) */}
+      <details className="group">
+        <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+          Advanced: Manual Review Fetch
+        </summary>
+        <div className="mt-3 flex items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={timePeriod}
+              onValueChange={(value) => setTimePeriod(value as FetchOptions['timePeriod'])}
+              disabled={isLoading || disabled}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_PERIOD_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Hash className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={reviewCount.toString()}
+              onValueChange={(value) => setReviewCount(Number(value) as FetchOptions['reviewCount'])}
+              disabled={isLoading || disabled}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REVIEW_COUNT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value.toString()}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            onClick={() => onFetch({ timePeriod, reviewCount })}
+            disabled={isLoading || disabled}
+            className="flex items-center gap-2"
+            variant="outline"
+            size="sm"
+          >
+            {isLoading ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Manual Fetch
+          </Button>
+        </div>
+      </details>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  Calendar, 
+import {
+  Search,
+  Filter,
+  Star,
+  Calendar,
   Building2,
   X,
   RotateCcw
@@ -21,13 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export default function ReviewFilters({ 
-  filters, 
-  businesses, 
-  onFiltersChange, 
-  onReset, 
+export default function ReviewFilters({
+  filters,
+  businesses,
+  onFiltersChange,
+  onReset,
   isLoading = false,
-  resultCount 
+  resultCount
 }: ReviewFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localDateFrom, setLocalDateFrom] = useState(
@@ -37,11 +37,11 @@ export default function ReviewFilters({
     filters.dateRange.to ? filters.dateRange.to.toISOString().split('T')[0] : ''
   );
 
-  const hasActiveFilters = filters.search || 
-    filters.rating !== null || 
-    filters.status !== 'all' || 
-    filters.businessId !== 'all' || 
-    filters.dateRange.from || 
+  const hasActiveFilters = filters.search ||
+    filters.rating !== null ||
+    filters.status !== 'all' ||
+    filters.businessId !== 'all' ||
+    filters.dateRange.from ||
     filters.dateRange.to;
 
   const handleSearchChange = useCallback((value: string) => {
@@ -64,8 +64,8 @@ export default function ReviewFilters({
   const handleDateFromChange = useCallback((value: string) => {
     setLocalDateFrom(value);
     const date = value ? new Date(value) : null;
-    onFiltersChange({ 
-      ...filters, 
+    onFiltersChange({
+      ...filters,
       dateRange: { ...filters.dateRange, from: date }
     });
   }, [filters, onFiltersChange]);
@@ -73,8 +73,8 @@ export default function ReviewFilters({
   const handleDateToChange = useCallback((value: string) => {
     setLocalDateTo(value);
     const date = value ? new Date(value) : null;
-    onFiltersChange({ 
-      ...filters, 
+    onFiltersChange({
+      ...filters,
       dateRange: { ...filters.dateRange, to: date }
     });
   }, [filters, onFiltersChange]);
@@ -164,14 +164,14 @@ export default function ReviewFilters({
           transition={{ duration: 0.2 }}
           className="mt-4 pt-4 border-t border-border overflow-hidden"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-2">
             {/* Rating Filter */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <Star className="inline h-4 w-4 mr-1" />
                 Rating
               </label>
-              <Select 
+              <Select
                 value={filters.rating === null ? 'all' : filters.rating.toString()}
                 onValueChange={handleRatingChange}
                 disabled={isLoading}
@@ -194,7 +194,7 @@ export default function ReviewFilters({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Status
               </label>
-              <Select 
+              <Select
                 value={filters.status}
                 onValueChange={handleStatusChange}
                 disabled={isLoading}
@@ -219,7 +219,7 @@ export default function ReviewFilters({
                   <Building2 className="inline h-4 w-4 mr-1" />
                   Business
                 </label>
-                <Select 
+                <Select
                   value={filters.businessId}
                   onValueChange={handleBusinessChange}
                   disabled={isLoading}

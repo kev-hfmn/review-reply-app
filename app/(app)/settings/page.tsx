@@ -74,7 +74,7 @@ interface BillingInfo {
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  
+
   // Initialize active tab from URL parameter
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
@@ -86,7 +86,7 @@ export default function SettingsPage() {
     }
     return 'profile';
   };
-  
+
   const [activeTab, setActiveTab] = useState(getInitialTab());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -165,14 +165,14 @@ export default function SettingsPage() {
       setIsLoading(true);
       try {
         console.log('Loading settings for user:', user.id);
-        
+
         // First, get the user's business (without Google fields due to RLS)
         const { data: businesses, error: businessError } = await supabase
           .from('businesses')
           .select('id, name, location, industry, google_business_id, user_id, created_at, updated_at, last_review_sync')
           .eq('user_id', user.id)
           .limit(1);
-        
+
         console.log('Businesses query result:', { businesses, businessError });
 
         if (businessError) throw businessError;
@@ -251,18 +251,18 @@ export default function SettingsPage() {
             try {
               console.log('Fetching Google credentials via API...', { businessId: business.id, userId: user.id });
               const credentialsResponse = await fetch(`/api/auth/google-business/credentials/get?businessId=${business.id}&userId=${user.id}`);
-              
+
               if (!credentialsResponse.ok) {
                 console.error('Credentials API error:', credentialsResponse.status, credentialsResponse.statusText);
               }
-              
+
               const credentialsData = await credentialsResponse.json();
-              
+
               console.log('Credentials API response:', credentialsData);
-              
+
               hasGoogleCredentials = credentialsData.hasCredentials || false;
               hasGoogleTokens = credentialsData.hasTokens || false;
-              
+
               if (credentialsData.hasCredentials && credentialsData.credentials) {
                 loadedCredentials = {
                   clientId: credentialsData.credentials.clientId || '',
@@ -276,13 +276,13 @@ export default function SettingsPage() {
               console.error('Failed to load Google credentials:', credentialsError);
             }
           }
-          
+
           console.log('Google Integration Debug:', {
             hasGoogleCredentials,
             hasGoogleTokens,
             credentialsFromAPI: !!loadedCredentials.clientId
           });
-          
+
           let googleStatus: 'not_connected' | 'configured' | 'pending' | 'approved' = 'not_connected';
           if (hasGoogleCredentials && hasGoogleTokens) {
             googleStatus = 'approved'; // Connected with both credentials and tokens
@@ -308,7 +308,7 @@ export default function SettingsPage() {
               url: settings?.make_webhook_url || ''
             }
           };
-          
+
           console.log('Setting integration state:', integrationState);
           setIntegrations(integrationState);
 
@@ -353,10 +353,10 @@ export default function SettingsPage() {
           token_exchange_failed: 'Failed to exchange OAuth tokens. Please check your credentials.',
           callback_failed: 'OAuth callback failed. Please try again.',
         };
-        
+
         const errorMessage = errorMessages[error as keyof typeof errorMessages] || 'An unknown error occurred.';
         console.error('Google OAuth error:', errorMessage);
-        
+
         // Clear the error from URL
         window.history.replaceState({}, '', '/settings?tab=integrations');
       }
@@ -1041,8 +1041,8 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     {integrations.googleBusiness.connected ? (
                       <>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={handleTestGoogleConnection}
                           disabled={isTesting}
@@ -1050,8 +1050,8 @@ export default function SettingsPage() {
                           <TestTube className="h-4 w-4 mr-2" />
                           {isTesting ? 'Testing...' : 'Test'}
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={handleDisconnectGoogle}
                           disabled={isSaving}
@@ -1060,7 +1060,7 @@ export default function SettingsPage() {
                         </Button>
                       </>
                     ) : integrations.googleBusiness.status === 'configured' ? (
-                      <Button 
+                      <Button
                         size="sm"
                         onClick={handleConnectGoogle}
                         disabled={isConnecting}
@@ -1068,7 +1068,7 @@ export default function SettingsPage() {
                         {isConnecting ? 'Connecting...' : 'Connect Google'}
                       </Button>
                     ) : (
-                      <Button 
+                      <Button
                         size="sm"
                         onClick={() => setShowGoogleSetup(!showGoogleSetup)}
                       >
@@ -1086,11 +1086,11 @@ export default function SettingsPage() {
                         Google Cloud Credentials
                       </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        You need to create a Google Cloud Project and enable the Business Profile API. 
+                        You need to create a Google Cloud Project and enable the Business Profile API.
                         <a href="#" className="text-blue-600 hover:underline ml-1">View setup guide</a>
                       </p>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -1104,7 +1104,7 @@ export default function SettingsPage() {
                           placeholder="Your Google Cloud Client ID"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                           Client Secret
@@ -1117,7 +1117,7 @@ export default function SettingsPage() {
                           placeholder="Your Google Cloud Client Secret"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                           Account ID
@@ -1130,7 +1130,7 @@ export default function SettingsPage() {
                           placeholder="accounts/1234567890"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                           Location ID
@@ -1144,9 +1144,9 @@ export default function SettingsPage() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex justify-end">
-                      <Button 
+                      <Button
                         onClick={handleSaveGoogleCredentials}
                         disabled={isSaving || !googleCredentials.clientId || !googleCredentials.clientSecret || !googleCredentials.accountId || !googleCredentials.locationId}
                       >
@@ -1159,66 +1159,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-                  <Webhook className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  Make.com Webhook
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon('approved', integrations.makeWebhook.connected)}
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">
-                        {integrations.makeWebhook.connected ? 'Connected' : 'Not Connected'}
-                      </p>
-                      {integrations.makeWebhook.lastTest && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          Last test: {new Date(integrations.makeWebhook.lastTest).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {integrations.makeWebhook.connected && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleTestWebhook}
-                        disabled={isTesting}
-                      >
-                        <TestTube className="h-4 w-4 mr-2" />
-                        {isTesting ? 'Testing...' : 'Test'}
-                      </Button>
-                    )}
-                    <Button size="sm" variant={integrations.makeWebhook.connected ? 'outline' : 'default'}>
-                      {integrations.makeWebhook.connected ? 'Update' : 'Setup'}
-                    </Button>
-                  </div>
-                </div>
 
-                {integrations.makeWebhook.url && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Webhook URL
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={integrations.makeWebhook.url}
-                        readOnly
-                        className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
-                      />
-                      <Button variant="outline" size="sm">
-                        Copy
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         )}
 

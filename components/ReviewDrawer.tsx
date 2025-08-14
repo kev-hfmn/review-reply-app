@@ -153,8 +153,23 @@ export default function ReviewDrawer({
             {/* Customer & Rating */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-muted rounded-lg">
-                  <User className="h-5 w-5 text-muted-foreground" />
+                <div className="relative">
+                  {review.customer_avatar_url ? (
+                    <img
+                      src={review.customer_avatar_url}
+                      alt={`${review.customer_name}'s avatar`}
+                      className="h-10 w-10 rounded-full object-cover border-2 border-muted"
+                      onError={(e) => {
+                        // Fallback to user icon if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`p-2 bg-muted rounded-lg ${review.customer_avatar_url ? 'hidden' : ''}`}>
+                    <User className="h-5 w-5 text-muted-foreground" />
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground">
@@ -189,6 +204,15 @@ export default function ReviewDrawer({
                 {review.status === 'needs_edit' ? 'Needs Edit' :
                  review.status.charAt(0).toUpperCase() + review.status.slice(1)}
               </Badge>
+              {/* Posted timestamp - show when reply was posted to Google */}
+              {review.status === 'posted' && review.posted_at && (
+                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+
+                  <span>
+                   on {formatDate(review.posted_at)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Review Text */}
@@ -209,7 +233,7 @@ export default function ReviewDrawer({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-foreground">
-                AI Reply
+                Reply
               </h3>
               <div className="flex items-center space-x-2">
 {/*                 <Select value={selectedTone} onValueChange={setSelectedTone}>
