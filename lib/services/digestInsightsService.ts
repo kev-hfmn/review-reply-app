@@ -476,15 +476,30 @@ Focus on actionable insights that drive measurable business outcomes.`;
       positiveThemes: cleanPositiveThemes,
       improvementThemes: cleanImprovementThemes,
       highlights: Array.isArray(aiResults.highlights) ? aiResults.highlights : [],
-      competitiveInsights: ((typeof aiResults.competitiveInsights === 'object' && aiResults.competitiveInsights) ? aiResults.competitiveInsights : {
-        competitorMentions: [],
-        uniqueValueProps: [],
-        marketPositioning: {
-          pricePerception: 'value',
-          qualityPosition: 'standard',
-          serviceLevel: 'good'
-        }
-      }) as unknown as Record<string, unknown>,
+      competitiveInsights: (aiResults.competitiveInsights && typeof aiResults.competitiveInsights === 'object') 
+        ? aiResults.competitiveInsights as {
+            competitorMentions: Array<{
+              competitor: string;
+              context: 'positive' | 'negative' | 'neutral';
+              quote: string;
+              implication: string;
+            }>;
+            uniqueValueProps: string[];
+            marketPositioning: {
+              pricePerception: 'premium' | 'value' | 'budget';
+              qualityPosition: 'luxury' | 'standard' | 'basic';
+              serviceLevel: 'exceptional' | 'good' | 'average';
+            };
+          }
+        : {
+            competitorMentions: [],
+            uniqueValueProps: [],
+            marketPositioning: {
+              pricePerception: 'value' as const,
+              qualityPosition: 'standard' as const,
+              serviceLevel: 'good' as const
+            }
+          },
       overallConfidence: (typeof aiResults.overallConfidence === 'number' ? aiResults.overallConfidence : 0.85),
       generated_at: new Date().toISOString(),
       created_at: new Date().toISOString()
