@@ -43,35 +43,8 @@ export interface SyncResult {
   errors: string[];
   lastSyncTime: string;
   fetchOptions?: FetchOptions;
-}
-
-/**
- * Calculate time cutoff based on selected period
- */
-function getTimeCutoff(timePeriod: FetchOptions['timePeriod']): Date | null {
-  if (timePeriod === 'all') return null;
-
-  const now = new Date();
-  const cutoff = new Date(now);
-
-  switch (timePeriod) {
-    case '7days':
-      cutoff.setDate(now.getDate() - 7);
-      break;
-    case '30days':
-      cutoff.setDate(now.getDate() - 30);
-      break;
-    case '3months':
-      cutoff.setMonth(now.getMonth() - 3);
-      break;
-    case '6months':
-      cutoff.setMonth(now.getMonth() - 6);
-      break;
-    default:
-      return null;
-  }
-
-  return cutoff;
+  syncType?: 'initial_backfill' | 'incremental';
+  backfillComplete?: boolean;
 }
 
 /**
@@ -195,7 +168,7 @@ export async function fetchReviews(
 
 /**
  * Sync reviews from Google Business Profile to our database
- * Uses smart pagination to avoid fetching duplicate reviews
+ * Uses two-phase approach: initial backfill + incremental updates
  */
 export async function syncReviews(
   businessId: string,
@@ -227,162 +200,18 @@ export async function syncReviews(
       throw new Error('Business not found or access denied');
     }
 
-    // Check what reviews we already have to avoid duplicates
-    const { data: existingReviews, error: existingError } = await supabaseAdmin
-      .from('reviews')
-      .select('google_review_id, created_at')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    // Determine sync type: initial backfill or incremental
+    const needsBackfill = !business.last_review_sync || 
+      (new Date().getTime() - new Date(business.last_review_sync).getTime()) > 30 * 24 * 60 * 60 * 1000; // 30+ days ago
 
-    if (existingError) {
-      console.error('Error checking existing reviews:', existingError);
-      // Continue anyway, but log the error
-      result.errors.push(`Warning: Could not check existing reviews: ${existingError.message}`);
-    }
-
-    const hasExistingReviews = existingReviews && existingReviews.length > 0;
-    const newestExistingReview = hasExistingReviews ? existingReviews[0] : null;
-
-    console.log(hasExistingReviews
-      ? `Found existing reviews. Newest review created at: ${newestExistingReview?.created_at}`
-      : 'No existing reviews found. Fetching latest reviews.');
-
-    // Calculate time cutoff based on selected period
-    const timeCutoff = getTimeCutoff(options.timePeriod);
-    const maxReviewsToFetch = options.reviewCount;
-
-    console.log(`Fetch parameters: ${options.timePeriod} (since ${timeCutoff?.toISOString()}), max ${maxReviewsToFetch} reviews`);
-
-    let totalFetched = 0;
-    let pageToken: string | undefined = undefined;
-    let shouldContinue = true;
-    let pagesProcessed = 0;
-    const maxPages = Math.ceil(maxReviewsToFetch / 50); // Calculate pages needed
-
-    // Fetch reviews with smart pagination
-    while (shouldContinue && pagesProcessed < maxPages) {
-      try {
-        // Use optimal page size: min(50, remaining reviews needed)
-        const remainingReviews = maxReviewsToFetch - result.newReviews;
-        const pageSize = Math.min(50, Math.max(10, remainingReviews));
-
-        console.log(`Fetching page ${pagesProcessed + 1} with pageSize=${pageSize}`);
-        const reviewsResponse = await fetchReviews(businessId, pageToken, pageSize);
-
-        if (reviewsResponse.reviews && reviewsResponse.reviews.length > 0) {
-          console.log(`Processing page ${pagesProcessed + 1}: ${reviewsResponse.reviews.length} reviews`);
-
-          let newReviewsInBatch = 0;
-          let duplicatesFound = 0;
-          let tooOldCount = 0;
-
-          // Process batch of reviews
-          for (const googleReview of reviewsResponse.reviews) {
-            try {
-              // Check if we've reached our review count limit
-              if (result.newReviews >= maxReviewsToFetch) {
-                console.log(`Reached review count limit (${maxReviewsToFetch}), stopping`);
-                shouldContinue = false;
-                break;
-              }
-
-              // Check if review is within time period
-              if (timeCutoff) {
-                const reviewDate = new Date(googleReview.createTime);
-                if (reviewDate < timeCutoff) {
-                  console.log(`Review ${googleReview.reviewId} is older than ${options.timePeriod} cutoff, skipping`);
-                  tooOldCount++;
-                  // If we find several old reviews in a row, stop pagination
-                  if (tooOldCount >= 5) {
-                    console.log('Found many reviews older than time period, stopping pagination');
-                    shouldContinue = false;
-                    break;
-                  }
-                  continue;
-                }
-              }
-
-              // Check if this review already exists in our database
-              const { data: existingReview, error: checkError } = await supabaseAdmin
-                .from('reviews')
-                .select('id, google_review_id, ai_reply, status')
-                .eq('google_review_id', googleReview.reviewId)
-                .single();
-
-              if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
-                console.error(`Error checking for existing review ${googleReview.reviewId}:`, checkError);
-                result.errors.push(`Error checking review ${googleReview.reviewId}: ${checkError.message}`);
-                continue;
-              }
-
-              if (existingReview) {
-                // Review already exists - skip it to preserve AI replies and status
-                console.log(`Skipping existing review ${googleReview.reviewId} (preserving AI reply and status)`);
-                duplicatesFound++;
-                continue;
-              }
-
-              // This is a new review - insert it
-              const reviewData = mapGoogleReviewToSchema(googleReview, businessId);
-              console.log(`Inserting new review ${googleReview.reviewId} by ${reviewData.customer_name}`);
-
-              const { error: insertError } = await supabaseAdmin
-                .from('reviews')
-                .insert(reviewData)
-                .select('id, google_review_id');
-
-              if (insertError) {
-                console.error(`Failed to insert review ${googleReview.reviewId}:`, insertError);
-                result.errors.push(`Failed to insert review ${googleReview.reviewId}: ${insertError.message}`);
-              } else {
-                console.log(`Successfully inserted new review ${googleReview.reviewId}`);
-                newReviewsInBatch++;
-                result.newReviews++;
-              }
-            } catch (reviewError) {
-              console.error(`Error processing review ${googleReview.reviewId}:`, reviewError);
-              result.errors.push(`Error processing review ${googleReview.reviewId}: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
-            }
-          }
-
-          totalFetched += reviewsResponse.reviews.length;
-          pagesProcessed++;
-
-          console.log(`Batch complete: ${newReviewsInBatch} new reviews, ${duplicatesFound} duplicates skipped, ${tooOldCount} too old`);
-
-          // Stop conditions
-          if (result.newReviews >= maxReviewsToFetch) {
-            console.log(`Reached target review count (${maxReviewsToFetch})`);
-            shouldContinue = false;
-          }
-          // If we found mostly duplicates, we've likely reached reviews we already have
-          else if (duplicatesFound > newReviewsInBatch && duplicatesFound > 5) {
-            console.log('Found many duplicates, stopping pagination to avoid unnecessary API calls');
-            shouldContinue = false;
-          }
-          // If we found many old reviews, we've gone past our time period
-          else if (tooOldCount >= 5) {
-            console.log('Found many reviews outside time period, stopping pagination');
-            shouldContinue = false;
-          }
-          // Continue to next page if available
-          else if (reviewsResponse.nextPageToken) {
-            pageToken = reviewsResponse.nextPageToken;
-          } else {
-            console.log('No more pages available');
-            shouldContinue = false;
-          }
-        } else {
-          console.log('No reviews found in this batch');
-          shouldContinue = false;
-        }
-
-      } catch (fetchError) {
-        console.error('Error fetching reviews:', fetchError);
-        result.errors.push(`Error fetching reviews: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
-        shouldContinue = false;
-      }
+    if (needsBackfill) {
+      console.log('🔄 Starting INITIAL BACKFILL - fetching reviews from last 2 years');
+      result.syncType = 'initial_backfill';
+      await performInitialBackfill(businessId, result);
+    } else {
+      console.log('⚡ Starting INCREMENTAL SYNC - fetching only new reviews');
+      result.syncType = 'incremental';
+      await performIncrementalSync(businessId, result);
     }
 
     // Update last sync time
@@ -400,20 +229,20 @@ export async function syncReviews(
       .insert({
         business_id: businessId,
         type: 'review_received',
-        description: `Synced ${totalFetched} reviews from Google Business Profile`,
+        description: `${result.syncType === 'initial_backfill' ? 'Initial backfill' : 'Incremental sync'}: ${result.totalFetched} reviews processed`,
         metadata: {
-          totalFetched,
+          syncType: result.syncType,
+          totalFetched: result.totalFetched,
           newReviews: result.newReviews,
           updatedReviews: result.updatedReviews,
           errors: result.errors.length,
         },
       });
 
-    result.totalFetched = totalFetched;
-    result.success = result.errors.length < totalFetched / 2; // Success if less than 50% errors
+    result.success = result.errors.length < result.totalFetched / 2; // Success if less than 50% errors
     result.message = result.success
-      ? `Successfully synced ${totalFetched} reviews (${result.newReviews} new, ${result.updatedReviews} updated)`
-      : `Sync completed with errors. ${totalFetched} reviews processed, ${result.errors.length} errors.`;
+      ? `${result.syncType === 'initial_backfill' ? 'Initial backfill' : 'Incremental sync'} completed: ${result.totalFetched} reviews processed (${result.newReviews} new)`
+      : `Sync completed with errors. ${result.totalFetched} reviews processed, ${result.errors.length} errors.`;
 
     return result;
 
@@ -422,6 +251,247 @@ export async function syncReviews(
     result.message = `Sync failed: ${result.errors[0]}`;
     return result;
   }
+}
+
+/**
+ * Initial backfill: Fetch all reviews from last 2 years
+ */
+async function performInitialBackfill(businessId: string, result: SyncResult): Promise<void> {
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+  
+  console.log(`📅 Backfill cutoff date: ${twoYearsAgo.toISOString()}`);
+
+  let pageToken: string | undefined = undefined;
+  let shouldContinue = true;
+  let pagesProcessed = 0;
+  let consecutiveOldReviews = 0;
+  const maxPages = 100; // Safety limit
+
+  while (shouldContinue && pagesProcessed < maxPages) {
+    try {
+      console.log(`📄 Fetching backfill page ${pagesProcessed + 1}`);
+      const reviewsResponse = await fetchReviews(businessId, pageToken, 50);
+
+      if (reviewsResponse.reviews && reviewsResponse.reviews.length > 0) {
+        let newReviewsInBatch = 0;
+        let oldReviewsInBatch = 0;
+
+        for (const googleReview of reviewsResponse.reviews) {
+          try {
+            const reviewDate = new Date(googleReview.createTime);
+            
+            // Check if review is too old (beyond 2-year cutoff)
+            if (reviewDate < twoYearsAgo) {
+              oldReviewsInBatch++;
+              consecutiveOldReviews++;
+              
+              console.log(`📅 Old review found: ${reviewDate.toLocaleDateString()} vs cutoff ${twoYearsAgo.toLocaleDateString()} (${consecutiveOldReviews} consecutive old)`);
+              
+              // If we find 5 consecutive old reviews, stop backfill (much more aggressive)
+              if (consecutiveOldReviews >= 5) {
+                console.log(`⏹️ Found ${consecutiveOldReviews} consecutive old reviews beyond 2-year cutoff, stopping backfill`);
+                shouldContinue = false;
+                break;
+              }
+              continue;
+            } else {
+              consecutiveOldReviews = 0; // Reset counter for any review within 2-year window
+            }
+
+            // Check for duplicates
+            const { data: existingReview, error: checkError } = await supabaseAdmin
+              .from('reviews')
+              .select('id')
+              .eq('google_review_id', googleReview.reviewId)
+              .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+              console.error(`❌ Error checking review ${googleReview.reviewId}:`, checkError);
+              result.errors.push(`Error checking review: ${checkError.message}`);
+              continue;
+            }
+
+            if (existingReview) {
+              // Skip existing review
+              continue;
+            }
+
+            // Insert new review
+            const reviewData = mapGoogleReviewToSchema(googleReview, businessId);
+            const { error: insertError } = await supabaseAdmin
+              .from('reviews')
+              .insert(reviewData);
+
+            if (insertError) {
+              console.error(`❌ Failed to insert review ${googleReview.reviewId}:`, insertError);
+              result.errors.push(`Failed to insert review: ${insertError.message}`);
+            } else {
+              console.log(`✅ Inserted review ${googleReview.reviewId} (${reviewDate.toLocaleDateString()})`);
+              newReviewsInBatch++;
+              result.newReviews++;
+            }
+          } catch (reviewError) {
+            console.error(`❌ Error processing review:`, reviewError);
+            result.errors.push(`Error processing review: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
+          }
+        }
+
+        result.totalFetched += reviewsResponse.reviews.length;
+        pagesProcessed++;
+
+        console.log(`📊 Backfill batch complete: ${newReviewsInBatch} new, ${oldReviewsInBatch} too old`);
+
+        // Continue pagination
+        if (reviewsResponse.nextPageToken && shouldContinue) {
+          pageToken = reviewsResponse.nextPageToken;
+        } else {
+          console.log('📄 No more pages available');
+          shouldContinue = false;
+        }
+      } else {
+        console.log('📄 No reviews in this batch');
+        shouldContinue = false;
+      }
+    } catch (fetchError) {
+      console.error('❌ Error fetching backfill page:', fetchError);
+      result.errors.push(`Error fetching reviews: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+      shouldContinue = false;
+    }
+  }
+
+  result.backfillComplete = true;
+  console.log(`🎉 Initial backfill complete: ${result.newReviews} new reviews from last 2 years`);
+
+  // Update backfill completion status
+  await supabaseAdmin
+    .from('businesses')
+    .update({ initial_backfill_complete: true })
+    .eq('id', businessId);
+}
+
+/**
+ * Incremental sync: Fetch only reviews newer than our newest review
+ */
+async function performIncrementalSync(businessId: string, result: SyncResult): Promise<void> {
+  // Get the newest review date we have
+  const { data: newestReview, error: newestError } = await supabaseAdmin
+    .from('reviews')
+    .select('review_date')
+    .eq('business_id', businessId)
+    .order('review_date', { ascending: false })
+    .limit(1);
+
+  if (newestError) {
+    console.error('❌ Error getting newest review:', newestError);
+    result.errors.push(`Error getting newest review: ${newestError.message}`);
+    return;
+  }
+
+  const newestReviewDate = newestReview?.[0]?.review_date 
+    ? new Date(newestReview[0].review_date)
+    : new Date(0); // If no reviews, start from epoch
+
+  console.log(`📅 Incremental sync cutoff: ${newestReviewDate.toISOString()}`);
+
+  let pageToken: string | undefined = undefined;
+  let shouldContinue = true;
+  let pagesProcessed = 0;
+  let consecutiveDuplicates = 0;
+  const maxPages = 20; // Reasonable limit for incremental sync
+
+  while (shouldContinue && pagesProcessed < maxPages) {
+    try {
+      console.log(`📄 Fetching incremental page ${pagesProcessed + 1}`);
+      const reviewsResponse = await fetchReviews(businessId, pageToken, 50);
+
+      if (reviewsResponse.reviews && reviewsResponse.reviews.length > 0) {
+        let newReviewsInBatch = 0;
+        let duplicatesInBatch = 0;
+        let oldReviewsInBatch = 0;
+
+        for (const googleReview of reviewsResponse.reviews) {
+          try {
+            const reviewDate = new Date(googleReview.createTime);
+            
+            // Skip reviews older than our newest review
+            if (reviewDate <= newestReviewDate) {
+              oldReviewsInBatch++;
+              consecutiveDuplicates++;
+              
+              // If we find many consecutive old reviews, we've caught up
+              if (consecutiveDuplicates >= 10) {
+                console.log(`⏹️ Found ${consecutiveDuplicates} consecutive old/duplicate reviews, sync complete`);
+                shouldContinue = false;
+                break;
+              }
+              continue;
+            } else {
+              consecutiveDuplicates = 0; // Reset counter
+            }
+
+            // Check for duplicates
+            const { data: existingReview, error: checkError } = await supabaseAdmin
+              .from('reviews')
+              .select('id')
+              .eq('google_review_id', googleReview.reviewId)
+              .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+              console.error(`❌ Error checking review ${googleReview.reviewId}:`, checkError);
+              result.errors.push(`Error checking review: ${checkError.message}`);
+              continue;
+            }
+
+            if (existingReview) {
+              duplicatesInBatch++;
+              continue;
+            }
+
+            // Insert new review
+            const reviewData = mapGoogleReviewToSchema(googleReview, businessId);
+            const { error: insertError } = await supabaseAdmin
+              .from('reviews')
+              .insert(reviewData);
+
+            if (insertError) {
+              console.error(`❌ Failed to insert review ${googleReview.reviewId}:`, insertError);
+              result.errors.push(`Failed to insert review: ${insertError.message}`);
+            } else {
+              console.log(`✅ Inserted new review ${googleReview.reviewId} (${reviewDate.toLocaleDateString()})`);
+              newReviewsInBatch++;
+              result.newReviews++;
+            }
+          } catch (reviewError) {
+            console.error(`❌ Error processing review:`, reviewError);
+            result.errors.push(`Error processing review: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
+          }
+        }
+
+        result.totalFetched += reviewsResponse.reviews.length;
+        pagesProcessed++;
+
+        console.log(`📊 Incremental batch complete: ${newReviewsInBatch} new, ${duplicatesInBatch} duplicates, ${oldReviewsInBatch} old`);
+
+        // Continue pagination if we're still finding new reviews
+        if (reviewsResponse.nextPageToken && shouldContinue && newReviewsInBatch > 0) {
+          pageToken = reviewsResponse.nextPageToken;
+        } else {
+          console.log('📄 No more new reviews or pages available');
+          shouldContinue = false;
+        }
+      } else {
+        console.log('📄 No reviews in this batch');
+        shouldContinue = false;
+      }
+    } catch (fetchError) {
+      console.error('❌ Error fetching incremental page:', fetchError);
+      result.errors.push(`Error fetching reviews: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+      shouldContinue = false;
+    }
+  }
+
+  console.log(`⚡ Incremental sync complete: ${result.newReviews} new reviews`);
 }
 
 /**
@@ -448,7 +518,22 @@ function convertStarRating(starRating: number | string): number {
 /**
  * Map Google Business Profile review to our database schema
  */
-function mapGoogleReviewToSchema(googleReview: GoogleReview, businessId: string): any {
+function mapGoogleReviewToSchema(googleReview: GoogleReview, businessId: string): {
+  business_id: string;
+  google_review_id: string;
+  customer_name: string;
+  customer_avatar_url: string | null;
+  rating: number;
+  review_text: string;
+  review_date: string;
+  status: string;
+  ai_reply: string | null;
+  final_reply: string | null;
+  reply_tone: string;
+  posted_at: string | null;
+  created_at: string;
+  updated_at: string;
+} {
   // Extract existing reply from Google if it exists
   const existingReply = googleReview.reviewReply?.comment || null;
   const replyStatus = existingReply ? 'posted' : 'pending';
@@ -469,6 +554,162 @@ function mapGoogleReviewToSchema(googleReview: GoogleReview, businessId: string)
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Post reply to Google Business Profile review
+ */
+export async function postReplyToGoogle(
+  businessId: string,
+  googleReviewId: string,
+  replyText: string
+): Promise<{ success: boolean; message: string; error?: string }> {
+  console.log('🔄 Starting Google Business Profile reply posting...');
+  
+  try {
+    // Get business credentials - EXACT same pattern as fetchReviews
+    const { data: business, error } = await supabaseAdmin
+      .from('businesses')
+      .select('google_client_id, google_client_secret, google_access_token, google_refresh_token, google_account_id, google_location_id')
+      .eq('id', businessId)
+      .single();
+
+    if (error || !business) {
+      throw new Error('Business not found or credentials missing');
+    }
+
+    if (!business.google_access_token || !business.google_account_id || !business.google_location_id) {
+      throw new Error('Google Business Profile not connected. Please connect in Settings.');
+    }
+
+    // Try to decrypt credentials, fallback to plain text if not encrypted - EXACT same pattern as fetchReviews
+    let decrypted;
+    try {
+      decrypted = decryptFields(business, [
+        'google_client_id',
+        'google_client_secret',
+        'google_access_token',
+        'google_refresh_token',
+        'google_account_id',
+        'google_location_id'
+      ]);
+    } catch (decryptError) {
+      // If decryption fails, assume they're stored as plain text (backward compatibility)
+      console.log('Using plain text credentials for reply posting (not encrypted)');
+      decrypted = {
+        google_client_id: business.google_client_id,
+        google_client_secret: business.google_client_secret,
+        google_access_token: business.google_access_token,
+        google_refresh_token: business.google_refresh_token,
+        google_account_id: business.google_account_id,
+        google_location_id: business.google_location_id,
+      };
+    }
+
+    // Build the reply URL using the EXACT same pattern as reviews URL
+    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${decrypted.google_account_id}/locations/${decrypted.google_location_id}/reviews/${googleReviewId}/reply`;
+
+    // Request body for the reply
+    const requestBody = {
+      comment: replyText
+    };
+
+    try {
+      // Make the PUT request - EXACT same pattern as fetchReviews
+      const response = await fetch(replyUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${decrypted.google_access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.status === 401) {
+        // Token expired, try to refresh - EXACT same pattern as fetchReviews
+        if (decrypted.google_refresh_token) {
+          try {
+            const newTokens = await refreshAccessToken(
+              decrypted.google_refresh_token,
+              {
+                clientId: decrypted.google_client_id,
+                clientSecret: decrypted.google_client_secret,
+              }
+            );
+
+            // Store new token - EXACT same pattern as fetchReviews
+            const tokenData = { google_access_token: newTokens.access_token };
+            const encryptedTokens = encryptFields(tokenData, ['google_access_token']);
+
+            await supabaseAdmin
+              .from('businesses')
+              .update(encryptedTokens)
+              .eq('id', businessId);
+
+            // Retry request with new token - EXACT same pattern as fetchReviews
+            const retryResponse = await fetch(replyUrl, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${newTokens.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!retryResponse.ok) {
+              const errorData = await retryResponse.json().catch(() => ({}));
+              console.error('❌ Google API error after token refresh:', retryResponse.status, errorData);
+              
+              if (retryResponse.status === 404) {
+                return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
+              } else if (retryResponse.status === 403) {
+                return { success: false, message: 'Permission denied. Please check your Google Business Profile permissions.', error: 'PERMISSION_DENIED' };
+              } else {
+                return { success: false, message: `Google API error: ${retryResponse.status}`, error: 'API_ERROR' };
+              }
+            }
+
+            console.log('✅ Reply posted to Google Business Profile successfully (after token refresh)');
+            return { success: true, message: 'Reply posted successfully to Google Business Profile' };
+
+          } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
+            return { success: false, message: 'Authentication failed. Please reconnect your Google Business Profile.', error: 'TOKEN_REFRESH_FAILED' };
+          }
+        } else {
+          return { success: false, message: 'Authentication expired. Please reconnect your Google Business Profile.', error: 'NO_REFRESH_TOKEN' };
+        }
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Google API error:', response.status, errorData);
+        
+        if (response.status === 404) {
+          return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
+        } else if (response.status === 403) {
+          return { success: false, message: 'Permission denied. Please check your Google Business Profile permissions.', error: 'PERMISSION_DENIED' };
+        } else {
+          return { success: false, message: `Google API error: ${response.status}`, error: 'API_ERROR' };
+        }
+      }
+
+      console.log('✅ Reply posted to Google Business Profile successfully');
+      return { success: true, message: 'Reply posted successfully to Google Business Profile' };
+
+    } catch (fetchError) {
+      console.error('❌ Network error posting reply:', fetchError);
+      return { success: false, message: 'Network error. Please check your internet connection and try again.', error: 'NETWORK_ERROR' };
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to post reply to Google:', error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Unknown error occurred', 
+      error: 'UNKNOWN_ERROR' 
+    };
+  }
 }
 
 /**

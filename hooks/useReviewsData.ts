@@ -11,6 +11,7 @@ import type {
   ToastNotification
 } from '@/types/reviews';
 import type { Review, Business } from '@/types/dashboard';
+import type { SyncStatus } from '@/components/ReviewFetchControls';
 
 const DEFAULT_FILTERS: ReviewFilters = {
   search: '',
@@ -40,6 +41,13 @@ export function useReviewsData() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    syncType: null,
+    isBackfillComplete: false,
+    lastSyncTime: null,
+    totalReviews: 0,
+    isFirstTime: true
+  });
 
   // Helper function to show toast notifications
   const showToast = useCallback((toast: Omit<ToastNotification, 'id'>) => {
@@ -95,7 +103,7 @@ export function useReviewsData() {
     };
   }, []);
 
-  // Fetch businesses
+  // Fetch businesses with sync status
   const fetchBusinesses = useCallback(async () => {
     if (!user?.id) return;
 
@@ -107,42 +115,40 @@ export function useReviewsData() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
       setBusinesses(data || []);
+
+      // Update sync status based on current business
+      const currentBusiness = data?.find(b => 
+        filters.businessId === 'all' ? true : b.id === filters.businessId
+      ) || data?.[0];
+
+      if (currentBusiness) {
+        setSyncStatus({
+          syncType: currentBusiness.initial_backfill_complete ? 'incremental' : 'initial_backfill',
+          isBackfillComplete: currentBusiness.initial_backfill_complete || false,
+          lastSyncTime: currentBusiness.last_review_sync,
+          totalReviews: reviews.length, // Will be updated when reviews are fetched
+          isFirstTime: !currentBusiness.last_review_sync
+        });
+      }
     } catch (err) {
-      console.error('Failed to fetch businesses:', err);
+      console.error('Error fetching businesses:', err);
       setError('Failed to load businesses');
     }
-  }, [user?.id]);
+  }, [user?.id, filters.businessId, reviews.length]);
 
-  // Fetch reviews with filters
+  // Fetch reviews with sync status update
   const fetchReviews = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || businesses.length === 0) return;
 
     try {
-      setIsLoading(true);
       setError(null);
-
-      // Get business IDs for the user
-      const businessIds = businesses.length > 0
-        ? businesses.map(b => b.id)
-        : (await supabase
-            .from('businesses')
-            .select('id')
-            .eq('user_id', user.id)
-          ).data?.map(b => b.id) || [];
-
-      if (businessIds.length === 0) {
-        setReviews([]);
-        setFilteredReviews([]);
-        setPagination(prev => ({ ...prev, totalItems: 0, totalPages: 0 }));
-        return;
-      }
-
-      // Build query
+      
       let query = supabase
         .from('reviews')
         .select('*')
-        .in('business_id', businessIds)
+        .eq('business_id', filters.businessId === 'all' ? businesses[0]?.id : filters.businessId)
         .order('review_date', { ascending: false });
 
       // Apply business filter
@@ -172,16 +178,23 @@ export function useReviewsData() {
 
       if (error) throw error;
 
+      setReviews(data || []);
+
+      // Update sync status with actual review count
+      setSyncStatus(prev => ({
+        ...prev,
+        totalReviews: data?.length || 0
+      }));
+
       let processedReviews = data || [];
 
       // Apply text search filter (client-side for simplicity)
-      if (filters.search.trim()) {
-        const searchTerm = filters.search.toLowerCase().trim();
-        processedReviews = processedReviews.filter(review =>
-          review.customer_name.toLowerCase().includes(searchTerm) ||
-          review.review_text.toLowerCase().includes(searchTerm) ||
-          (review.ai_reply && review.ai_reply.toLowerCase().includes(searchTerm)) ||
-          (review.final_reply && review.final_reply.toLowerCase().includes(searchTerm))
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        processedReviews = processedReviews.filter(
+          (review) =>
+            review.customer_name.toLowerCase().includes(searchTerm) ||
+            review.review_text.toLowerCase().includes(searchTerm)
         );
       }
 
@@ -213,6 +226,88 @@ export function useReviewsData() {
       setIsLoading(false);
     }
   }, [user?.id, businesses, filters, pagination.currentPage, transformReviewForTable]);
+
+  // Fetch reviews from Google Business Profile
+  const fetchReviewsFromGoogle = useCallback(async (options: { timePeriod: string; reviewCount: number }) => {
+    if (!user?.id || businesses.length === 0) {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No business connected. Please connect your Google Business Profile first.'
+      });
+      return;
+    }
+
+    const businessId = filters.businessId === 'all' ? businesses[0]?.id : filters.businessId;
+    if (!businessId) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/reviews/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessId,
+          userId: user.id,
+          options
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to sync reviews');
+      }
+
+      // Update sync status based on result
+      setSyncStatus(prev => ({
+        ...prev,
+        syncType: result.syncType || 'incremental',
+        isBackfillComplete: result.backfillComplete || prev.isBackfillComplete,
+        lastSyncTime: result.lastSyncTime,
+        isFirstTime: false
+      }));
+
+      // Show success toast with appropriate message
+      const isInitialBackfill = result.syncType === 'initial_backfill';
+      const title = isInitialBackfill ? 'Initial Import Complete' : 'Sync Complete';
+      
+      let message: string;
+      if (result.newReviews === 0) {
+        message = 'No new reviews found. Your reviews are up to date!';
+      } else if (result.newReviews === 1) {
+        message = '1 new review imported.';
+      } else {
+        message = `${result.newReviews} new reviews imported.`;
+      }
+      
+      // Add processing info ONLY for initial backfill or when there are new reviews AND many duplicates
+      if (isInitialBackfill || (result.newReviews > 0 && result.totalFetched > result.newReviews + 10)) {
+        message += ` ${result.totalFetched} total processed.`;
+      }
+
+      showToast({
+        type: 'success',
+        title,
+        message
+      });
+
+      // Refresh data
+      await Promise.all([fetchBusinesses(), fetchReviews()]);
+
+    } catch (err) {
+      console.error('Error syncing reviews:', err);
+      showToast({
+        type: 'error',
+        title: 'Sync Failed',
+        message: err instanceof Error ? err.message : 'Failed to sync reviews from Google Business Profile'
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [user?.id, businesses, filters.businessId, showToast, fetchBusinesses, fetchReviews]);
 
   // Initial data fetch
   useEffect(() => {
@@ -292,45 +387,59 @@ export function useReviewsData() {
     post: async (reviewId: string) => {
       try {
         setIsUpdating(true);
-        const postedAt = new Date().toISOString();
-        const { error } = await supabase
-          .from('reviews')
-          .update({
-            status: 'posted',
-            posted_at: postedAt,
-            updated_at: postedAt
-          })
-          .eq('id', reviewId);
-
-        if (error) throw error;
-
-        // Update local state immediately to preserve scroll position
-        updateReviewInState(reviewId, { status: 'posted', posted_at: postedAt });
-
-        // Add activity
+        
+        // Get the review to find the reply text - EXACT same pattern as other operations
         const review = reviews.find(r => r.id === reviewId);
-        if (review) {
-          await supabase
-            .from('activities')
-            .insert({
-              business_id: review.business_id,
-              type: 'reply_posted',
-              description: `Reply posted to ${review.rating}-star review from ${review.customer_name}`,
-              metadata: { review_id: reviewId, rating: review.rating }
-            });
+        if (!review) {
+          throw new Error('Review not found');
         }
 
+        // Use final_reply if available, otherwise use ai_reply - EXACT same pattern as existing code
+        const replyText = review.final_reply || review.ai_reply;
+        if (!replyText) {
+          throw new Error('No reply text found. Please generate or edit a reply first.');
+        }
+
+        // Call the Google Business Profile API - EXACT same pattern as fetchReviewsFromGoogle
+        const response = await fetch('/api/reviews/post-reply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reviewId,
+            userId: user?.id,
+            replyText
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || result.details || 'Failed to post reply');
+        }
+
+        // Update local state only after successful Google posting - EXACT same pattern as other operations
+        const postedAt = result.postedAt || new Date().toISOString();
+        updateReviewInState(reviewId, { 
+          status: 'posted', 
+          posted_at: postedAt,
+          final_reply: replyText
+        });
+
+        // Show success notification - clear and specific
         showToast({
           type: 'success',
-          title: 'Reply posted',
-          message: 'The reply has been posted successfully.'
+          title: 'Reply posted to Google!',
+          message: 'Your reply has been successfully posted to Google Business Profile.'
         });
+
       } catch (err) {
-        console.error('Failed to post reply:', err);
+        console.error('Failed to post reply to Google:', err);
         showToast({
           type: 'error',
           title: 'Failed to post reply',
-          message: err instanceof Error ? err.message : 'Please try again.'
+          message: err instanceof Error ? err.message : 'Please check your Google Business Profile connection and try again.'
         });
       } finally {
         setIsUpdating(false);
@@ -582,32 +691,97 @@ export function useReviewsData() {
     post: async (reviewIds: string[]) => {
       try {
         setIsUpdating(true);
-        const postedAt = new Date().toISOString();
-        const { error } = await supabase
-          .from('reviews')
-          .update({
-            status: 'posted',
-            posted_at: postedAt,
-            updated_at: postedAt
-          })
-          .in('id', reviewIds);
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: string[] = [];
 
-        if (error) throw error;
+        // Process each review individually - EXACT same pattern as single post
+        for (const reviewId of reviewIds) {
+          try {
+            // Get the review to find the reply text - EXACT same pattern as single post
+            const review = reviews.find(r => r.id === reviewId);
+            if (!review) {
+              errors.push(`Review ${reviewId} not found`);
+              errorCount++;
+              continue;
+            }
 
-        // Update local state immediately to preserve scroll position
-        updateMultipleReviewsInState(reviewIds, { status: 'posted', posted_at: postedAt });
+            // Use final_reply if available, otherwise use ai_reply - EXACT same pattern as single post
+            const replyText = review.final_reply || review.ai_reply;
+            if (!replyText) {
+              errors.push(`No reply text found for ${review.customer_name}'s review`);
+              errorCount++;
+              continue;
+            }
 
-        showToast({
-          type: 'success',
-          title: 'Replies posted',
-          message: `${reviewIds.length} repl${reviewIds.length > 1 ? 'ies' : 'y'} posted successfully.`
-        });
+            // Call the Google Business Profile API - EXACT same pattern as single post
+            const response = await fetch('/api/reviews/post-reply', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                reviewId,
+                userId: user?.id,
+                replyText
+              }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              errors.push(`${review.customer_name}: ${result.error || result.details || 'Failed to post'}`);
+              errorCount++;
+              continue;
+            }
+
+            // Update local state only after successful Google posting - EXACT same pattern as single post
+            const postedAt = result.postedAt || new Date().toISOString();
+            updateReviewInState(reviewId, { 
+              status: 'posted', 
+              posted_at: postedAt,
+              final_reply: replyText
+            });
+
+            successCount++;
+
+          } catch (reviewError) {
+            const review = reviews.find(r => r.id === reviewId);
+            const customerName = review?.customer_name || 'Unknown';
+            errors.push(`${customerName}: ${reviewError instanceof Error ? reviewError.message : 'Unknown error'}`);
+            errorCount++;
+          }
+        }
+
+        // Show appropriate success/error messages - EXACT same pattern as other bulk operations
+        if (successCount > 0 && errorCount === 0) {
+          showToast({
+            type: 'success',
+            title: 'All replies posted to Google!',
+            message: `${successCount} ${successCount === 1 ? 'reply' : 'replies'} successfully posted to Google Business Profile.`
+          });
+        } else if (successCount > 0 && errorCount > 0) {
+          showToast({
+            type: 'warning',
+            title: 'Partial success',
+            message: `${successCount} replies posted successfully, ${errorCount} failed. Check console for details.`
+          });
+          console.error('Bulk post errors:', errors);
+        } else {
+          showToast({
+            type: 'error',
+            title: 'Failed to post replies',
+            message: `All ${errorCount} replies failed to post. ${errors[0] || 'Please check your Google Business Profile connection.'}`
+          });
+          console.error('Bulk post errors:', errors);
+        }
+
       } catch (err) {
-        console.error('Failed to post replies:', err);
+        console.error('Failed to bulk post replies:', err);
         showToast({
           type: 'error',
-          title: 'Failed to post replies',
-          message: err instanceof Error ? err.message : 'Please try again.'
+          title: 'Bulk post failed',
+          message: err instanceof Error ? err.message : 'Please check your Google Business Profile connection and try again.'
         });
       } finally {
         setIsUpdating(false);
@@ -685,6 +859,7 @@ export function useReviewsData() {
     isUpdating,
     error,
     toasts,
+    syncStatus,
 
     // Actions
     reviewActions,
@@ -698,6 +873,7 @@ export function useReviewsData() {
     // Utils
     refetch,
     removeToast,
-    showToast
+    showToast,
+    fetchReviewsFromGoogle
   };
 }

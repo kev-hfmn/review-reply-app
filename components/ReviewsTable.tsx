@@ -205,7 +205,7 @@ export default function ReviewsTable({
               </div>
 
               {/* Main Content - Full Width */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-6">
                 {/* Rating Stars - moved above customer name */}
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="flex space-x-1">
@@ -221,12 +221,42 @@ export default function ReviewsTable({
                   >
                     {review.statusLabel}
                   </Badge>
+                  {/* Posted timestamp - show when reply was posted to Google */}
+                  {review.status === 'posted' && review.posted_at && (
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground ml-2">
+
+                      <span>
+                        on {new Date(review.posted_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Customer & Date */}
                 <div className="flex items-center space-x-2 text-sm mb-3">
-                  <User className="h-4 w-4 text-slate-400" />
-                  <span className="font-medium text-foreground text-lg">
+                  <div className="relative flex-shrink-0">
+                    {review.customer_avatar_url ? (
+                      <img
+                        src={review.customer_avatar_url}
+                        alt={`${review.customerDisplayName}'s avatar`}
+                        className="h-8 w-8 rounded-full object-cover border border-muted"
+                        onError={(e) => {
+                          // Fallback to user icon if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <User className={`h-4 w-4 text-slate-400 ${review.customer_avatar_url ? 'hidden' : ''}`} />
+                  </div>
+                  <span className="font-medium text-foreground text-md self-center">
                     {review.customerDisplayName}
                   </span>
                   <span className="text-muted-foreground">•</span>
@@ -251,7 +281,7 @@ export default function ReviewsTable({
                         <MessageSquare className="h-3 w-3 text-white" />
                       </div>
                       <span className="text-sm text-foreground/80 font-semibold">
-                        AI Reply
+                        Reply
                       </span>
 {/*                       {review.reply_tone && (
                         <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded-full">

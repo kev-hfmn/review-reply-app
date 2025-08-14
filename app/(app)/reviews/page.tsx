@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Download } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -10,14 +10,14 @@ import ReviewsTable from '@/components/ReviewsTable';
 import BulkActionsBar from '@/components/BulkActionsBar';
 import ReviewDrawer from '@/components/ReviewDrawer';
 import ToastNotifications from '@/components/ToastNotifications';
-import ReviewFetchControls, { type FetchOptions } from '@/components/ReviewFetchControls';
+import type { FetchOptions } from '@/components/ReviewFetchControls';
 import type { Review } from '@/types/dashboard';
 import type { SelectionState, ReviewDrawerData } from '@/types/reviews';
 import { REPLY_TONES } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 
 export default function ReviewsPage() {
-  const { user } = useAuth();
+  const { } = useAuth();
   const {
     businesses,
     reviews,
@@ -28,6 +28,7 @@ export default function ReviewsPage() {
     isUpdating,
     error,
     toasts,
+    // syncStatus no longer needed after removing ReviewFetchControls
     reviewActions,
     bulkActions,
     updateFilters,
@@ -35,7 +36,8 @@ export default function ReviewsPage() {
     goToPage,
     refetch,
     removeToast,
-    showToast
+    showToast,
+    fetchReviewsFromGoogle
   } = useReviewsData();
 
   const [isFetchingReviews, setIsFetchingReviews] = useState(false);
@@ -192,73 +194,17 @@ export default function ReviewsPage() {
     setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
   }, []);
 
-  // Handle fetch reviews from Google Business Profile with custom options
+  // Handle fetching reviews from Google Business Profile
   const handleFetchReviews = useCallback(async (options: FetchOptions) => {
-    if (!user || !businesses || businesses.length === 0) {
-      showToast({
-        type: 'error',
-        title: 'Cannot fetch reviews',
-        message: 'Please ensure you have a business configured and Google Business Profile connected.'
-      });
-      return;
-    }
-
-    const businessId = businesses[0]?.id;
-    if (!businessId) {
-      showToast({
-        type: 'error',
-        title: 'No business found',
-        message: 'Please configure your business profile first.'
-      });
-      return;
-    }
-
     setIsFetchingReviews(true);
     try {
-      const response = await fetch('/api/reviews/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId,
-          userId: user.id,
-          action: 'sync',
-          timePeriod: options.timePeriod,
-          reviewCount: options.reviewCount
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        const periodLabel = {
-          '7days': 'last 7 days',
-          '30days': 'last 30 days', 
-          '3months': 'last 3 months',
-          '6months': 'last 6 months',
-          'all': 'all time'
-        }[options.timePeriod];
-        
-        showToast({
-          type: 'success',
-          title: 'Reviews fetched successfully',
-          message: `Fetched ${result.totalFetched} reviews from ${periodLabel} (${result.newReviews} new)`
-        });
-        // Refresh the reviews list
-        refetch();
-      } else {
-        throw new Error(result.message || 'Failed to fetch reviews');
-      }
+      await fetchReviewsFromGoogle(options);
     } catch (error) {
-      console.error('Failed to fetch reviews:', error);
-      showToast({
-        type: 'error',
-        title: 'Failed to fetch reviews',
-        message: error instanceof Error ? error.message : 'Please check your Google Business Profile connection in Settings.'
-      });
+      console.error('Error fetching reviews:', error);
     } finally {
       setIsFetchingReviews(false);
     }
-  }, [user, businesses, showToast, refetch]);
+  }, [fetchReviewsFromGoogle]);
 
   // Handle export (placeholder)
   const handleExport = useCallback(() => {
@@ -286,13 +232,13 @@ export default function ReviewsPage() {
 
         <div className="flex items-center space-x-3">
           <Button
-            onClick={() => refetch()}
-            disabled={isLoading}
-            variant="outline"
-            className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+            onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
+            disabled={isFetchingReviews || isUpdating}
+            variant="primary"
+            className="flex items-center space-x-2 px-3 py-2 "
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
+            <span>Fetch New Reviews</span>
           </Button>
 
           <Button
@@ -328,12 +274,7 @@ export default function ReviewsPage() {
         </motion.div>
       )}
 
-      {/* Fetch Controls */}
-      <ReviewFetchControls
-        onFetch={handleFetchReviews}
-        isLoading={isFetchingReviews}
-        disabled={isLoading}
-      />
+      {/* Review Fetch Controls moved to header */}
 
       {/* Filters */}
       <ReviewFilters

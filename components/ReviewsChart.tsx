@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BarChart3 } from 'lucide-react';
 import type { ChartDataPoint } from '@/types/dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 interface ReviewsChartProps {
   data: ChartDataPoint[];
@@ -10,53 +11,60 @@ interface ReviewsChartProps {
 export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
   const maxReviews = Math.max(...data.map(d => d.reviews), 1);
   const hasAnyData = data.some(d => d.reviews > 0);
-  
+
   // Function to get bar color based on average rating
   const getBarColor = (avgRating: number, hasReviews: boolean) => {
     if (!hasReviews || avgRating === 0) {
       return 'hsl(var(--border))';
     }
-    
+
     // Color scale from red (1 star) to green (5 stars)
     if (avgRating >= 4.5) return '#10b981'; // green-500
-    if (avgRating >= 4.0) return '#84cc16'; // lime-500  
+    if (avgRating >= 4.0) return '#84cc16'; // lime-500
     if (avgRating >= 3.5) return '#eab308'; // yellow-500
     if (avgRating >= 3.0) return '#f97316'; // orange-500
     if (avgRating >= 2.0) return '#ef4444'; // red-500
     return '#dc2626'; // red-600
   };
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   if (isLoading) {
     return (
-      <div className="bg-background rounded-xl p-6 shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-foreground">
+      <Card>
+        <CardHeader>
+          <CardTitle>
             Reviews Over Time
-          </h3>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+        <div className="flex items-center justify-between mb-6">
           <BarChart3 className="h-5 w-5 text-muted-foreground" />
         </div>
         <div className="h-64 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </div>
+        </CardContent>
+        </Card>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="bg-background rounded-xl p-6 shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-foreground">
+      <Card>
+        <CardHeader>
+          <CardTitle>
             Reviews Over Time
-          </h3>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-6">
           <BarChart3 className="h-5 w-5 text-muted-foreground" />
         </div>
         <div className="h-64 flex flex-col items-center justify-center space-y-4">
@@ -70,26 +78,28 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
             </p>
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-background rounded-xl p-6 shadow-sm border border-border">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-foreground">
+    <Card>
+      <CardHeader>
+        <CardTitle>
           Reviews Over Time
-        </h3>
-        <BarChart3 className="h-5 w-5 text-muted-foreground" />
-      </div>
-      
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+
+
       <div className="h-64 flex items-end justify-between space-x-1 px-2">
         {data.map((point, index) => {
           // Calculate height - ensure minimum height for visibility when there are reviews
-          const height = hasAnyData 
+          const height = hasAnyData
             ? Math.max((point.reviews / maxReviews) * 180, point.reviews > 0 ? 12 : 0)
             : 0;
-          
+
           return (
             <div key={point.date} className="flex flex-col items-center space-y-2 flex-1">
               <div className="flex flex-col items-center space-y-1 h-[200px] justify-end">
@@ -100,19 +110,19 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
                     animate={{ height: height }}
                     transition={{ delay: index * 0.05, duration: 0.5 }}
                     className="w-6 rounded-t-sm cursor-pointer transition-all duration-200 hover:opacity-80"
-                    style={{ 
+                    style={{
                       height: `${height}px`,
                       minHeight: point.reviews > 0 ? '12px' : '2px',
                       backgroundColor: getBarColor(point.avgRating || 0, point.reviews > 0)
                     }}
                   />
-                  
+
                   {/* Tooltip */}
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                     <div className="text-center">
                       <div className="font-medium">{point.reviews} review{point.reviews !== 1 ? 's' : ''}</div>
                       {point.avgRating && point.avgRating > 0 && (
-                        <div 
+                        <div
                           className="font-medium"
                           style={{ color: getBarColor(point.avgRating, true) }}
                         >
@@ -124,7 +134,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
                   </div>
                 </div>
-                
+
                 {/* Review count label */}
                 {point.reviews > 0 && (
                   <span className="text-xs font-medium text-muted-foreground">
@@ -132,7 +142,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
                   </span>
                 )}
               </div>
-              
+
               {/* Date label */}
               <span className="text-xs text-muted-foreground transform -rotate-45 origin-center whitespace-nowrap">
                 {formatDate(point.date)}
@@ -141,7 +151,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
           );
         })}
       </div>
-      
+
       {/* Summary stats and legend */}
       <div className="mt-6 pt-4 border-t border-border">
         <div className="flex justify-between text-sm mb-3">
@@ -158,7 +168,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
             </span>
           </div>
         </div>
-        
+
         {/* Color legend */}
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
@@ -187,6 +197,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
           </div>
         </div>
       </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

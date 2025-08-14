@@ -187,6 +187,7 @@ Automate the review management process for small businesses by:
 2. Add a static chart with mock review data.
 3. Create a simple activity feed (e.g., “Reply posted to 5-star review from Jane”).
 4. Build the onboarding card:
+
    - Each step has a short description.
    - “Approve Google access” step opens a modal with:
      - Copy: “Google requires a one-time 5-minute approval so we can post replies on your behalf. We guide you through it.”

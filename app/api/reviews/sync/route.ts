@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncReviews, testConnection } from '@/lib/services/googleBusinessService';
+import { syncReviews } from '@/lib/services/googleBusinessService';
 
 /**
  * Sync reviews from Google Business Profile
@@ -8,44 +8,33 @@ import { syncReviews, testConnection } from '@/lib/services/googleBusinessServic
 export async function POST(request: NextRequest) {
   try {
     const { 
-      businessId, 
-      userId, 
-      action = 'sync',
-      timePeriod = '30days',
-      reviewCount = 50
+      businessId,
+      userId,
+      options = { timePeriod: '30days', reviewCount: 50 }
     } = await request.json();
 
-    if (!businessId || !userId) {
+    // Basic validation - the user should be passed from the client
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Business ID and User ID are required' },
+        { error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    if (!businessId) {
+      return NextResponse.json(
+        { error: 'Business ID is required' },
         { status: 400 }
       );
     }
 
-    // Handle test connection
-    if (action === 'test') {
-      const testResult = await testConnection(businessId);
-      return NextResponse.json(testResult);
-    }
-
-    // Handle full sync
-    if (action === 'sync') {
-      console.log(`Starting review sync for business ${businessId} (${timePeriod}, ${reviewCount} reviews)`);
-      
-      const syncResult = await syncReviews(businessId, userId, {
-        timePeriod,
-        reviewCount
-      });
-      
-      const statusCode = syncResult.success ? 200 : 207; // 207 = Multi-Status (partial success)
-      
-      return NextResponse.json(syncResult, { status: statusCode });
-    }
-
-    return NextResponse.json(
-      { error: 'Invalid action. Use "test" or "sync"' },
-      { status: 400 }
-    );
+    console.log(`🚀 Starting two-phase review sync for business ${businessId}, user ${userId}`);
+    
+    const syncResult = await syncReviews(businessId, userId, options);
+    
+    const statusCode = syncResult.success ? 200 : 207; // 207 = Multi-Status (partial success)
+    
+    return NextResponse.json(syncResult, { status: statusCode });
 
   } catch (error) {
     console.error('Reviews sync API error:', error);

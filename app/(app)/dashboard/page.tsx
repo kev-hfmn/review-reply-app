@@ -16,7 +16,7 @@ import {
 } from '@/utils/dashboard';
 import OnboardingCard from '@/components/OnboardingCard';
 import ReviewsChart from '@/components/ReviewsChart';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const AUTH_TIMEOUT = 15000; // 15 seconds
 
@@ -122,7 +122,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Flowrise Reviews
+            Your Reviews
           </h1>
         </div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -147,7 +147,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Flowrise Reviews
+            Your Reviews
           </h1>
           {businesses.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
@@ -197,7 +197,6 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-c
           >
             <Card>
               <CardContent>
@@ -238,11 +237,14 @@ c
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-background rounded-xl p-6 shadow-sm border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-6">
-            Recent Activity
-          </h3>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           {recentActivity.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-3">
               <Activity className="h-8 w-8 text-muted-foreground" />
@@ -280,7 +282,8 @@ c
               ))}
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Additional Onboarding for existing users */}

@@ -1,14 +1,12 @@
 import React from 'react';
-import { 
-  MessageSquare, 
-  Activity, 
-  Star, 
+import {
+  MessageSquare,
+  Activity,
+  Star,
   Clock,
   Settings,
   PlusCircle,
-  BarChart3,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 import type { DashboardMetric, Activity as ActivityType, DashboardActivity } from '@/types/dashboard';
 
@@ -26,16 +24,16 @@ export function formatTimeAgo(dateString: string): string {
   const now = new Date();
   const date = new Date(dateString);
   const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
+
   if (diffInMinutes < 1) return 'Just now';
   if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
-  
+
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-  
+
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-  
+
   const diffInWeeks = Math.floor(diffInDays / 7);
   return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`;
 }
@@ -66,7 +64,7 @@ export function convertActivitiesToDashboard(activities: ActivityType[]): Dashbo
 }
 
 export function createMetrics(
-  reviewsThisWeek: number,
+  reviewsThisWeek: number, // Actually monthly data now
   reviewsThisWeekChange: number,
   repliesPosted: number,
   repliesPostedChange: number,
@@ -77,7 +75,7 @@ export function createMetrics(
 ): DashboardMetric[] {
   return [
     {
-      title: "Reviews this week",
+      title: "Reviews this month",
       value: reviewsThisWeek.toString(),
       change: formatMetricChange(reviewsThisWeekChange),
       icon: React.createElement(MessageSquare, { className: "h-6 w-6 text-primary" }),
@@ -88,7 +86,8 @@ export function createMetrics(
       value: repliesPosted.toString(),
       change: formatMetricChange(repliesPostedChange),
       icon: React.createElement(Activity, { className: "h-6 w-6 text-primary" }),
-      trend: repliesPostedChange >= 0 ? 'up' : 'down'
+      trend: repliesPostedChange >= 0 ? 'up' : 'down',
+      subtitle: "This month"
     },
     {
       title: "Avg rating",
@@ -96,14 +95,15 @@ export function createMetrics(
       change: formatMetricChange(avgRatingChange),
       icon: React.createElement(Star, { className: "h-6 w-6 text-primary" }),
       trend: avgRatingChange >= 0 ? 'up' : 'down',
-      subtitle: "Last 30 days"
+      subtitle: "This month"
     },
     {
-      title: "Pending approvals",
+      title: "Without a reply",
       value: pendingApprovals.toString(),
       change: formatMetricChange(pendingApprovalsChange),
       icon: React.createElement(Clock, { className: "h-6 w-6 text-primary" }),
-      trend: pendingApprovalsChange <= 0 ? 'up' : 'down' // Lower pending is better
+      trend: pendingApprovalsChange <= 0 ? 'up' : 'down', // Lower pending is better
+      subtitle: "All time"
     }
   ];
 }
