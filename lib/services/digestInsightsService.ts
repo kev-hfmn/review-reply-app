@@ -454,7 +454,7 @@ Focus on actionable insights that drive measurable business outcomes.`;
    * Process AI results into structured insights
    */
   private processAIResults(
-    aiResults: any,
+    aiResults: Record<string, unknown>,
     reviews: Review[],
     businessInfo: Business,
     weekStart: Date,
@@ -464,8 +464,8 @@ Focus on actionable insights that drive measurable business outcomes.`;
     const stats = this.calculateDigestStats(reviews);
 
     // Validate and clean AI themes
-    const cleanPositiveThemes = this.validateAndCleanThemes(aiResults.positiveThemes || [], reviews.length, 'positive');
-    const cleanImprovementThemes = this.validateAndCleanThemes(aiResults.improvementThemes || [], reviews.length, 'improvement');
+    const cleanPositiveThemes = this.validateAndCleanThemes(Array.isArray(aiResults.positiveThemes) ? aiResults.positiveThemes : [], reviews.length);
+    const cleanImprovementThemes = this.validateAndCleanThemes(Array.isArray(aiResults.improvementThemes) ? aiResults.improvementThemes : [], reviews.length);
 
     return {
       id: crypto.randomUUID(),
@@ -475,8 +475,8 @@ Focus on actionable insights that drive measurable business outcomes.`;
       stats,
       positiveThemes: cleanPositiveThemes,
       improvementThemes: cleanImprovementThemes,
-      highlights: aiResults.highlights || [],
-      competitiveInsights: aiResults.competitiveInsights || {
+      highlights: Array.isArray(aiResults.highlights) ? aiResults.highlights : [],
+      competitiveInsights: ((typeof aiResults.competitiveInsights === 'object' && aiResults.competitiveInsights) ? aiResults.competitiveInsights : {
         competitorMentions: [],
         uniqueValueProps: [],
         marketPositioning: {
@@ -484,8 +484,8 @@ Focus on actionable insights that drive measurable business outcomes.`;
           qualityPosition: 'standard',
           serviceLevel: 'good'
         }
-      },
-      overallConfidence: aiResults.overallConfidence || 0.85,
+      }) as unknown as Record<string, unknown>,
+      overallConfidence: (typeof aiResults.overallConfidence === 'number' ? aiResults.overallConfidence : 0.85),
       generated_at: new Date().toISOString(),
       created_at: new Date().toISOString()
     };
@@ -494,11 +494,11 @@ Focus on actionable insights that drive measurable business outcomes.`;
   /**
    * Validate and clean AI-generated themes
    */
-  private validateAndCleanThemes(themes: unknown[], totalReviews: number, _type: 'positive' | 'improvement'): ActionableTheme[] {
+  private validateAndCleanThemes(themes: unknown[], totalReviews: number): ActionableTheme[] {
     if (!Array.isArray(themes)) return [];
 
     // Deduplicate themes by similar content
-    const uniqueThemes = new Map<string, any>();
+    const uniqueThemes = new Map<string, Record<string, unknown>>();
     
     themes.forEach(theme => {
       if (!theme || typeof theme !== 'object') return;

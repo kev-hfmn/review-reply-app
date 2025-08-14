@@ -13,7 +13,6 @@ import {
   ExternalLink,
   Save,
   TestTube,
-  Webhook,
   Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -465,33 +464,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleTestWebhook = async () => {
-    setIsTesting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setIntegrations(prev => ({
-        ...prev,
-        makeWebhook: {
-          ...prev.makeWebhook,
-          lastTest: new Date().toISOString()
-        }
-      }));
-      showToast({
-        type: 'success',
-        title: 'Webhook test successful',
-        message: 'Your Make.com webhook is working correctly.'
-      });
-    } catch (error) {
-      console.error('Webhook test failed:', error);
-      showToast({
-        type: 'error',
-        title: 'Webhook test failed',
-        message: 'Please check your webhook configuration.'
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
   // Google Business Profile handlers
   const handleSaveGoogleCredentials = async () => {

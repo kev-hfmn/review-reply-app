@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         accountId: decryptedBusiness.google_account_id,
         locationId: decryptedBusiness.google_location_id,
       };
-    } catch (decryptError) {
+    } catch {
       // If decryption fails, assume they're stored as plain text (backward compatibility)
       console.log('Using plain text credentials for display (not encrypted)');
       credentials = {

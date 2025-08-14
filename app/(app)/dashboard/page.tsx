@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
@@ -24,7 +23,6 @@ export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { fetchSubscription } = useSubscription();
   const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const { isInTrial, isLoading: isTrialLoading } = useTrialStatus();
   const [authTimeout, setAuthTimeout] = useState(false);
 
@@ -54,22 +52,6 @@ export default function Dashboard() {
     }
   }, [user?.id, fetchSubscription]);
 
-  useEffect(() => {
-    if (user?.id) {
-      // Check if user has completed onboarding
-      const checkOnboarding = async () => {
-        const { data } = await supabase
-          .from('user_preferences')
-          .select('has_completed_onboarding')
-          .eq('user_id', user.id)
-          .single();
-
-        setHasCompletedOnboarding(!!data?.has_completed_onboarding);
-      };
-
-      checkOnboarding();
-    }
-  }, [user?.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

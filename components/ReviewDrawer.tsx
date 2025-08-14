@@ -21,13 +21,6 @@ import type { ReviewDrawerProps } from '@/types/reviews';
 import { REPLY_TONES } from '@/types/reviews';
 import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
 export default function ReviewDrawer({
@@ -199,7 +192,7 @@ export default function ReviewDrawer({
                 Status:
               </span>
               <Badge
-                variant={review.status as any}
+                variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
               >
                 {review.status === 'needs_edit' ? 'Needs Edit' :
                  review.status.charAt(0).toUpperCase() + review.status.slice(1)}

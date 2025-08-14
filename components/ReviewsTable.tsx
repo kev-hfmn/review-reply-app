@@ -216,7 +216,7 @@ export default function ReviewsTable({
                   </span>
                   {/* Status Badge - moved next to rating */}
                   <Badge
-                    variant={review.status as any}
+                    variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
                     className="ml-auto"
                   >
                     {review.statusLabel}
@@ -269,7 +269,7 @@ export default function ReviewsTable({
                 {/* Review Text */}
                 <div className="mb-4">
                   <p className="text-foreground/90 text-sm leading-relaxed">
-                    "{review.truncatedReviewText}"
+                    &ldquo;{review.truncatedReviewText}&rdquo;
                   </p>
                 </div>
 

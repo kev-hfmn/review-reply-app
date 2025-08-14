@@ -166,7 +166,7 @@ export async function validateCredentials(
 export async function testConnection(
   accessToken: string,
   credentials: GoogleCredentials
-): Promise<{ success: boolean; message: string; accountInfo?: any }> {
+): Promise<{ success: boolean; message: string; accountInfo?: Record<string, unknown> }> {
   try {
     // Test account access
     const accountResponse = await fetch(
