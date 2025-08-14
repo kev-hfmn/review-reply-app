@@ -54,7 +54,7 @@ export default function ReviewFilters({
   }, [filters, onFiltersChange]);
 
   const handleStatusChange = useCallback((value: string) => {
-    onFiltersChange({ ...filters, status: value as any });
+    onFiltersChange({ ...filters, status: value as 'all' | 'pending' | 'approved' | 'posted' | 'needs_edit' | 'skipped' });
   }, [filters, onFiltersChange]);
 
   const handleBusinessChange = useCallback((value: string) => {

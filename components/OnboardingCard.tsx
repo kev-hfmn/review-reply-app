@@ -103,7 +103,7 @@ export default function OnboardingCard({ steps, onStepAction }: OnboardingCardPr
             🎉 Setup Complete!
           </p>
           <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-            You're all set to start managing your reviews
+            You&apos;re all set to start managing your reviews
           </p>
         </motion.div>
       )}

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns this business - EXACT same pattern as other API routes
-    if ((review.businesses as any).user_id !== userId) {
+    if ((review.businesses as unknown as { user_id: string }).user_id !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized: You do not own this business' },
         { status: 403 }

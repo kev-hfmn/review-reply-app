@@ -54,7 +54,7 @@ export default function ReviewsPage() {
     review: null,
     isOpen: false,
     isLoading: false,
-    availableTones: REPLY_TONES
+    availableTones: [...REPLY_TONES]
   });
 
   // Handle review click (open drawer)
@@ -63,7 +63,7 @@ export default function ReviewsPage() {
       review,
       isOpen: true,
       isLoading: false,
-      availableTones: REPLY_TONES
+      availableTones: [...REPLY_TONES]
     });
   }, []);
 
@@ -83,7 +83,7 @@ export default function ReviewsPage() {
         review: prev.review ? { ...prev.review, ai_reply: reply, reply_tone: tone } : null,
         isLoading: false
       }));
-    } catch (error) {
+    } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
   }, [reviewActions]);
@@ -94,7 +94,7 @@ export default function ReviewsPage() {
     try {
       await reviewActions.approve(reviewId);
       handleDrawerClose();
-    } catch (error) {
+    } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
   }, [reviewActions, handleDrawerClose]);
@@ -104,7 +104,7 @@ export default function ReviewsPage() {
     try {
       await reviewActions.post(reviewId);
       handleDrawerClose();
-    } catch (error) {
+    } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
   }, [reviewActions, handleDrawerClose]);
@@ -128,8 +128,7 @@ export default function ReviewsPage() {
           setDrawerData(prev => ({ ...prev, isLoading: false }));
         }
       }, 100);
-    } catch (error) {
-      console.error('Error in handleDrawerRegenerate:', error);
+    } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
   }, [reviewActions, allReviews]);
@@ -138,7 +137,7 @@ export default function ReviewsPage() {
   const handleInlineEdit = useCallback(async (reviewId: string, reply: string) => {
     try {
       await reviewActions.updateReply(reviewId, reply);
-    } catch (error) {
+    } catch {
       // Error handling is done in the hook
     }
   }, [reviewActions]);
@@ -157,7 +156,7 @@ export default function ReviewsPage() {
           await reviewActions.skip(reviewId);
           break;
       }
-    } catch (error) {
+    } catch {
       // Error handling is done in the hook
     }
   }, [reviewActions]);
@@ -167,7 +166,7 @@ export default function ReviewsPage() {
     try {
       await bulkActions.approve(Array.from(selection.selectedIds));
       setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
-    } catch (error) {
+    } catch {
       // Error handling is done in the hook
     }
   }, [bulkActions, selection.selectedIds]);
@@ -176,7 +175,7 @@ export default function ReviewsPage() {
     try {
       await bulkActions.post(Array.from(selection.selectedIds));
       setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
-    } catch (error) {
+    } catch {
       // Error handling is done in the hook
     }
   }, [bulkActions, selection.selectedIds]);
@@ -185,7 +184,7 @@ export default function ReviewsPage() {
     try {
       await bulkActions.skip(Array.from(selection.selectedIds));
       setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
-    } catch (error) {
+    } catch {
       // Error handling is done in the hook
     }
   }, [bulkActions, selection.selectedIds]);

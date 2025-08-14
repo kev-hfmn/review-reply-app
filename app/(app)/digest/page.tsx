@@ -16,7 +16,6 @@ import {
   RefreshCw,
   ChevronDown,
   AlertCircle,
-  Lightbulb,
   Target,
   Award
 } from 'lucide-react';
@@ -24,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDigestData, downloadBlob, type TimePeriodSelection, type TimePeriodType } from '@/hooks/useDigestData';
+import { useDigestData, downloadBlob, type TimePeriodType } from '@/hooks/useDigestData';
 import { supabase } from '@/utils/supabase';
 import type { Business } from '@/types/dashboard';
 
@@ -46,7 +45,6 @@ export default function DigestPage() {
     confidenceScore,
     lastGenerated,
     selectPeriod,
-    selectCustomPeriod,
     regenerateInsights,
     getAvailablePeriods,
     exportInsights,

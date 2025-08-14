@@ -81,7 +81,7 @@ export async function fetchReviews(
       'google_account_id',
       'google_location_id'
     ]);
-  } catch (decryptError) {
+  } catch {
     // If decryption fails, assume they're stored as plain text (backward compatibility)
     console.log('Using plain text credentials for review fetch (not encrypted)');
     decrypted = {
@@ -593,7 +593,7 @@ export async function postReplyToGoogle(
         'google_account_id',
         'google_location_id'
       ]);
-    } catch (decryptError) {
+    } catch {
       // If decryption fails, assume they're stored as plain text (backward compatibility)
       console.log('Using plain text credentials for reply posting (not encrypted)');
       decrypted = {
@@ -715,7 +715,7 @@ export async function postReplyToGoogle(
 /**
  * Test Google Business Profile connection
  */
-export async function testConnection(businessId: string): Promise<{ success: boolean; message: string; details?: any }> {
+export async function testConnection(businessId: string): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {
   try {
     // Try to fetch just one review to test connection
     const reviewsResponse = await fetchReviews(businessId, undefined, 1);

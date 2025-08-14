@@ -7,7 +7,7 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM standard
-const TAG_LENGTH = 16; // GCM standard
+ // GCM standard
 
 /**
  * Get encryption key from environment variables
@@ -24,6 +24,7 @@ function getEncryptionKey(): Buffer {
     return Buffer.from(key, 'hex');
   } else {
     // Create a hash from the string to get consistent 32-byte key
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require('crypto');
     return crypto.createHash('sha256').update(key).digest();
   }
@@ -94,7 +95,7 @@ export function decrypt(encryptedData: string): string {
  * @param fieldsToEncrypt - Array of field names to encrypt
  * @returns Object with specified fields encrypted
  */
-export function encryptFields<T extends Record<string, any>>(
+export function encryptFields<T extends Record<string, unknown>>(
   data: T,
   fieldsToEncrypt: (keyof T)[]
 ): T {
@@ -115,7 +116,7 @@ export function encryptFields<T extends Record<string, any>>(
  * @param fieldsToDecrypt - Array of field names to decrypt
  * @returns Object with specified fields decrypted
  */
-export function decryptFields<T extends Record<string, any>>(
+export function decryptFields<T extends Record<string, unknown>>(
   data: T,
   fieldsToDecrypt: (keyof T)[]
 ): T {
