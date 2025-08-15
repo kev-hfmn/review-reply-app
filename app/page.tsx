@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { PricingSection } from '@/components/PricingSection';
-import { TypewriterEffect } from '@/components/TypewriterEffect';
 import {
   Star,
   TrendingUp,
@@ -28,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { Link as ScrollLink } from 'react-scroll';
 import { VideoModal } from '@/components/VideoModal';
 import { Button } from '@/components/ui/button';
+import { GoogleReviewCard } from '@/components/GoogleReviewCard';
 import {
   Accordion,
   AccordionContent,
@@ -116,11 +116,48 @@ const navigationSections = [
   { id: "pricing", title: "Pricing" }
 ];
 
+// Sample reviews for showcase
+const sampleReviews = [
+  {
+    userName: "Tommy Fearn",
+    userRole: "Local Guide",
+    userReviewCount: 17,
+    userPhotoCount: 14,
+    rating: 5,
+    reviewText: "Love this shop! Bought my first surfboard from here, and they were super helpful making sure I found the right one. Also got a bag for the board and they went to their stock room to double check as we thought there weren't any in stock but...",
+    reviewDate: "a month ago",
+    replyText: "Thank you for your review, Tommy. We're glad to hear you found the right surfboard and that our team was able to help you with the board bag as well. It's nice to know you enjoy browsing through our selection, too. We appreciate your support over the years, here's to many more!",
+    replyDate: "a month ago"
+  },
+  {
+    userName: "Sarah Chen",
+    userRole: "Local Guide",
+    userReviewCount: 32,
+    userPhotoCount: 8,
+    rating: 4,
+    reviewText: "Great coffee and friendly staff! The atmosphere is perfect for working on my laptop. Only minor complaint is that it can get quite noisy during peak hours, but overall a solid choice for a local café.",
+    reviewDate: "2 weeks ago",
+    replyText: "Hi Sarah, thank you so much for the wonderful feedback! We're thrilled you enjoy our coffee and find our space great for working. We're aware of the noise during busy times and are looking into ways to improve the acoustics. Hope to see you again soon!",
+    replyDate: "2 weeks ago"
+  },
+  {
+    "userName": "Karen Simmons",
+    "userReviewCount": 15,
+    "userPhotoCount": 4,
+    "rating": 3,
+    "reviewText": "The staff was friendly and helpful, but my order took much longer than expected and one item wasn’t quite right. I appreciate the effort, but I was hoping for a smoother experience.",
+    "reviewDate": "2 weeks ago",
+    "replyText": "Karen, thank you for sharing your feedback and for recognizing our team’s friendliness. We’re sorry to hear about the delay and the issue with your order, that’s not the experience we aim to deliver. We’d love the chance to make it right for you, so please reach out and we’ll ensure your next visit is much smoother.",
+    "replyDate": "2 weeks ago"
+  }
+];
+
 export default function LandingPage() {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState("home");
   const router = useRouter();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
 
   const [heroRef, heroInView] = useInView({
     triggerOnce: true,
@@ -226,7 +263,7 @@ export default function LandingPage() {
               </p>
 
               {/* Social Proof Metrics */}
-              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+{/*               <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
                 {metrics.map((metric, index) => (
                   <motion.div
                     key={metric.label}
@@ -243,7 +280,7 @@ export default function LandingPage() {
                     </div>
                   </motion.div>
                 ))}
-              </div>
+              </div> */}
 
               {/* CTA Buttons */}
               <motion.div
@@ -263,51 +300,94 @@ export default function LandingPage() {
                   </Button>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">No credit card required</p>
                 </div>
-                <Button
+{/*                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => setIsVideoModalOpen(true)}
                   className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-8 py-4 text-lg"
                 >
                   Watch a quick demo
-                </Button>
+                </Button> */}
               </motion.div>
             </motion.div>
 
-            {/* Hero Visual */}
+            {/* Review Showcase */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={heroInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="mt-20 relative"
             >
-              <div className="relative mx-auto max-w-5xl">
-                <div className="relative rounded-2xl bg-slate-900 shadow-2xl overflow-hidden">
-                  <div className="flex items-center justify-between px-6 py-4 bg-slate-800">
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <div className="text-slate-400 text-sm">RepliFast Dashboard</div>
-                    <div></div>
+              <div className="relative mx-auto max-w-6xl">
+                {/* Toggle Section */}
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-lg border border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={() => setShowReplies(false)}
+                      className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                        !showReplies
+                          ? 'bg-slate-900 text-white dark:bg-slate-700'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Without Replies
+                    </button>
+                    <button
+                      onClick={() => setShowReplies(true)}
+                      className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                        showReplies
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      With AI Replies
+                    </button>
                   </div>
-                  <div className="p-8">
-                    <div className="text-green-400 text-sm leading-relaxed">
-                      <TypewriterEffect
-                        text={`🌟 New Google Review Received!
-
-"Amazing service! The team went above and beyond to help us with our project. Highly recommended!"
-⭐⭐⭐⭐⭐ Sarah M.
-
-🤖 AI Reply Generated:
-"Thank you so much for your wonderful review, Sarah! We're thrilled to hear that our team exceeded your expectations. Your feedback means the world to us and motivates us to continue delivering exceptional service. We look forward to working with you again soon!"
-
-✅ Ready to post | 📝 Edit reply | ⚡ Bulk approve`}
-                      />
-                    </div>
-                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-3">
+                    See the difference replies make to your business reputation
+                  </p>
                 </div>
+
+                {/* Review Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {sampleReviews.map((review, index) => (
+                    <motion.div
+                      key={review.userName}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={heroInView ? { opacity: 1, y: 0 } : {}}
+                      transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+                    >
+                      <GoogleReviewCard
+                        userName={review.userName}
+                        userRole={review.userRole}
+                        userReviewCount={review.userReviewCount}
+                        userPhotoCount={review.userPhotoCount}
+                        rating={review.rating}
+                        reviewText={review.reviewText}
+                        reviewDate={review.reviewDate}
+                        showReply={showReplies}
+                        replyText={review.replyText}
+                        replyDate={review.replyDate}
+                        className="h-full"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Impact Note */}
+                {showReplies && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="text-center mt-8"
+                  >
+                    <div className="inline-flex items-center px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Reviews with replies build 3x more trust with potential customers
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -749,14 +829,14 @@ export default function LandingPage() {
                 </Button>
                 <p className="text-sm opacity-80 mb-4">No credit card required</p>
               </div>
-              <Button
+{/*               <Button
                 size="lg"
                 variant="outline"
                 onClick={() => setIsVideoModalOpen(true)}
                 className="border-white text-white hover:bg-white/10 px-8 py-4 text-lg"
               >
                 Watch a quick demo
-              </Button>
+              </Button> */}
             </div>
 
             <div className="mt-8 flex items-center justify-center space-x-6 text-sm opacity-80">
