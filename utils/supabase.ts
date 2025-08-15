@@ -26,4 +26,4 @@ export const supabase = createClient(
       schema: 'public'
     }
   }
-); 
+);
