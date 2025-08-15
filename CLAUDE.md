@@ -16,17 +16,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a Next.js 15 full-stack SaaS application for **Flowrise Reviews** - a review management platform that helps small businesses manage Google reviews with AI-generated replies. The application has completed Phases I-III of development with the following key architectural patterns:
+This is a Next.js 15 full-stack SaaS application for **RepliFast** - an AI-powered review management platform that helps small businesses manage Google reviews with intelligent, automated replies. The application features a complete MVP with modern landing page, comprehensive dashboard, and production-ready integrations.
 
 ### Tech Stack
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript with strict mode enabled
-- **Styling**: Tailwind CSS with custom configuration
+- **Framework**: Next.js 15.4.6 (latest) with App Router
+- **Language**: TypeScript 5.9.2 with strict mode enabled
+- **Frontend**: React 19.0.0 with modern hooks and patterns
+- **Styling**: Tailwind CSS 3.4.17 with PostCSS and autoprefixer
 - **UI Components**: Shadcn UI (shadcn@latest) with custom configuration
+- **Animations**: Framer Motion 12.4.3 for smooth interactions
+- **Icons**: Lucide React 0.539.0 for consistent iconography
 - **Authentication**: Supabase Auth with Google OAuth integration
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Supabase (PostgreSQL) with Row Level Security
 - **Payments**: Stripe integration with subscription management
-- **Analytics**: Vercel Analytics (PostHog commented out)
+- **AI Services**: OpenAI API integration for reply generation
+- **Analytics**: Vercel Analytics (PostHog available but disabled)
 - **State Management**: React Context for auth and subscription state
 
 ### Core Architecture Patterns
@@ -46,20 +50,29 @@ This is a Next.js 15 full-stack SaaS application for **Flowrise Reviews** - a re
 - Trial period management with user_trials table
 
 #### API Structure
+- **AI API routes**: `/api/ai/` for OpenAI integration and reply generation
+- **Google Business API routes**: `/api/auth/google-business/` for OAuth and credentials management
+- **Review API routes**: `/api/reviews/` for sync and reply posting
 - **Stripe API routes**: `/api/stripe/` for webhook handling, sync, test, cancel, reactivate
 - **User API routes**: `/api/user/delete` for account management
 - **Config**: `config/api.ts` defines external API endpoints (separate backend at localhost:8080)
 
 #### Database Schema
-- Users table with soft-delete functionality (is_deleted, deleted_at fields)
-- Subscriptions table with Stripe integration
-- User preferences and trials tables
-- Database trigger function handles new user creation automatically
+- **Users table**: Soft-delete functionality (is_deleted, deleted_at fields)
+- **Businesses table**: Business profile information and Google Business Profile IDs
+- **Reviews table**: Google reviews with AI-generated replies and status tracking
+- **Business_settings table**: Voice configuration, approval modes, and integration settings
+- **Activities table**: Audit trail for user actions and system events
+- **Weekly_digests table**: Computed analytics and insights data
+- **Subscriptions table**: Stripe integration for payment management
+- **User preferences and trials tables**: Onboarding and trial management
+- **Database triggers**: Automated user creation, updated_at timestamps, and business_settings initialization
 
 #### Component Organization
-- **Contexts**: AuthContext, PostHogContext, ProtectedRoute
-- **Hooks**: useSubscription, useTrialStatus for subscription-related state
-- **Components**: Reusable UI components with consistent patterns
+- **Contexts**: AuthContext, ThemeProvider, ProtectedRoute for app-wide state
+- **Hooks**: useSubscription, useTrialStatus, useDashboardData, useReviewsData for data management
+- **Services**: AI reply service (`lib/services/aiReplyService.ts`), Google Business service, digest insights service
+- **Components**: Reusable UI components with consistent patterns (TypewriterEffect, VideoModal, ReviewsTable, etc.)
 - **Utils**: Supabase client configuration, analytics, CORS helpers
 - **UI Components**: Shadcn UI (shadcn@latest) with custom configuration. Use `npx shadcn@latest add <component-name>` to add new components.
 
@@ -69,6 +82,18 @@ This is a Next.js 15 full-stack SaaS application for **Flowrise Reviews** - a re
 - Client configuration in `utils/supabase.ts` with persistent sessions
 - Admin client in `utils/supabase-admin.ts` for server-side operations
 - Row Level Security (RLS) enabled on all tables
+
+#### AI Reply Generation
+- **OpenAI Integration**: GPT-powered reply generation with business context
+- **Brand Voice Configuration**: Customizable tone settings (formality, warmth, brevity)
+- **Fallback Templates**: Template-based replies when AI service is unavailable
+- **Reply Workflow**: Generate → Edit → Approve → Post pipeline with status tracking
+
+#### Google Business Profile Integration
+- **OAuth 2.0 Flow**: Complete authentication with credential encryption
+- **Review Synchronization**: Automatic fetching and updating of reviews
+- **Reply Posting**: Direct integration with Google Business Profile API
+- **Credential Management**: Secure storage and refresh token handling
 
 #### Stripe Integration
 - Webhook handling with comprehensive event processing
@@ -97,6 +122,27 @@ This is a Next.js 15 full-stack SaaS application for **Flowrise Reviews** - a re
 - Environment variable validation in Supabase client
 - CORS utilities for API routes
 - Webhook signature verification for Stripe events
+- Google OAuth credential encryption with `CREDENTIALS_ENCRYPTION_KEY`
+- Row Level Security (RLS) policies on all database tables
+- Secure API key management with `NEXT_PUBLIC_` prefix for client-side variables
+
+### Development & Deployment Patterns
+
+#### Environment Variables
+- **Client-side (NEXT_PUBLIC_)**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- **Server-side only**: `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `OPENAI_API_KEY`, `CREDENTIALS_ENCRYPTION_KEY`
+- Critical for Vercel deployment: maintain `NEXT_PUBLIC_` prefixes in environment variables
+
+#### Build Configuration
+- **PostCSS**: Configured with Tailwind CSS 3.4.17 and autoprefixer
+- **TypeScript**: Strict mode with path aliases (`@/*` → project root)
+- **Static Generation**: Optimized for Vercel deployment with proper prerendering
+
+#### Landing Page Architecture
+- **Modern Design**: Complete redesign with hero section, features showcase, testimonials
+- **SEO Optimized**: Meta tags, structured data, and semantic HTML
+- **Interactive Elements**: Framer Motion animations, scroll-triggered effects, video modal
+- **Navigation**: Smooth scroll navigation with active section tracking
 
 ## Implementation Status
 
@@ -185,7 +231,39 @@ This project supports Model Control Protocol (MCP) integration with:
 - Configuration expected in `.cursor/mcp.json` (see README for setup)
 
 ### Development Notes
-- Project uses "you-can-build-anything" as package name
+- Project uses "replifast" as package name
+- **Current Branding**: RepliFast (as seen in landing page and components)
 - Supports both test and live Stripe configurations
-- PostHog analytics integration available but currently disabled
-- Dark mode support built into Tailwind configuration
+- PostHog analytics integration available but currently disabled in favor of Vercel Analytics
+- Dark mode support built into Tailwind configuration with ThemeProvider
+- **Latest Updates**: Next.js 15.4.6, React 19, TypeScript 5.9.2, modern landing page design, rebranded to RepliFast
+
+### Core Workflow Patterns
+
+#### Review Management Workflow
+1. **Sync Reviews**: Google Business Profile API → Database
+2. **AI Reply Generation**: OpenAI API with business context + brand voice settings
+3. **Review & Edit**: User approves/modifies AI-generated replies in ReviewDrawer
+4. **Bulk Operations**: Multi-select reviews for batch approval/posting
+5. **Status Tracking**: pending → approved → posted workflow with activity logging
+
+#### Brand Voice Configuration
+- **Preset Options**: Friendly, Professional, Playful, Custom
+- **Tone Controls**: Formality (1-10), Warmth (1-10), Brevity (1-10)
+- **Custom Instructions**: Business-specific reply guidelines
+- **Fallback Templates**: Used when AI service unavailable
+
+#### Data Flow Architecture
+- **Frontend**: React components with real-time state management
+- **API Layer**: Next.js API routes for external service integration
+- **Database**: Supabase with RLS policies and audit trails
+- **External Services**: Google Business API, OpenAI API, Stripe webhooks
+
+### Production Deployment Checklist
+- ✅ Environment variables configured with proper `NEXT_PUBLIC_` prefixes
+- ✅ Supabase RLS policies enabled and tested
+- ✅ Stripe webhook endpoints configured
+- ✅ Google Business Profile API credentials set up
+- ✅ OpenAI API key configured for AI reply generation
+- ✅ Build optimizations enabled (static generation, image optimization)
+- ✅ SEO meta tags and structured data implemented

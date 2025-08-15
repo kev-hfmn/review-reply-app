@@ -26,7 +26,7 @@ import { VideoModal } from '@/components/VideoModal';
 import { Button } from '@/components/ui/button';
 import Head from 'next/head';
 
-// Core features of ReplyDesk
+// Core features of RepliFast
 const features = [
   {
     title: "AI-Powered Replies",
@@ -115,16 +115,16 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>ReplyDesk - AI-Powered Google Review Management for Small Business</title>
+        <title>RepliFast - AI-Powered Google Review Management for Small Business</title>
         <meta name="description" content="Save 10+ hours per week with AI-generated Google review replies. Manage all your customer feedback in one dashboard. Never miss responding to a review again. Start your free trial today." />
         <meta name="keywords" content="google reviews, review management, AI replies, customer feedback, business reputation, review automation, small business" />
         <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="ReplyDesk - AI-Powered Google Review Management" />
+        <meta property="og:title" content="RepliFast - AI-Powered Google Review Management" />
         <meta property="og:description" content="Turn customer feedback into business growth with AI-powered review replies. Save time and never miss responding to a review." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="/og-image.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ReplyDesk - AI Review Management" />
+        <meta name="twitter:title" content="RepliFast - AI Review Management" />
         <meta name="twitter:description" content="Save 10+ hours per week with AI-generated Google review replies. Start your free trial today." />
         <link rel="canonical" href="https://flowrise-reviews.com" />
       </Head>
@@ -138,7 +138,7 @@ export default function LandingPage() {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <Star className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-slate-900 dark:text-white">ReplyDesk</span>
+              <span className="text-xl font-bold text-slate-900 dark:text-white">RepliFast</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -274,7 +274,7 @@ export default function LandingPage() {
                       <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     </div>
-                    <div className="text-slate-400 text-sm">ReplyDesk Dashboard</div>
+                    <div className="text-slate-400 text-sm">RepliFast Dashboard</div>
                     <div></div>
                   </div>
                   <div className="p-8">
@@ -312,7 +312,7 @@ export default function LandingPage() {
               Everything You Need to Manage Reviews
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-              From AI-powered responses to detailed analytics, ReplyDesk provides all the tools you need to turn customer feedback into business growth.
+              From AI-powered responses to detailed analytics, RepliFast provides all the tools you need to turn customer feedback into business growth.
             </p>
           </motion.div>
 
@@ -354,7 +354,7 @@ export default function LandingPage() {
               The Impact on Your Business
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-              See how ReplyDesk transforms the way businesses handle customer feedback and drives measurable results.
+              See how RepliFast transforms the way businesses handle customer feedback and drives measurable results.
             </p>
           </motion.div>
 
@@ -394,7 +394,7 @@ export default function LandingPage() {
               ))}
             </div>
             <blockquote className="text-xl lg:text-2xl font-medium text-slate-900 dark:text-white mb-6">
-              &ldquo;ReplyDesk has completely transformed how we handle customer feedback. We&apos;ve saved 15+ hours per week and our response rate went from 20% to 95%!&rdquo;
+              &ldquo;RepliFast has completely transformed how we handle customer feedback. We&apos;ve saved 15+ hours per week and our response rate went from 20% to 95%!&rdquo;
             </blockquote>
             <div className="flex items-center justify-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -445,7 +445,7 @@ export default function LandingPage() {
               Ready to Transform Your Review Management?
             </h2>
             <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
-              Join thousands of businesses already using ReplyDesk to save time, improve customer relationships, and grow their reputation.
+              Join thousands of businesses already using RepliFast to save time, improve customer relationships, and grow their reputation.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
