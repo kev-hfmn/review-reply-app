@@ -13,58 +13,56 @@ import { useRouter } from 'next/navigation';
 
 const pricingTiers = [
   {
-    id: "pro",
-    name: "Pro",
+    id: "starter",
+    name: "Starter",
     price: "$19",
     interval: "/month",
-    description: "Perfect for small teams and startups",
+    description: "Perfect for small businesses with fewer than 1,000 total reviews",
     features: [
-      "All template features",
-      "Priority support",
-      "Custom branding",
-      "Analytics dashboard",
-      "Team collaboration"
+      "Fetch and manage up to 200 existing reviews when connecting",
+      "New reviews fetched automatically going forward",
+      "Standard tone presets only (friendly, professional, casual, etc.)",
+      "Manual approval of all replies",
+      "Basic review dashboard showing review and reply counts"
     ],
     cta: "Get Started",
     popular: false
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
+    id: "pro",
+    name: "Pro",
     price: "$49",
     interval: "/month",
-    description: "For larger organizations",
+    description: "For businesses with higher review volume or over 1,000 total reviews",
     features: [
-      "Everything in Pro",
-      "Advanced security",
-      "Custom integrations",
-      "24/7 support",
-      "SLA guarantee"
+      "Fetch all existing reviews when connecting",
+      "New reviews fetched automatically going forward",
+      "Custom brand instructions field to fine-tune tone and style",
+      "Auto-approve rules for certain star ratings (for example 4 or 5 stars)",
+      "Advanced insights including response rate trends, customer sentiment breakdown, and SEO impact overview"
     ],
-    cta: "Start Trial",
+    cta: "Get Started",
     popular: true
   },
   {
-    id: "custom",
-    name: "Custom",
-    price: "Custom",
-    interval: "",
-    description: "Tailored to your needs",
+    id: "pro-plus",
+    name: "Pro Plus - Additional Locations Add-On",
+    price: "+$19",
+    interval: "/month per location",
+    description: "For Pro customers managing multiple locations",
     features: [
-      "Custom development",
-      "Dedicated support",
-      "Custom SLA",
-      "On-premise options",
-      "Training sessions"
+      "Full Pro plan features for each additional location",
+      "Reduced per-location cost",
+      "Separate dashboards and review management for each location"
     ],
-    cta: "Contact Sales",
+    cta: "Get Started",
     popular: false
   }
 ];
 
 export function PricingSection() {
   const router = useRouter();
-  const [selectedTier, setSelectedTier] = useState<string | null>("enterprise");
+  const [selectedTier, setSelectedTier] = useState<string | null>("pro");
 
   const handleTierClick = (tierId: string) => {
     setSelectedTier(currentTier => currentTier === tierId ? null : tierId);
@@ -104,8 +102,8 @@ export function PricingSection() {
           <p className="mt-4 text-slate-500 dark:text-slate-400">{tier.description}</p>
           <ul className="mt-8 space-y-4">
             {tier.features.map((feature) => (
-              <li key={feature} className="flex items-center">
-                <CheckCircle2 className="h-5 w-5 text-primary mr-3" />
+              <li key={feature} className="flex items-center flex-row gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
                 <span className="text-slate-600 dark:text-slate-300">{feature}</span>
               </li>
             ))}
