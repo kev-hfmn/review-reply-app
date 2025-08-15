@@ -52,7 +52,7 @@ export default function TopBar() {
       <div className="mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-2 hover:opacity-80 transition-opacity">
           <span className="text-2xl"></span>
-          <span className="font-sans">ReplyDesk</span>
+          <span className="font-sans">RepliFast</span>
         </Link>
 
         <div className="flex items-center gap-4">
