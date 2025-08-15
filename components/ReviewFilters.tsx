@@ -4,7 +4,7 @@ import {
   Search,
   Filter,
   Star,
-  Calendar,
+  Calendar as CalendarIcon,
   Building2,
   X,
   RotateCcw
@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export default function ReviewFilters({
   filters,
@@ -30,12 +38,8 @@ export default function ReviewFilters({
   resultCount
 }: ReviewFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [localDateFrom, setLocalDateFrom] = useState(
-    filters.dateRange.from ? filters.dateRange.from.toISOString().split('T')[0] : ''
-  );
-  const [localDateTo, setLocalDateTo] = useState(
-    filters.dateRange.to ? filters.dateRange.to.toISOString().split('T')[0] : ''
-  );
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
 
   const hasActiveFilters = filters.search ||
     filters.rating !== null ||
@@ -61,27 +65,23 @@ export default function ReviewFilters({
     onFiltersChange({ ...filters, businessId: value });
   }, [filters, onFiltersChange]);
 
-  const handleDateFromChange = useCallback((value: string) => {
-    setLocalDateFrom(value);
-    const date = value ? new Date(value) : null;
+  const handleDateFromChange = useCallback((date: Date | undefined) => {
     onFiltersChange({
       ...filters,
-      dateRange: { ...filters.dateRange, from: date }
+      dateRange: { ...filters.dateRange, from: date || null }
     });
+    setDateFromOpen(false);
   }, [filters, onFiltersChange]);
 
-  const handleDateToChange = useCallback((value: string) => {
-    setLocalDateTo(value);
-    const date = value ? new Date(value) : null;
+  const handleDateToChange = useCallback((date: Date | undefined) => {
     onFiltersChange({
       ...filters,
-      dateRange: { ...filters.dateRange, to: date }
+      dateRange: { ...filters.dateRange, to: date || null }
     });
+    setDateToOpen(false);
   }, [filters, onFiltersChange]);
 
   const handleReset = useCallback(() => {
-    setLocalDateFrom('');
-    setLocalDateTo('');
     onReset();
   }, [onReset]);
 
@@ -242,25 +242,69 @@ export default function ReviewFilters({
             {/* Date Range */}
             <div className={businesses.length > 1 ? 'sm:col-span-2 lg:col-span-1' : 'sm:col-span-2'}>
               <label className="block text-sm font-medium text-foreground mb-2">
-                <Calendar className="inline h-4 w-4 mr-1" />
+                <CalendarIcon className="inline h-4 w-4 mr-1" />
                 Date Range
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <Input
-                  type="date"
-                  value={localDateFrom}
-                  onChange={(e) => handleDateFromChange(e.target.value)}
-                  placeholder="From"
-                  disabled={isLoading}
-                />
-                <Input
-                  type="date"
-                  value={localDateTo}
-                  onChange={(e) => handleDateToChange(e.target.value)}
-                  min={localDateFrom}
-                  placeholder="To"
-                  disabled={isLoading}
-                />
+                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !filters.dateRange.from && "text-muted-foreground"
+                      )}
+                      disabled={isLoading}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filters.dateRange.from ? (
+                        format(filters.dateRange.from, "dd.MM.yyyy")
+                      ) : (
+                        <span>From date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateRange.from || undefined}
+                      onSelect={handleDateFromChange}
+                      disabled={(date) =>
+                        date > new Date() || (filters.dateRange.to ? date > filters.dateRange.to : false)
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !filters.dateRange.to && "text-muted-foreground"
+                      )}
+                      disabled={isLoading}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filters.dateRange.to ? (
+                        format(filters.dateRange.to, "dd.MM.yyyy")
+                      ) : (
+                        <span>To date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateRange.to || undefined}
+                      onSelect={handleDateToChange}
+                      disabled={(date) =>
+                        date > new Date() || (filters.dateRange.from ? date < filters.dateRange.from : false)
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
