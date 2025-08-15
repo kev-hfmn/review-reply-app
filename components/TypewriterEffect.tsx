@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 interface TypewriterEffectProps {
   text: string;
   delay?: number;
+  onComplete?: () => void;
 }
 
-export const TypewriterEffect = ({ text, delay = 50 }: TypewriterEffectProps) => {
+export const TypewriterEffect = ({ text, delay = 50, onComplete }: TypewriterEffectProps) => {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -17,8 +18,10 @@ export const TypewriterEffect = ({ text, delay = 50 }: TypewriterEffectProps) =>
       }, delay);
 
       return () => clearTimeout(timeout);
+    } else if (currentIndex === text.length && onComplete) {
+      onComplete();
     }
-  }, [currentIndex, delay, text]);
+  }, [currentIndex, delay, text, onComplete]);
 
-  return <span className="font-mono">{displayText}</span>;
+  return <span>{displayText}</span>;
 }; 
