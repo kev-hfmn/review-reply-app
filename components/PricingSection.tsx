@@ -20,7 +20,8 @@ const pricingTiers = [
     description: "Perfect for small businesses with fewer than 1,000 total reviews",
     features: [
       "Fetch and manage up to 200 existing reviews when connecting",
-      "New reviews fetched automatically going forward",
+      "Manually fetch new reviews at any time",
+      "Automatically generate replies for newly fetched reviews",
       "Standard tone presets only (friendly, professional, casual, etc.)",
       "Manual approval of all replies",
       "Basic review dashboard showing review and reply counts"
@@ -36,10 +37,12 @@ const pricingTiers = [
     description: "For businesses with higher review volume or over 1,000 total reviews",
     features: [
       "Fetch all existing reviews when connecting",
-      "New reviews fetched automatically going forward",
+      "Automatic daily sync: new reviews are fetched for you every day at a time you choose",
+      "Automatically generate replies for newly fetched reviews",
       "Custom brand instructions field to fine-tune tone and style",
       "Auto-approve rules for certain star ratings (for example 4 or 5 stars)",
-      "Advanced insights including response rate trends, customer sentiment breakdown, and SEO impact overview"
+      "Email notifications when new reviews and replies are ready",
+      "Advanced insights including customer sentiment breakdown"
     ],
     cta: "Get Started",
     popular: true
@@ -74,7 +77,7 @@ export function PricingSection() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 items-start">
       {pricingTiers.map((tier, i) => (
         <motion.div
           key={tier.name}
@@ -82,7 +85,7 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.1 }}
           onClick={() => handleTierClick(tier.id)}
-          className={`relative rounded-2xl p-8 shadow-lg cursor-pointer transition-all duration-300 ${
+          className={`relative rounded-2xl p-8 shadow-lg cursor-pointer transition-all duration-300 h-fit ${
             selectedTier === tier.id
               ? 'bg-primary/5 dark:bg-primary/10 ring-2 ring-primary transform scale-105'
               : 'bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-primary/50'

@@ -13,11 +13,14 @@ import {
   ExternalLink,
   Save,
   TestTube,
-  Globe
+  Globe,
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/utils/supabase';
 import ToastNotifications from '@/components/ToastNotifications';
@@ -62,6 +65,12 @@ interface IntegrationStatus {
     url?: string;
     lastTest?: string;
   };
+}
+
+interface AutoSyncSettings {
+  enabled: boolean;
+  time: string;
+  timezone: string;
 }
 
 interface BillingInfo {
@@ -137,6 +146,12 @@ export default function SettingsPage() {
     status: 'active'
   });
 
+  const [autoSyncSettings, setAutoSyncSettings] = useState<AutoSyncSettings>({
+    enabled: false,
+    time: '12:00',
+    timezone: 'UTC'
+  });
+
   // Helper function to show toast notifications
   const showToast = (toast: Omit<ToastNotification, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -187,10 +202,10 @@ export default function SettingsPage() {
             googleBusinessId: business.google_business_id || ''
           });
 
-          // Get business settings
+          // Get business settings (including auto sync settings)
           const { data: settings, error: settingsError } = await supabase
             .from('business_settings')
-            .select('*')
+            .select('*, auto_sync_enabled, auto_sync_time, auto_sync_timezone')
             .eq('business_id', business.id)
             .single();
 
@@ -233,6 +248,13 @@ export default function SettingsPage() {
 
             setApprovalSettings({
               mode: settings.approval_mode as 'manual' | 'auto_4_plus' | 'auto_except_low'
+            });
+
+            // Set auto-sync settings
+            setAutoSyncSettings({
+              enabled: settings.auto_sync_enabled || false,
+              time: settings.auto_sync_time || '12:00',
+              timezone: settings.auto_sync_timezone || 'UTC'
             });
           }
 
@@ -458,6 +480,40 @@ export default function SettingsPage() {
         type: 'error',
         title: 'Failed to save approval settings',
         message: error instanceof Error ? error.message : 'An unexpected error occurred.'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAutoSync = async () => {
+    if (!currentBusinessId) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          auto_sync_enabled: autoSyncSettings.enabled,
+          auto_sync_time: autoSyncSettings.time,
+          auto_sync_timezone: autoSyncSettings.timezone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('business_id', currentBusinessId);
+
+      if (error) throw error;
+
+      showToast({
+        type: 'success',
+        title: 'Auto-Sync Settings Saved',
+        message: `Automated review sync ${autoSyncSettings.enabled ? 'enabled' : 'disabled'} successfully`
+      });
+    } catch (error: any) {
+      console.error('Error saving auto-sync settings:', error);
+      showToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: error.message || 'Failed to save auto-sync settings'
       });
     } finally {
       setIsSaving(false);
@@ -1131,6 +1187,106 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Automated Review Sync Card */}
+            <Card className="text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+                  <RefreshCw className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  Automated Review Sync
+                </CardTitle>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  Automatically check for new reviews daily at a scheduled time
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${autoSyncSettings.enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+                        {autoSyncSettings.enabled ? 'Auto-sync Enabled' : 'Auto-sync Disabled'}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {autoSyncSettings.enabled 
+                          ? `Daily at ${autoSyncSettings.time} ${autoSyncSettings.timezone}`
+                          : 'Manual review sync only'
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={autoSyncSettings.enabled}
+                    onCheckedChange={(enabled) => setAutoSyncSettings(prev => ({ ...prev, enabled }))}
+                  />
+                </div>
+
+                {autoSyncSettings.enabled && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <Clock className="h-4 w-4 inline mr-1" />
+                        Sync Time
+                      </label>
+                      <input
+                        type="time"
+                        value={autoSyncSettings.time}
+                        onChange={(e) => setAutoSyncSettings(prev => ({ ...prev, time: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <Globe className="h-4 w-4 inline mr-1" />
+                        Timezone
+                      </label>
+                      <select
+                        value={autoSyncSettings.timezone}
+                        onChange={(e) => setAutoSyncSettings(prev => ({ ...prev, timezone: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                        <option value="Europe/London">London</option>
+                        <option value="Europe/Paris">Paris</option>
+                        <option value="Asia/Tokyo">Tokyo</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                  <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">How it works:</h4>
+                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                    <li>• Automatically checks for new reviews from your Google Business Profile</li>
+                    <li>• Generates AI replies for new reviews based on your brand voice settings</li>
+                    <li>• Sends email notifications when new reviews are found</li>
+                    <li>• Requires valid Google Business Profile integration</li>
+                  </ul>
+                  {integrations.googleBusiness.status !== 'approved' && (
+                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        Google Business Profile must be connected and approved to use automated sync.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleSaveAutoSync} 
+                    disabled={isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Auto-Sync Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
           </div>
         )}
