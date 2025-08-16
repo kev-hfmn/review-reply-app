@@ -28,6 +28,7 @@ import { Link as ScrollLink } from 'react-scroll';
 import { VideoModal } from '@/components/VideoModal';
 import { Button } from '@/components/ui/button';
 import { GoogleReviewCard } from '@/components/GoogleReviewCard';
+import { Footer } from '@/components/Footer';
 import {
   Accordion,
   AccordionContent,
@@ -63,8 +64,8 @@ const features = [
     bgGradient: "from-purple-500/10 to-pink-500/10"
   },
   {
-    title: "Real‑time sync",
-    description: "Stay up to date with instant notifications the moment a new review appears on your Google profile.",
+    title: "Daily auto-sync",
+    description: "New reviews are fetched automatically every day at the time you choose, so you never have to worry about missing updates.",
     icon: <Clock className="h-6 w-6 text-primary" />,
     bgGradient: "from-red-500/10 to-orange-500/10"
   },
@@ -123,10 +124,11 @@ const sampleReviews = [
     userRole: "Local Guide",
     userReviewCount: 17,
     userPhotoCount: 14,
+    userAvatar: "/icons/tommy.jpeg",
     rating: 5,
-    reviewText: "Love this shop! Bought my first surfboard from here, and they were super helpful making sure I found the right one. Also got a bag for the board and they went to their stock room to double check as we thought there weren't any in stock but...",
+    reviewText: "Love this shop! Bought my first surfboard from here, and they were super helpful making sure I found the right one. Also got a bag for the board and they went to their stock room to double check as we thought there weren't any in stock but they found it for me.",
     reviewDate: "a month ago",
-    replyText: "Thank you for your review, Tommy. We're glad to hear you found the right surfboard and that our team was able to help you with the board bag as well. It's nice to know you enjoy browsing through our selection, too. We appreciate your support over the years, here's to many more!",
+    replyText: "Thanks for dropping by, Tommy. Glad we could help you pick out your first board and track down that bag in the stock room. Hope the board's treating you well! Enjoy the waves.",
     replyDate: "a month ago"
   },
   {
@@ -134,20 +136,22 @@ const sampleReviews = [
     userRole: "Local Guide",
     userReviewCount: 32,
     userPhotoCount: 8,
+    userAvatar: "/icons/sarah.jpeg",
     rating: 4,
     reviewText: "Great coffee and friendly staff! The atmosphere is perfect for working on my laptop. Only minor complaint is that it can get quite noisy during peak hours, but overall a solid choice for a local café.",
     reviewDate: "2 weeks ago",
-    replyText: "Hi Sarah, thank you so much for the wonderful feedback! We're thrilled you enjoy our coffee and find our space great for working. We're aware of the noise during busy times and are looking into ways to improve the acoustics. Hope to see you again soon!",
+    replyText: "Hi Sarah, good to hear you've been enjoying the coffee and using the café as a work spot. You're right about the noise when it gets busy. It's something we're keeping an eye on. Thanks for pointing it out and for spending time with us.",
     replyDate: "2 weeks ago"
   },
   {
     "userName": "Karen Simmons",
     "userReviewCount": 15,
     "userPhotoCount": 4,
+    "userAvatar": "/icons/karen.jpeg",
     "rating": 3,
-    "reviewText": "The staff was friendly and helpful, but my order took much longer than expected and one item wasn’t quite right. I appreciate the effort, but I was hoping for a smoother experience.",
+    "reviewText": "The staff was friendly and helpful, but my order took much longer than expected and one item wasn't quite right. I appreciate the effort, but I was hoping for a smoother experience.",
     "reviewDate": "2 weeks ago",
-    "replyText": "Karen, thank you for sharing your feedback and for recognizing our team’s friendliness. We’re sorry to hear about the delay and the issue with your order, that’s not the experience we aim to deliver. We’d love the chance to make it right for you, so please reach out and we’ll ensure your next visit is much smoother.",
+    "replyText": "Karen, thanks for sharing both the good and the not-so-good. I'm glad our staff made you feel welcome, but I'm sorry about the wait and the mistake with your order. That's not the experience we want for anyone. If you give us another chance, we'll work to make it a smoother visit.",
     "replyDate": "2 weeks ago"
   }
 ];
@@ -362,6 +366,7 @@ export default function LandingPage() {
                         userRole={review.userRole}
                         userReviewCount={review.userReviewCount}
                         userPhotoCount={review.userPhotoCount}
+                        userAvatar={review.userAvatar}
                         rating={review.rating}
                         reviewText={review.reviewText}
                         reviewDate={review.reviewDate}
@@ -939,6 +944,9 @@ export default function LandingPage() {
         videoId="S1cnQG0-LP4"
       />
       </div>
+
+      {/* Footer */}
+      <Footer />
     </>
   );
 }
