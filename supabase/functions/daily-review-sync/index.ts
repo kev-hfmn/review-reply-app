@@ -29,6 +29,8 @@ interface Database {
           google_credentials: any | null
           last_review_sync: string | null
           sync_enabled: boolean
+          auto_sync_enabled: boolean
+          auto_sync_slot: string
           created_at: string
           updated_at: string
         }
@@ -69,15 +71,30 @@ serve(async (req) => {
   }
 
   try {
+    // Get slot_id from request body
+    let slotId = 'slot_1' // default
+    try {
+      const body = await req.json()
+      slotId = body.slot_id || 'slot_1'
+    } catch (e) {
+      // If no body or invalid JSON, use default slot_1
+      console.log('No request body or invalid JSON, using default slot_1')
+    }
+
+    // Validate slot_id
+    if (!['slot_1', 'slot_2'].includes(slotId)) {
+      throw new Error(`Invalid slot_id: ${slotId}. Must be slot_1 or slot_2`)
+    }
+
     // Initialize Supabase client with service role key
     const supabase = createClient<Database>(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('🚀 Starting daily review sync at', new Date().toISOString())
+    console.log(`🚀 Starting daily review sync for ${slotId} at`, new Date().toISOString())
 
-    // Get all businesses with Google Business Profile integration enabled
+    // Get all businesses with Google Business Profile integration enabled for this slot
     const { data: businesses, error: businessesError } = await supabase
       .from('businesses')
       .select(`
@@ -85,10 +102,12 @@ serve(async (req) => {
         business_settings (
           google_credentials,
           last_review_sync,
-          sync_enabled
+          auto_sync_enabled,
+          auto_sync_slot
         )
       `)
-      .eq('business_settings.sync_enabled', true)
+      .eq('business_settings.auto_sync_enabled', true)
+      .eq('business_settings.auto_sync_slot', slotId)
       .not('google_business_profile_id', 'is', null)
 
     if (businessesError) {
@@ -96,11 +115,12 @@ serve(async (req) => {
     }
 
     if (!businesses || businesses.length === 0) {
-      console.log('📭 No businesses with sync enabled found')
+      console.log(`📭 No businesses with sync enabled found for ${slotId}`)
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No businesses with sync enabled found',
+          message: `No businesses with sync enabled found for ${slotId}`,
+          slot_id: slotId,
           processed: 0
         }),
         { 
@@ -110,7 +130,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`📋 Found ${businesses.length} businesses to sync`)
+    console.log(`📋 Found ${businesses.length} businesses to sync for ${slotId}`)
 
     let totalSynced = 0
     let totalErrors = 0
@@ -160,9 +180,10 @@ serve(async (req) => {
           .insert({
             business_id: business.id,
             type: 'review_sync_automated',
-            description: `Automated daily review sync completed - ${syncResult.newReviews || 0} new reviews`,
+            description: `Automated daily review sync completed for ${slotId} - ${syncResult.newReviews || 0} new reviews`,
             metadata: {
               source: 'edge_function',
+              slot_id: slotId,
               newReviews: syncResult.newReviews || 0,
               totalReviews: syncResult.totalReviews || 0,
               syncTime: new Date().toISOString()
@@ -188,9 +209,10 @@ serve(async (req) => {
           .insert({
             business_id: business.id,
             type: 'review_sync_error',
-            description: `Automated review sync failed: ${error.message}`,
+            description: `Automated review sync failed for ${slotId}: ${error.message}`,
             metadata: {
               source: 'edge_function',
+              slot_id: slotId,
               error: error.message,
               syncTime: new Date().toISOString()
             }
@@ -205,17 +227,18 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 Daily sync complete: ${totalSynced} successful, ${totalErrors} errors`)
+    console.log(`📊 Daily sync complete for ${slotId}: ${totalSynced} successful, ${totalErrors} errors`)
 
     // If there were significant errors, optionally send alert email
     if (totalErrors > 0 && totalErrors > totalSynced * 0.5) {
-      console.log('⚠️ High error rate detected, consider sending admin alert')
+      console.log(`⚠️ High error rate detected for ${slotId}, consider sending admin alert`)
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Daily review sync completed',
+        message: `Daily review sync completed for ${slotId}`,
+        slot_id: slotId,
         processed: businesses.length,
         successful: totalSynced,
         errors: totalErrors,
@@ -229,12 +252,13 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Daily review sync failed:', error)
+    console.error(`❌ Daily review sync failed for ${slotId || 'unknown'}:`, error)
 
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
+        slot_id: slotId || 'unknown',
         timestamp: new Date().toISOString()
       }),
       { 

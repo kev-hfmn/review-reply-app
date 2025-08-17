@@ -159,7 +159,7 @@ export default function Dashboard() {
           />
           <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-6 flex flex-col justify-center">
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              Welcome to Flowrise Reviews! 👋
+              Welcome to RepliFast! 👋
             </h3>
             <p className="text-muted-foreground mb-4">
               Start by connecting your Google Business account to automatically manage your reviews with AI-powered replies.
