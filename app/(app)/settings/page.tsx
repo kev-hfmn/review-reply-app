@@ -69,8 +69,7 @@ interface IntegrationStatus {
 
 interface AutoSyncSettings {
   enabled: boolean;
-  time: string;
-  timezone: string;
+  slot: string;
 }
 
 interface BillingInfo {
@@ -148,8 +147,7 @@ export default function SettingsPage() {
 
   const [autoSyncSettings, setAutoSyncSettings] = useState<AutoSyncSettings>({
     enabled: false,
-    time: '12:00',
-    timezone: 'UTC'
+    slot: 'slot_1'
   });
 
   // Helper function to show toast notifications
@@ -205,7 +203,7 @@ export default function SettingsPage() {
           // Get business settings (including auto sync settings)
           const { data: settings, error: settingsError } = await supabase
             .from('business_settings')
-            .select('*, auto_sync_enabled, auto_sync_time, auto_sync_timezone')
+            .select('*, auto_sync_enabled, auto_sync_slot')
             .eq('business_id', business.id)
             .single();
 
@@ -253,8 +251,7 @@ export default function SettingsPage() {
             // Set auto-sync settings
             setAutoSyncSettings({
               enabled: settings.auto_sync_enabled || false,
-              time: settings.auto_sync_time || '12:00',
-              timezone: settings.auto_sync_timezone || 'UTC'
+              slot: settings.auto_sync_slot || 'slot_1'
             });
           }
 
@@ -495,18 +492,20 @@ export default function SettingsPage() {
         .from('business_settings')
         .update({
           auto_sync_enabled: autoSyncSettings.enabled,
-          auto_sync_time: autoSyncSettings.time,
-          auto_sync_timezone: autoSyncSettings.timezone,
+          auto_sync_slot: autoSyncSettings.slot,
           updated_at: new Date().toISOString()
         })
         .eq('business_id', currentBusinessId);
 
       if (error) throw error;
 
+      const slotTime = autoSyncSettings.slot === 'slot_1' ? '12:00 PM UTC' : '12:00 AM UTC';
+      const slotDescription = autoSyncSettings.slot === 'slot_1' ? 'Europe/Africa' : 'Americas/Asia';
+
       showToast({
         type: 'success',
         title: 'Auto-Sync Settings Saved',
-        message: `Automated review sync ${autoSyncSettings.enabled ? 'enabled' : 'disabled'} successfully`
+        message: `Automated review sync ${autoSyncSettings.enabled ? `enabled for ${slotTime} (${slotDescription})` : 'disabled'} successfully`
       });
     } catch (error: any) {
       console.error('Error saving auto-sync settings:', error);
@@ -1208,7 +1207,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">
                         {autoSyncSettings.enabled 
-                          ? `Daily at ${autoSyncSettings.time} ${autoSyncSettings.timezone}`
+                          ? `Daily at ${autoSyncSettings.slot === 'slot_1' ? '12:00 PM UTC (Europe/Africa)' : '12:00 AM UTC (Americas/Asia)'}`
                           : 'Manual review sync only'
                         }
                       </div>
@@ -1221,39 +1220,52 @@ export default function SettingsPage() {
                 </div>
 
                 {autoSyncSettings.enabled && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                         <Clock className="h-4 w-4 inline mr-1" />
-                        Sync Time
+                        Sync Time Slot
                       </label>
-                      <input
-                        type="time"
-                        value={autoSyncSettings.time}
-                        onChange={(e) => setAutoSyncSettings(prev => ({ ...prev, time: e.target.value }))}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        <Globe className="h-4 w-4 inline mr-1" />
-                        Timezone
-                      </label>
-                      <select
-                        value={autoSyncSettings.timezone}
-                        onChange={(e) => setAutoSyncSettings(prev => ({ ...prev, timezone: e.target.value }))}
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="UTC">UTC</option>
-                        <option value="America/New_York">Eastern Time</option>
-                        <option value="America/Chicago">Central Time</option>
-                        <option value="America/Denver">Mountain Time</option>
-                        <option value="America/Los_Angeles">Pacific Time</option>
-                        <option value="Europe/London">London</option>
-                        <option value="Europe/Paris">Paris</option>
-                        <option value="Asia/Tokyo">Tokyo</option>
-                        <option value="Australia/Sydney">Sydney</option>
-                      </select>
+                      <div className="space-y-3">
+                        {[
+                          {
+                            id: 'slot_1',
+                            title: 'Slot 1 - 12:00 PM UTC',
+                            description: 'Good for Europe and Africa (morning/afternoon business hours)'
+                          },
+                          {
+                            id: 'slot_2', 
+                            title: 'Slot 2 - 12:00 AM UTC',
+                            description: 'Good for Americas and Asia (evening/morning business hours)'
+                          }
+                        ].map((slot) => (
+                          <div
+                            key={slot.id}
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                              autoSyncSettings.slot === slot.id
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                            }`}
+                            onClick={() => setAutoSyncSettings(prev => ({ ...prev, slot: slot.id }))}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+                                autoSyncSettings.slot === slot.id
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-slate-300 dark:border-slate-600'
+                              }`}>
+                                {autoSyncSettings.slot === slot.id && (
+                                  <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-slate-900 dark:text-white">{slot.title}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{slot.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

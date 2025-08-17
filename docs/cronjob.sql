@@ -9,8 +9,7 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 -- Add automated sync settings to business_settings table
 ALTER TABLE business_settings 
 ADD COLUMN IF NOT EXISTS auto_sync_enabled boolean DEFAULT false,
-ADD COLUMN IF NOT EXISTS auto_sync_time text DEFAULT '12:00',
-ADD COLUMN IF NOT EXISTS auto_sync_timezone text DEFAULT 'UTC';
+ADD COLUMN IF NOT EXISTS auto_sync_slot text DEFAULT 'slot_1' CHECK (auto_sync_slot IN ('slot_1', 'slot_2'));
 
 -- Add indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_business_settings_auto_sync 
@@ -25,7 +24,7 @@ ALTER TABLE activities
 ALTER COLUMN business_id DROP NOT NULL;
 
 -- Create function to trigger daily review sync via Edge Function
-CREATE OR REPLACE FUNCTION trigger_daily_review_sync()
+CREATE OR REPLACE FUNCTION trigger_daily_review_sync(slot_id text DEFAULT 'slot_1')
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -51,12 +50,12 @@ BEGIN
     VALUES (
         NULL,
         'settings_updated'::activity_type,
-        'Daily automated review sync triggered via pg_cron',
+        'Daily automated review sync triggered via pg_cron for ' || slot_id,
         jsonb_build_object(
             'trigger_time', NOW(),
             'function_url', edge_function_url,
             'source', 'pg_cron',
-            'timezone', 'UTC',
+            'slot_id', slot_id,
             'activity_subtype', 'review_sync_scheduled'
         )
     );
@@ -71,7 +70,8 @@ BEGIN
             ),
             body := jsonb_build_object(
                 'trigger_source', 'pg_cron',
-                'trigger_time', NOW()
+                'trigger_time', NOW(),
+                'slot_id', slot_id
             )
         );
     
@@ -80,16 +80,17 @@ BEGIN
     VALUES (
         NULL,
         'settings_updated'::activity_type,
-        'HTTP request sent to daily review sync Edge Function',
+        'HTTP request sent to daily review sync Edge Function for ' || slot_id,
         jsonb_build_object(
             'request_id', request_id,
             'function_url', edge_function_url,
             'timestamp', NOW(),
+            'slot_id', slot_id,
             'activity_subtype', 'review_sync_request_sent'
         )
     );
     
-    RAISE NOTICE 'Daily review sync triggered with request ID: %', request_id;
+    RAISE NOTICE 'Daily review sync triggered for % with request ID: %', slot_id, request_id;
     
 EXCEPTION WHEN OTHERS THEN
     -- Log any errors
@@ -97,33 +98,41 @@ EXCEPTION WHEN OTHERS THEN
     VALUES (
         NULL,
         'settings_updated'::activity_type,
-        'Failed to trigger daily review sync: ' || SQLERRM,
+        'Failed to trigger daily review sync for ' || slot_id || ': ' || SQLERRM,
         jsonb_build_object(
             'error', SQLERRM,
             'error_state', SQLSTATE,
             'timestamp', NOW(),
             'source', 'pg_cron_function',
+            'slot_id', slot_id,
             'activity_subtype', 'review_sync_error'
         )
     );
     
-    RAISE NOTICE 'Error triggering daily review sync: %', SQLERRM;
+    RAISE NOTICE 'Error triggering daily review sync for %: %', slot_id, SQLERRM;
 END;
 $$;
 
 -- Grant execute permission on the function
 GRANT EXECUTE ON FUNCTION trigger_daily_review_sync() TO postgres;
 
--- Create the scheduled job for daily execution at 12:00 PM UTC
--- Note: This uses UTC time. The Edge Function can handle timezone conversion if needed.
+-- Create two scheduled jobs for different time slots
+-- Slot 1: 12:00 PM UTC (good for Europe/Africa business hours)
 SELECT cron.schedule(
-    'daily-review-sync',
+    'daily-review-sync-slot-1',
     '0 12 * * *',  -- Every day at 12:00 PM UTC
-    'SELECT trigger_daily_review_sync();'
+    'SELECT trigger_daily_review_sync(''slot_1'');'
+);
+
+-- Slot 2: 12:00 AM UTC (good for Americas/Asia business hours) 
+SELECT cron.schedule(
+    'daily-review-sync-slot-2',
+    '0 0 * * *',   -- Every day at 12:00 AM UTC (midnight)
+    'SELECT trigger_daily_review_sync(''slot_2'');'
 );
 
 -- Add a manual trigger function for testing
-CREATE OR REPLACE FUNCTION manual_review_sync_test()
+CREATE OR REPLACE FUNCTION manual_review_sync_test(slot_id text DEFAULT 'slot_1')
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -131,13 +140,23 @@ AS $$
 DECLARE
     result jsonb;
 BEGIN
+    -- Validate slot_id
+    IF slot_id NOT IN ('slot_1', 'slot_2') THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Invalid slot_id. Must be slot_1 or slot_2',
+            'timestamp', NOW()
+        );
+    END IF;
+    
     -- Call the trigger function
-    PERFORM trigger_daily_review_sync();
+    PERFORM trigger_daily_review_sync(slot_id);
     
     -- Return status
     result := jsonb_build_object(
         'success', true,
-        'message', 'Manual review sync test triggered',
+        'message', 'Manual review sync test triggered for ' || slot_id,
+        'slot_id', slot_id,
         'timestamp', NOW(),
         'note', 'Check activities table for execution details'
     );
@@ -157,7 +176,7 @@ SELECT
     active,
     command
 FROM cron.job
-WHERE jobname = 'daily-review-sync';
+WHERE jobname LIKE 'daily-review-sync%';
 
 -- Grant access to the view
 GRANT SELECT ON scheduled_jobs TO authenticated, anon;
@@ -187,7 +206,7 @@ LIMIT 50;
 GRANT SELECT ON sync_activities TO authenticated, anon;
 
 -- Create function to get businesses eligible for auto sync
-CREATE OR REPLACE FUNCTION get_auto_sync_businesses()
+CREATE OR REPLACE FUNCTION get_auto_sync_businesses(slot_filter text DEFAULT NULL)
 RETURNS TABLE (
     business_id uuid,
     business_name text,
@@ -195,7 +214,7 @@ RETURNS TABLE (
     google_business_id text,
     last_review_sync timestamptz,
     auto_sync_enabled boolean,
-    auto_sync_time text
+    auto_sync_slot text
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -209,12 +228,13 @@ BEGIN
         b.google_business_id,
         b.last_review_sync,
         bs.auto_sync_enabled,
-        bs.auto_sync_time
+        bs.auto_sync_slot
     FROM businesses b
     INNER JOIN business_settings bs ON b.id = bs.business_id
     WHERE bs.auto_sync_enabled = true
       AND b.google_business_id IS NOT NULL
-      AND b.google_access_token IS NOT NULL;
+      AND b.google_access_token IS NOT NULL
+      AND (slot_filter IS NULL OR bs.auto_sync_slot = slot_filter);
 END;
 $$;
 
@@ -235,9 +255,9 @@ CREATE POLICY "Users can manage their business settings" ON business_settings
     );
 
 -- Add comments for documentation
-COMMENT ON FUNCTION trigger_daily_review_sync() IS 'Triggers the daily review sync by calling the Supabase Edge Function via HTTP request';
-COMMENT ON FUNCTION manual_review_sync_test() IS 'Manual test function to trigger review sync for testing purposes';
-COMMENT ON FUNCTION get_auto_sync_businesses() IS 'Returns list of businesses with auto sync enabled and valid Google credentials';
+COMMENT ON FUNCTION trigger_daily_review_sync() IS 'Triggers the daily review sync by calling the Supabase Edge Function via HTTP request for a specific slot';
+COMMENT ON FUNCTION manual_review_sync_test() IS 'Manual test function to trigger review sync for testing purposes for a specific slot';
+COMMENT ON FUNCTION get_auto_sync_businesses() IS 'Returns list of businesses with auto sync enabled and valid Google credentials, optionally filtered by slot';
 COMMENT ON VIEW scheduled_jobs IS 'View to monitor the status of scheduled review sync jobs';
 COMMENT ON VIEW sync_activities IS 'View to monitor recent sync-related activities and their status';
 
@@ -246,29 +266,34 @@ DO $$
 BEGIN
     RAISE NOTICE '';
     RAISE NOTICE '============================================';
-    RAISE NOTICE '✅ Daily Review Sync Setup Complete!';
+    RAISE NOTICE '✅ Two-Slot Daily Review Sync Setup Complete!';
     RAISE NOTICE '============================================';
     RAISE NOTICE '';
     RAISE NOTICE '📋 What was created:';
     RAISE NOTICE '  • pg_cron extension enabled';
     RAISE NOTICE '  • pg_net extension enabled';
-    RAISE NOTICE '  • Auto sync columns added to business_settings';
-    RAISE NOTICE '  • Daily cron job scheduled for 12:00 PM UTC';
+    RAISE NOTICE '  • Auto sync slot column added to business_settings';
+    RAISE NOTICE '  • Two cron jobs scheduled:';
+    RAISE NOTICE '    - Slot 1: 12:00 PM UTC (Europe/Africa)';
+    RAISE NOTICE '    - Slot 2: 12:00 AM UTC (Americas/Asia)';
     RAISE NOTICE '  • Edge Function trigger system created';
     RAISE NOTICE '  • Monitoring views and test functions added';
     RAISE NOTICE '';
     RAISE NOTICE '🧪 To test the setup:';
-    RAISE NOTICE '  SELECT manual_review_sync_test();';
+    RAISE NOTICE '  SELECT manual_review_sync_test(''slot_1'');';
+    RAISE NOTICE '  SELECT manual_review_sync_test(''slot_2'');';
     RAISE NOTICE '';
     RAISE NOTICE '📊 To monitor:';
     RAISE NOTICE '  SELECT * FROM scheduled_jobs;';
     RAISE NOTICE '  SELECT * FROM sync_activities;';
     RAISE NOTICE '  SELECT * FROM get_auto_sync_businesses();';
-    RAISE NOTICE '  SELECT * FROM cron.job WHERE jobname = ''daily-review-sync'';';
+    RAISE NOTICE '  SELECT * FROM get_auto_sync_businesses(''slot_1'');';
+    RAISE NOTICE '  SELECT * FROM get_auto_sync_businesses(''slot_2'');';
     RAISE NOTICE '';
     RAISE NOTICE '⚙️ Next steps:';
-    RAISE NOTICE '  1. Deploy the Edge Function to Supabase';
-    RAISE NOTICE '  2. Enable auto_sync_enabled in Settings UI';
-    RAISE NOTICE '  3. Test with manual_review_sync_test()';
+    RAISE NOTICE '  1. Deploy the updated Edge Function to Supabase';
+    RAISE NOTICE '  2. Update Settings UI to use slot selection';
+    RAISE NOTICE '  3. Enable auto_sync_enabled in Settings UI';
+    RAISE NOTICE '  4. Test with manual_review_sync_test()';
     RAISE NOTICE '';
 END $$;

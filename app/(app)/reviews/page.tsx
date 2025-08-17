@@ -240,14 +240,14 @@ export default function ReviewsPage() {
             <span>Fetch New Reviews</span>
           </Button>
 
-          <Button
+{/*           <Button
             onClick={handleExport}
             variant="outline"
             className="flex items-center space-x-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <Download className="h-4 w-4" />
             <span>Export</span>
-          </Button>
+          </Button> */}
         </div>
       </div>
 
