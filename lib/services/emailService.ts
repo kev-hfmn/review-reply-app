@@ -13,7 +13,10 @@ import {
   ReplyConfirmationData,
   OnboardingEmailData,
   BillingEmailData,
-  SystemAlertData
+  SystemAlertData,
+  AutomationSummaryData,
+  AutomationErrorData,
+  NewReviewAlertData
 } from '@/types/email';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 
@@ -427,6 +430,102 @@ export class EmailService {
     
     await this.logEmailActivity(
       EmailTemplateType.SYSTEM_ALERT,
+      data.userEmail,
+      template.subject,
+      response,
+      data.userId,
+      data.businessId
+    );
+
+    return response;
+  }
+
+  /**
+   * Send automation summary email
+   */
+  async sendAutomationSummary(data: AutomationSummaryData): Promise<EmailResponse> {
+    const { getEmailTemplates } = await import('./emailTemplates');
+    const templates = getEmailTemplates();
+    
+    const template = templates.automationSummary(data);
+    const options: EmailSendOptions = {
+      to: [{ email: data.userEmail, name: data.userName }],
+      tags: ['automation', 'summary', 'daily'],
+      headers: {
+        'X-RepliFast-Type': 'automation-summary',
+        'X-RepliFast-User-ID': data.userId,
+        'X-RepliFast-Slot-ID': data.slotId
+      }
+    };
+
+    const response = await this.sendEmail(template, options);
+    
+    await this.logEmailActivity(
+      EmailTemplateType.AUTOMATION_SUMMARY,
+      data.userEmail,
+      template.subject,
+      response,
+      data.userId,
+      data.businessId
+    );
+
+    return response;
+  }
+
+  /**
+   * Send automation error email
+   */
+  async sendAutomationError(data: AutomationErrorData): Promise<EmailResponse> {
+    const { getEmailTemplates } = await import('./emailTemplates');
+    const templates = getEmailTemplates();
+    
+    const template = templates.automationError(data);
+    const options: EmailSendOptions = {
+      to: [{ email: data.userEmail, name: data.userName }],
+      tags: ['automation', 'error', 'alert'],
+      headers: {
+        'X-RepliFast-Type': 'automation-error',
+        'X-RepliFast-User-ID': data.userId,
+        'X-RepliFast-Error-Type': data.errorType
+      }
+    };
+
+    const response = await this.sendEmail(template, options);
+    
+    await this.logEmailActivity(
+      EmailTemplateType.AUTOMATION_ERROR,
+      data.userEmail,
+      template.subject,
+      response,
+      data.userId,
+      data.businessId
+    );
+
+    return response;
+  }
+
+  /**
+   * Send new review alert email
+   */
+  async sendNewReviewAlert(data: NewReviewAlertData): Promise<EmailResponse> {
+    const { getEmailTemplates } = await import('./emailTemplates');
+    const templates = getEmailTemplates();
+    
+    const template = templates.newReviewAlert(data);
+    const options: EmailSendOptions = {
+      to: [{ email: data.userEmail, name: data.userName }],
+      tags: ['review', 'alert', 'new'],
+      headers: {
+        'X-RepliFast-Type': 'new-review-alert',
+        'X-RepliFast-User-ID': data.userId,
+        'X-RepliFast-Review-Count': data.totalNewReviews.toString()
+      }
+    };
+
+    const response = await this.sendEmail(template, options);
+    
+    await this.logEmailActivity(
+      EmailTemplateType.NEW_REVIEW_ALERT,
       data.userEmail,
       template.subject,
       response,

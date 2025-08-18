@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   Star,
-  User,
   Calendar,
   MessageSquare,
   Wand2,
@@ -10,6 +9,7 @@ import {
   Save,
   Loader2
 } from 'lucide-react';
+import { Avatar } from '@/components/Avatar';
 import {
   Dialog,
   DialogContent,
@@ -146,29 +146,16 @@ export default function ReviewDrawer({
             {/* Customer & Rating */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="relative">
-                  {review.customer_avatar_url ? (
-                    <img
-                      src={review.customer_avatar_url}
-                      alt={`${review.customer_name}'s avatar`}
-                      className="h-10 w-10 rounded-full object-cover border-2 border-muted"
-                      onError={(e) => {
-                        // Fallback to user icon if image fails to load
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`p-2 bg-muted rounded-lg ${review.customer_avatar_url ? 'hidden' : ''}`}>
-                    <User className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
+                <Avatar
+                  src={review.customer_avatar_url}
+                  alt={`${review.customer_name}'s avatar`}
+                  size="lg"
+                />
                 <div>
                   <h3 className="font-medium text-foreground">
                     {review.customer_name}
                   </h3>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {formatDate(review.review_date)}
@@ -212,11 +199,11 @@ export default function ReviewDrawer({
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-muted-foreground">
                   Customer Review
                 </span>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-foreground leading-relaxed">
                 &ldquo;{review.review_text}&rdquo;
               </p>
             </div>

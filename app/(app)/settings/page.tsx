@@ -25,6 +25,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/utils/supabase';
 import ToastNotifications from '@/components/ToastNotifications';
 import type { ToastNotification } from '@/types/reviews';
+import { Input } from '@/components/ui/input';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface BusinessProfile {
   name: string;
@@ -70,6 +73,13 @@ interface IntegrationStatus {
 interface AutoSyncSettings {
   enabled: boolean;
   slot: string;
+}
+
+interface AutomationSettings {
+  autoReplyEnabled: boolean;
+  autoPostEnabled: boolean;
+  emailNotificationsEnabled: boolean;
+  lastAutomationRun?: string;
 }
 
 interface BillingInfo {
@@ -150,6 +160,13 @@ export default function SettingsPage() {
     slot: 'slot_1'
   });
 
+  const [automationSettings, setAutomationSettings] = useState<AutomationSettings>({
+    autoReplyEnabled: false,
+    autoPostEnabled: false,
+    emailNotificationsEnabled: true,
+    lastAutomationRun: undefined
+  });
+
   // Helper function to show toast notifications
   const showToast = (toast: Omit<ToastNotification, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -200,10 +217,10 @@ export default function SettingsPage() {
             googleBusinessId: business.google_business_id || ''
           });
 
-          // Get business settings (including auto sync settings)
+          // Get business settings (including auto sync and automation settings)
           const { data: settings, error: settingsError } = await supabase
             .from('business_settings')
-            .select('*, auto_sync_enabled, auto_sync_slot')
+            .select('*, auto_sync_enabled, auto_sync_slot, auto_reply_enabled, auto_post_enabled, email_notifications_enabled, last_automation_run')
             .eq('business_id', business.id)
             .single();
 
@@ -252,6 +269,14 @@ export default function SettingsPage() {
             setAutoSyncSettings({
               enabled: settings.auto_sync_enabled || false,
               slot: settings.auto_sync_slot || 'slot_1'
+            });
+
+            // Set automation settings
+            setAutomationSettings({
+              autoReplyEnabled: settings.auto_reply_enabled || false,
+              autoPostEnabled: settings.auto_post_enabled || false,
+              emailNotificationsEnabled: settings.email_notifications_enabled !== false, // Default to true
+              lastAutomationRun: settings.last_automation_run || undefined
             });
           }
 
@@ -519,6 +544,47 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveAutomation = async () => {
+    if (!currentBusinessId) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('business_settings')
+        .update({
+          auto_reply_enabled: automationSettings.autoReplyEnabled,
+          auto_post_enabled: automationSettings.autoPostEnabled,
+          email_notifications_enabled: automationSettings.emailNotificationsEnabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('business_id', currentBusinessId);
+
+      if (error) throw error;
+
+      const enabledFeatures = [];
+      if (automationSettings.autoReplyEnabled) enabledFeatures.push('AI reply generation');
+      if (automationSettings.autoPostEnabled) enabledFeatures.push('automatic posting');
+      if (automationSettings.emailNotificationsEnabled) enabledFeatures.push('email notifications');
+
+      showToast({
+        type: 'success',
+        title: 'Automation Settings Saved',
+        message: enabledFeatures.length > 0
+          ? `Enabled: ${enabledFeatures.join(', ')}`
+          : 'All automation features disabled'
+      });
+    } catch (error: any) {
+      console.error('Error saving automation settings:', error);
+      showToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: error.message || 'Failed to save automation settings'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   // Google Business Profile handlers
   const handleSaveGoogleCredentials = async () => {
@@ -721,15 +787,15 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Settings
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">
+          Settings
+        </h1>
         </div>
 
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4 mx-auto"></div>
-            <p className="text-slate-600 dark:text-slate-400">Loading settings...</p>
+            <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
       </div>
@@ -740,13 +806,13 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-foreground">
           Settings
         </h1>
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-slate-200 dark:border-slate-700">
+      <div className="border-b border-border">
         <nav className="flex space-x-8">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -756,8 +822,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -779,7 +845,7 @@ export default function SettingsPage() {
         {activeTab === 'profile' && (
           <Card className=" border-slate-200 dark:border-slate-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Building2 className="h-5 w-5" />
                 Business Profile
               </CardTitle>
@@ -787,60 +853,63 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Business Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={businessProfile.name}
                     onChange={(e) => setBusinessProfile(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className=""
                     placeholder="Enter your business name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Location
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={businessProfile.location}
                     onChange={(e) => setBusinessProfile(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className=""
                     placeholder="City, State"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Industry
                   </label>
-                  <select
+                  <Select
                     value={businessProfile.industry}
-                    onChange={(e) => setBusinessProfile(prev => ({ ...prev, industry: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onValueChange={(value) => setBusinessProfile(prev => ({ ...prev, industry: value }))}
                   >
-                    <option value="">Select industry</option>
-                    <option value="Food & Beverage">Food & Beverage</option>
-                    <option value="Retail">Retail</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Professional Services">Professional Services</option>
-                    <option value="Beauty & Wellness">Beauty & Wellness</option>
-                    <option value="Automotive">Automotive</option>
-                    <option value="Real Estate">Real Estate</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="Healthcare">Healthcare</SelectItem>
+                      <SelectItem value="Professional Services">Professional Services</SelectItem>
+                      <SelectItem value="Beauty & Wellness">Beauty & Wellness</SelectItem>
+                      <SelectItem value="Automotive">Automotive</SelectItem>
+                      <SelectItem value="Real Estate">Real Estate</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Google Business ID
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={businessProfile.googleBusinessId || ''}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    className=""
                     placeholder="Auto-filled when connected"
                     disabled
                   />
@@ -861,14 +930,14 @@ export default function SettingsPage() {
         {activeTab === 'voice' && (
           <Card className="text-card-foreground">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <MessageSquare className="h-5 w-5" />
                 Brand Voice Configuration
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <label className="block text-sm font-medium text-foreground/80 mb-3">
                   Voice Preset
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -878,8 +947,8 @@ export default function SettingsPage() {
                       onClick={() => setBrandVoice(prev => ({ ...prev, preset }))}
                       className={`p-3 rounded-lg border-2 text-center transition-colors ${
                         brandVoice.preset === preset
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                          : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary'
+                          : 'border-border hover:border-border/80 text-muted-foreground hover:text-foreground/80'
                       }`}
                     >
                       <div className="font-medium capitalize">{preset}</div>
@@ -890,7 +959,7 @@ export default function SettingsPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
                     Formality Level: {brandVoice.formality}
                   </label>
                   <input
@@ -899,16 +968,16 @@ export default function SettingsPage() {
                     max="10"
                     value={brandVoice.formality}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Casual</span>
                     <span>Formal</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
                     Warmth Level: {brandVoice.warmth}
                   </label>
                   <input
@@ -917,16 +986,16 @@ export default function SettingsPage() {
                     max="10"
                     value={brandVoice.warmth}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Reserved</span>
                     <span>Warm</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
                     Brevity Level: {brandVoice.brevity}
                   </label>
                   <input
@@ -935,9 +1004,9 @@ export default function SettingsPage() {
                     max="10"
                     value={brandVoice.brevity}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Detailed</span>
                     <span>Concise</span>
                   </div>
@@ -946,17 +1015,17 @@ export default function SettingsPage() {
 
               {/* Custom Instruction */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-foreground/80 mb-2">
                   Custom Instructions
                 </label>
-                <textarea
+                <Textarea
                   value={brandVoice.customInstruction || ''}
                   onChange={(e) => setBrandVoice(prev => ({ ...prev, customInstruction: e.target.value }))}
                   placeholder="Add specific instructions for AI reply generation (e.g., 'Always mention our 24/7 customer service', 'Include a call to action', 'Use our brand terminology')..."
-                  className="w-full min-h-[100px] px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  className="w-full min-h-[100px] px-3 py-2 border  resize-vertical"
                   rows={4}
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
                 </p>
               </div>
@@ -973,68 +1042,260 @@ export default function SettingsPage() {
 
         {/* Approval Mode Tab */}
         {activeTab === 'approval' && (
-          <Card className="text-card-foreground">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                Approval Mode
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                {[
-                  {
-                    id: 'manual',
-                    title: 'Manual Approval',
-                    description: 'Review and approve every reply before posting'
-                  },
-                  {
-                    id: 'auto_4_plus',
-                    title: 'Auto-approve 4+ Stars',
-                    description: 'Automatically post replies to 4 and 5-star reviews'
-                  },
-                  {
-                    id: 'auto_except_low',
-                    title: 'Auto-approve Except Low Ratings',
-                    description: 'Automatically post replies except for 1 and 2-star reviews'
-                  }
-                ].map((mode) => (
-                  <div
-                    key={mode.id}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                      approvalSettings.mode === mode.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
-                    }`}
-                    onClick={() => setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+          <div className="space-y-6">
+            {/* Approval Mode Card */}
+            <Card className="text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <SettingsIcon className="h-5 w-5 " />
+                  Approval Mode
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  {[
+                    {
+                      id: 'manual',
+                      title: 'Manual Approval',
+                      description: 'Review and approve every reply before posting'
+                    },
+                    {
+                      id: 'auto_4_plus',
+                      title: 'Auto-approve 4+ Stars',
+                      description: 'Automatically post replies to 4 and 5-star reviews'
+                    },
+                    {
+                      id: 'auto_except_low',
+                      title: 'Auto-approve Except Low Ratings',
+                      description: 'Automatically post replies except for 1 and 2-star reviews'
+                    }
+                  ].map((mode) => (
+                    <div
+                      key={mode.id}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                         approvalSettings.mode === mode.id
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-slate-300 dark:border-slate-600'
-                      }`}>
-                        {approvalSettings.mode === mode.id && (
-                          <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                        )}
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                          : 'border-border hover:border-border/80'
+                      }`}
+                      onClick={() => setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+                          approvalSettings.mode === mode.id
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground'
+                        }`}>
+                          {approvalSettings.mode === mode.id && (
+                            <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-card-foreground">{mode.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-card-foreground">{mode.title}</h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{mode.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveApproval} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Approval Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Automation Pipeline Card */}
+            <Card className="text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  Automation Pipeline
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Configure automated AI reply generation, approval, and posting for new reviews
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Automation Status Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={`p-4 rounded-lg border ${automationSettings.autoReplyEnabled ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-muted/50 border-border'}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${automationSettings.autoReplyEnabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">AI Replies</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {automationSettings.autoReplyEnabled ? 'Auto-generating' : 'Manual only'}
+                    </p>
+                  </div>
+
+                  <div className={`p-4 rounded-lg border ${automationSettings.autoPostEnabled ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-muted/50 border-border'}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${automationSettings.autoPostEnabled ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Auto-Posting</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {automationSettings.autoPostEnabled ? 'Auto-posting approved' : 'Manual posting'}
+                    </p>
+                  </div>
+
+                  <div className={`p-4 rounded-lg border ${automationSettings.emailNotificationsEnabled ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' : 'bg-muted/50 border-border'}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${automationSettings.emailNotificationsEnabled ? 'bg-orange-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Notifications</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {automationSettings.emailNotificationsEnabled ? 'Email alerts on' : 'No notifications'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Last Automation Run */}
+                {automationSettings.lastAutomationRun && (
+                  <div className="p-3 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        Last automation run: {new Date(automationSettings.lastAutomationRun).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Automation Controls */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">
+                        AI Reply Generation
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically generate AI replies for new reviews using your brand voice
+                      </p>
+                    </div>
+                    <Switch
+                      checked={automationSettings.autoReplyEnabled}
+                      onCheckedChange={(enabled) => setAutomationSettings(prev => ({ ...prev, autoReplyEnabled: enabled }))}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">
+                        Automatic Reply Posting
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically post approved replies to Google Business Profile
+                      </p>
+                    </div>
+                    <Switch
+                      checked={automationSettings.autoPostEnabled}
+                      onCheckedChange={(enabled) => setAutomationSettings(prev => ({ ...prev, autoPostEnabled: enabled }))}
+                      disabled={!automationSettings.autoReplyEnabled}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-foreground">
+                        Email Notifications
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Receive email alerts about new reviews and automation status
+                      </p>
+                    </div>
+                    <Switch
+                      checked={automationSettings.emailNotificationsEnabled}
+                      onCheckedChange={(enabled) => setAutomationSettings(prev => ({ ...prev, emailNotificationsEnabled: enabled }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Automation Requirements */}
+                {(automationSettings.autoReplyEnabled || automationSettings.autoPostEnabled) && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-foreground">Requirements</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        {autoSyncSettings.enabled ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                        )}
+                        <span className={autoSyncSettings.enabled ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>
+                          Automated review sync must be enabled
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        {integrations.googleBusiness.status === 'approved' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                        )}
+                        <span className={integrations.googleBusiness.status === 'approved' ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>
+                          Google Business Profile must be connected and approved
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        {approvalSettings.mode !== 'manual' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                        )}
+                        <span className={approvalSettings.mode !== 'manual' ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>
+                          Auto-approval mode recommended for full automation (currently: {approvalSettings.mode})
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <div className="flex justify-end">
-                <Button onClick={handleSaveApproval} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Saving...' : 'Save Approval Settings'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                {/* Automation Pipeline Flow */}
+                {automationSettings.autoReplyEnabled && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-3">Automation Flow</h4>
+                    <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-400">
+                      <span>New Review</span>
+                      <span>→</span>
+                      <span>AI Reply</span>
+                      {approvalSettings.mode !== 'manual' && (
+                        <>
+                          <span>→</span>
+                          <span>Auto-Approve</span>
+                        </>
+                      )}
+                      {automationSettings.autoPostEnabled && (
+                        <>
+                          <span>→</span>
+                          <span>Auto-Post</span>
+                        </>
+                      )}
+                      {automationSettings.emailNotificationsEnabled && (
+                        <>
+                          <span>→</span>
+                          <span>Email Alert</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveAutomation}
+                    disabled={isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Automation Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Integrations Tab */}
@@ -1042,11 +1303,11 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <Card className="text-card-foreground">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                   <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   Google Business Profile
                 </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Connect your Google Business Profile to automatically fetch reviews
                 </p>
               </CardHeader>
@@ -1055,11 +1316,11 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     {getStatusIcon(integrations.googleBusiness.status, integrations.googleBusiness.connected)}
                     <div>
-                      <p className="font-medium text-slate-900 dark:text-white">
+                      <p className="font-medium text-foreground">
                         {getStatusText(integrations.googleBusiness.status, integrations.googleBusiness.connected)}
                       </p>
                       {integrations.googleBusiness.lastSync && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                        <p className="text-sm text-muted-foreground">
                           Last sync: {new Date(integrations.googleBusiness.lastSync).toLocaleString()}
                         </p>
                       )}
@@ -1109,10 +1370,10 @@ export default function SettingsPage() {
                 {(showGoogleSetup || integrations.googleBusiness.status === 'not_connected' || (!integrations.googleBusiness.connected && integrations.googleBusiness.status === 'configured')) && (
                   <div className="border-t pt-6 space-y-4">
                     <div>
-                      <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-medium text-foreground mb-2">
                         Google Cloud Credentials
                       </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
                         You need to create a Google Cloud Project and enable the Business Profile API.
                         <a href="#" className="text-blue-600 hover:underline ml-1">View setup guide</a>
                       </p>
@@ -1120,53 +1381,53 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Client ID
                         </label>
                         <input
                           type="text"
                           value={googleCredentials.clientId}
                           onChange={(e) => setGoogleCredentials(prev => ({ ...prev, clientId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                           placeholder="Your Google Cloud Client ID"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Client Secret
                         </label>
                         <input
                           type="password"
                           value={googleCredentials.clientSecret}
                           onChange={(e) => setGoogleCredentials(prev => ({ ...prev, clientSecret: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                           placeholder="Your Google Cloud Client Secret"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Account ID
                         </label>
                         <input
                           type="text"
                           value={googleCredentials.accountId}
                           onChange={(e) => setGoogleCredentials(prev => ({ ...prev, accountId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                           placeholder="accounts/1234567890"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">
                           Location ID
                         </label>
                         <input
                           type="text"
                           value={googleCredentials.locationId}
                           onChange={(e) => setGoogleCredentials(prev => ({ ...prev, locationId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                           placeholder="accounts/1234567890/locations/0987654321"
                         />
                       </div>
@@ -1189,11 +1450,11 @@ export default function SettingsPage() {
             {/* Automated Review Sync Card */}
             <Card className="text-card-foreground">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
                   <RefreshCw className="h-5 w-5 text-green-600 dark:text-green-400" />
                   Automated Review Sync
                 </CardTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Automatically check for new reviews daily at a scheduled time
                 </p>
               </CardHeader>
@@ -1202,11 +1463,11 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${autoSyncSettings.enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                     <div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      <div className="text-sm font-medium text-foreground">
                         {autoSyncSettings.enabled ? 'Auto-sync Enabled' : 'Auto-sync Disabled'}
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        {autoSyncSettings.enabled 
+                      <div className="text-sm text-muted-foreground">
+                        {autoSyncSettings.enabled
                           ? `Daily at ${autoSyncSettings.slot === 'slot_1' ? '12:00 PM UTC (Europe/Africa)' : '12:00 AM UTC (Americas/Asia)'}`
                           : 'Manual review sync only'
                         }
@@ -1222,7 +1483,7 @@ export default function SettingsPage() {
                 {autoSyncSettings.enabled && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                      <label className="block text-sm font-medium text-muted-foreground mb-3">
                         <Clock className="h-4 w-4 inline mr-1" />
                         Sync Time Slot
                       </label>
@@ -1234,7 +1495,7 @@ export default function SettingsPage() {
                             description: 'Good for Europe and Africa (morning/afternoon business hours)'
                           },
                           {
-                            id: 'slot_2', 
+                            id: 'slot_2',
                             title: 'Slot 2 - 12:00 AM UTC',
                             description: 'Good for Americas and Asia (evening/morning business hours)'
                           }
@@ -1243,24 +1504,24 @@ export default function SettingsPage() {
                             key={slot.id}
                             className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                               autoSyncSettings.slot === slot.id
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                                ? 'border-primary bg-primary/10'
+                                : 'border-border hover:border-border/80'
                             }`}
                             onClick={() => setAutoSyncSettings(prev => ({ ...prev, slot: slot.id }))}
                           >
                             <div className="flex items-start gap-3">
                               <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
                                 autoSyncSettings.slot === slot.id
-                                  ? 'border-blue-500 bg-blue-500'
-                                  : 'border-slate-300 dark:border-slate-600'
+                                  ? 'border-primary bg-primary'
+                                  : 'border-border'
                               }`}>
                                 {autoSyncSettings.slot === slot.id && (
-                                  <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                  <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
                                 )}
                               </div>
                               <div>
-                                <h3 className="font-medium text-slate-900 dark:text-white">{slot.title}</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{slot.description}</p>
+                                <h3 className="font-medium text-foreground">{slot.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{slot.description}</p>
                               </div>
                             </div>
                           </div>
@@ -1271,8 +1532,8 @@ export default function SettingsPage() {
                 )}
 
                 <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                  <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">How it works:</h4>
-                  <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                  <h4 className="text-sm font-medium text-foreground mb-2">How it works:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Automatically checks for new reviews from your Google Business Profile</li>
                     <li>• Generates AI replies for new reviews based on your brand voice settings</li>
                     <li>• Sends email notifications when new reviews are found</li>
@@ -1289,8 +1550,8 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button 
-                    onClick={handleSaveAutoSync} 
+                  <Button
+                    onClick={handleSaveAutoSync}
                     disabled={isSaving}
                   >
                     <Save className="h-4 w-4 mr-2" />
@@ -1300,6 +1561,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
+
           </div>
         )}
 
@@ -1307,7 +1569,7 @@ export default function SettingsPage() {
         {activeTab === 'billing' && (
           <Card className="text-card-foreground">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <CreditCard className="h-5 w-5" />
                 Current Plan
               </CardTitle>
@@ -1316,7 +1578,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white capitalize">
+                    <h3 className="text-lg font-semibold text-foreground capitalize">
                       {billing.plan} Plan
                     </h3>
                     <Badge variant={billing.status === 'active' ? 'default' : 'destructive'}>
@@ -1324,12 +1586,12 @@ export default function SettingsPage() {
                     </Badge>
                   </div>
                   {billing.trialEnds && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-muted-foreground">
                       Trial ends: {new Date(billing.trialEnds).toLocaleDateString()}
                     </p>
                   )}
                   {billing.nextBilling && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-sm text-muted-foreground">
                       Next billing: {new Date(billing.nextBilling).toLocaleDateString()}
                     </p>
                   )}

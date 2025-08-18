@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from '@/contexts/AuthContext';
 import { PricingSection } from '@/components/PricingSection';
 import {
   Star,
@@ -24,11 +23,11 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Link as ScrollLink } from 'react-scroll';
 import { VideoModal } from '@/components/VideoModal';
 import { Button } from '@/components/ui/button';
 import { GoogleReviewCard } from '@/components/GoogleReviewCard';
 import { Footer } from '@/components/Footer';
+import { PublicNavigation } from '@/components/PublicNavigation';
 import {
   Accordion,
   AccordionContent,
@@ -77,27 +76,51 @@ const features = [
   }
 ];
 
+// Why reviews matter cards
+const reviewMatters = [
+  {
+    title: "Show customers you care",
+    description: "Let customers know you value their feedback and are paying attention to their experience.",
+    icon: <Heart className="h-6 w-6 text-blue-400" />
+  },
+  {
+    title: "Build trust with new customers",
+    description: "Public replies help potential customers feel confident in choosing your business.",
+    icon: <UserCheck className="h-6 w-6 text-blue-400" />
+  },
+  {
+    title: "Boost local SEO",
+    description: "Regular replies keep your profile active and can improve your search rankings.",
+    icon: <Search className="h-6 w-6 text-blue-400" />
+  },
+  {
+    title: "Recover unhappy customers",
+    description: "Responding well to negative feedback can turn one-time complaints into long-term loyalty.",
+    icon: <RefreshCw className="h-6 w-6 text-blue-400" />
+  }
+];
+
 // Benefits for different business types
 const benefits = [
   {
-    title: "Save 10+ hours each week",
+    title: "Handle reviews in minutes, not hours",
     description: "Stop manually crafting replies and focus on what matters most.",
-    icon: <Clock className="h-8 w-8 text-blue-500" />
+    icon: <Clock className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Improve response rate and consistency",
     description: "Never miss a review again and maintain professional standards.",
-    icon: <TrendingUp className="h-8 w-8 text-green-500" />
+    icon: <TrendingUp className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Keep your profile looking active and cared for",
     description: "Show customers you value their feedback with timely responses.",
-    icon: <Shield className="h-8 w-8 text-purple-500" />
+    icon: <Shield className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Boost local SEO without lifting a finger",
     description: "Active review engagement improves your search rankings automatically.",
-    icon: <Star className="h-8 w-8 text-yellow-500" />
+    icon: <Star className="h-6 w-6 text-blue-400" />
   }
 ];
 
@@ -114,7 +137,8 @@ const navigationSections = [
   { id: "home", title: "Home" },
   { id: "features", title: "Features" },
   { id: "benefits", title: "Benefits" },
-  { id: "pricing", title: "Pricing" }
+  { id: "pricing", title: "Pricing" },
+  { id: "contact", title: "Contact" }
 ];
 
 // Sample reviews for showcase
@@ -157,7 +181,6 @@ const sampleReviews = [
 ];
 
 export default function LandingPage() {
-  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState("home");
   const router = useRouter();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -186,59 +209,12 @@ export default function LandingPage() {
       </Head>
       <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Star className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-slate-900 dark:text-white">RepliFast</span>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navigationSections.map((section) => (
-                <ScrollLink
-                  key={section.id}
-                  to={section.id}
-                  spy={true}
-                  smooth={true}
-                  offset={-100}
-                  duration={500}
-                  onSetActive={() => setActiveSection(section.id)}
-                  className={`cursor-pointer transition-colors duration-200 ${
-                    activeSection === section.id
-                      ? 'text-blue-600 dark:text-blue-400 font-medium'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
-                  }`}
-                >
-                  {section.title}
-                </ScrollLink>
-              ))}
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <Button onClick={() => router.push('/dashboard')} className="bg-blue-600 hover:bg-blue-700">
-                  Go to Dashboard
-                </Button>
-              ) : (
-                <>
-                  <Button variant="ghost" onClick={() => router.push('/login')} className="hidden sm:inline-flex">
-                    Sign In
-                  </Button>
-                  <Button onClick={() => router.push('/dashboard')} className="bg-blue-600 hover:bg-blue-700">
-                    Start now
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicNavigation
+        navigationSections={navigationSections}
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        showScrollLinks={true}
+      />
 
       {/* Hero Section */}
       <section id="home" className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-[#0B1120] dark:via-[#0B1120] dark:to-[#1a1a2e]">
@@ -297,7 +273,8 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     onClick={() => router.push('/dashboard')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg mb-2"
+                    className="px-8 py-4 text-lg mb-2"
+                    variant="primary"
                   >
                     Start now
                     <ArrowRight className="h-5 w-5 ml-2" />
@@ -340,7 +317,7 @@ export default function LandingPage() {
                       onClick={() => setShowReplies(true)}
                       className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                         showReplies
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white'
                           : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -413,11 +390,11 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6"
             >
               ⚡ Key Features
             </motion.div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Too busy to respond to every review?
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
@@ -425,7 +402,7 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -451,7 +428,7 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-24 bg-slate-900 dark:bg-slate-900">
+      <section id="benefits" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -464,93 +441,94 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6"
             >
               💬 Customer Engagement
             </motion.div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Why replying to reviews matters
             </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               Every review is an opportunity to strengthen your reputation and connect with customers. When you reply consistently and thoughtfully, you build trust, improve your visibility, and turn more first-time buyers into loyal customers.
             </p>
+
+
           </motion.div>
 
           {/* Why Reviews Matter Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="relative p-6 bg-slate-800/80 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                <Heart className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Show customers you care
-              </h3>
-              <p className="text-sm text-slate-300">
-                Let customers know you value their feedback and are paying attention to their experience.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="relative p-6 bg-slate-800/80 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                <UserCheck className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Build trust with new customers
-              </h3>
-              <p className="text-sm text-slate-300">
-                Public replies help potential customers feel confident in choosing your business.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="relative p-6 bg-slate-800/80 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                <Search className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Boost local SEO
-              </h3>
-              <p className="text-sm text-slate-300">
-                Regular replies keep your profile active and can improve your search rankings.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="relative p-6 bg-slate-800/80 rounded-2xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                <RefreshCw className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Recover unhappy customers
-              </h3>
-              <p className="text-sm text-slate-300">
-                Responding well to negative feedback can turn one-time complaints into long-term loyalty.
-              </p>
-            </motion.div>
+            {reviewMatters.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * (index + 1) }}
+                className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                  {item.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-md text-slate-600 dark:text-slate-400">
+                  {item.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
 
+            {/* Statistics Section */}
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30 rounded-2xl border border-blue-200 dark:border-blue-700/50"
+              >
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">89%</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  of consumers are highly likely to use a business that responds to all its online reviews
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  — <a href="https://www.brightlocal.com/research/local-consumer-review-survey/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 underline">BrightLocal, 2023</a>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30 rounded-2xl border border-green-200 dark:border-green-700/50"
+              >
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">Better</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  ratings over time when businesses actively respond to reviews
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  — <a href="https://hbr.org/2018/02/study-replying-to-customer-reviews-results-in-better-ratings" target="_blank" rel="noopener noreferrer" className="hover:text-green-600 dark:hover:text-green-400 underline">Harvard Business Review</a>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/30 rounded-2xl border border-purple-200 dark:border-purple-700/50"
+              >
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">Higher</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  local search rankings for businesses that respond to reviews
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  — <a href="https://support.google.com/business/answer/7091?hl=en" target="_blank" rel="noopener noreferrer" className="hover:text-purple-600 dark:hover:text-purple-400 underline">Google</a>
+                </div>
+              </motion.div>
+            </div>
           {/* Testimonial */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -577,28 +555,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8 mt-20">
-            {benefits.map((benefit, index) => (
-              <motion.div
-                key={benefit.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="relative p-8 bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 group text-center"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {benefit.icon}
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-                  {benefit.title}
-                </h3>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {benefit.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+
         </div>
       </section>
 
@@ -616,11 +573,11 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6"
             >
               ✨ Simple Setup Process
             </motion.div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-100 bg-clip-text text-transparent mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
               How it works
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
@@ -652,9 +609,24 @@ export default function LandingPage() {
                       <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-4">
                         We request approval from Google for you
                       </h4>
-                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed">
+                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
                         Google requires each business to approve access before review management tools like ours can connect. We take care of the request process on your behalf so you don&apos;t have to deal with any of the technical steps.
                       </p>
+
+                      {/* Expandable Why Section */}
+                      <details className="group">
+                        <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-1">
+                          <span>Why?</span>
+                          <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                            We have already applied for general access with Google, which will eventually remove the need for individual approvals. Since this process can take time, we currently follow the individual approval approach so you can start using RepliFast right away.
+                          </p>
+                        </div>
+                      </details>
                     </div>
                   </div>
                 </motion.div>
@@ -736,30 +708,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Additional Note */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6 }}
-              className="mt-20 relative"
-            >
-              <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-3xl p-8 lg:p-10 border border-blue-200/50 dark:border-blue-800/50 backdrop-blur-sm">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 dark:text-blue-400 text-sm">i</span>
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                      Why individual approvals?
-                    </h4>
-                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                      We have already applied for general access with Google, which will eventually remove the need for individual approvals. Since this process can take time, we currently follow the individual approval approach so you can start using RepliFast right away.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
           </div>
         </div>
       </section>
@@ -778,11 +726,11 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6"
+              className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6"
             >
               💳 Pricing Plans
             </motion.div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
@@ -791,11 +739,82 @@ export default function LandingPage() {
           </motion.div>
 
           <PricingSection />
+
+          {/* USP Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/5  via-secondary/15 to-primary/5 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-8 lg:p-12 text-center border border-slate-200/50 dark:border-slate-700/30"
+          >
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-6">
+              Why RepliFast is different
+            </h3>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-relaxed">
+              Most other review tools come as part of big, expensive packages filled with features many small businesses never use.
+              RepliFast does one thing well: replying to reviews.
+              That means it's simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium">No bloated feature packs you don't need</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium">Focused only on review replies</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium">Priced for small businesses</span>
+              </div>
+            </div>
+          </motion.div>
+
         </div>
       </section>
 
+      <section id="how-it-works" className="py-24 bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="text-center mb-16"
+        >
+        <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+        Why businesses choose RepliFast
+        </h3>
+        </motion.div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                {benefit.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  {benefit.title}
+                </h3>
+                <p className="text-md text-slate-600 dark:text-slate-400">
+                  {benefit.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+          </div>
+      </section>
       {/* Final CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-blue-600 to-purple-700 relative overflow-hidden">
+      <section className="py-24 bg-gradient-to-br from-primary to-secondary via-secondary/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/10 bg-[length:40px_40px]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-8">
@@ -815,7 +834,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center text-white"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
               Keep your reviews working for you
             </h2>
             <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
@@ -827,7 +846,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   onClick={() => router.push('/dashboard')}
-                  className="bg-white text-blue-600 hover:bg-slate-50 px-8 py-4 text-lg font-semibold mb-2"
+                  className="bg-white text-primary hover:bg-slate-50 px-8 py-4 text-lg font-semibold mb-2"
                 >
                   Start now
                   <ChevronRight className="h-5 w-5 ml-2" />
@@ -860,7 +879,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 bg-slate-900 dark:bg-slate-900">
+      <section className="py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
             {/* Left Sidebar */}
@@ -870,11 +889,16 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="lg:col-span-1"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Frequently <span className="text-slate-400">asked questions</span>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
+                Frequently asked questions
               </h2>
-              <p className="text-slate-300 mb-4">
-                <span className="text-blue-400">Contact us via support</span> if you have any more questions.
+              <p className="text-slate-600 dark:text-slate-300 mb-4">
+                <button 
+                  onClick={() => router.push('/contact')}
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
+                >
+                  Contact us via support
+                </button> if you have any more questions.
               </p>
             </motion.div>
 
@@ -887,47 +911,47 @@ export default function LandingPage() {
               className="lg:col-span-2"
             >
               <Accordion type="single" collapsible className="w-full space-y-4">
-                <AccordionItem value="item-1" className="border-slate-700 bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6 text-lg font-medium">
+                <AccordionItem value="item-1" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
+                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
                     What is RepliFast?
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-300 pb-6 text-base leading-relaxed">
+                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
                     RepliFast is an AI-powered review management platform that automatically generates professional responses to your Google Business Profile reviews. It helps you save time while maintaining consistent engagement with your customers.
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="item-2" className="border-slate-700 bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6 text-lg font-medium">
+                <AccordionItem value="item-2" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
+                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
                     How can I get started?
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-300 pb-6 text-base leading-relaxed">
+                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
                     Simply sign up for a free trial, connect your Google Business Profile, and customize your response tone. RepliFast will start generating replies for your reviews automatically. You can approve or edit responses before they&apos;re posted.
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="item-3" className="border-slate-700 bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6 text-lg font-medium">
+                <AccordionItem value="item-3" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
+                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
                     Do I need to approve every reply?
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-300 pb-6 text-base leading-relaxed">
+                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
                     You have full control over your replies. You can choose to approve each response individually, set up auto-approval for 4 and 5-star reviews, or use bulk approval features to manage multiple responses at once.
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="item-4" className="border-slate-700 bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6 text-lg font-medium">
+                <AccordionItem value="item-4" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
+                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
                     Can I customize the tone of responses?
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-300 pb-6 text-base leading-relaxed">
+                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
                     Absolutely! RepliFast allows you to customize your brand voice and response tone. Whether you prefer friendly, formal, or something in between, our AI adapts to match your business personality and communication style.
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="item-5" className="border-slate-700 bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6 text-lg font-medium">
+                <AccordionItem value="item-5" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
+                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
                     What is your refund policy?
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-300 pb-6 text-base leading-relaxed">
+                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
                     We offer a 14-day free trial with no credit card required. If you&apos;re not satisfied within the first 30 days of your paid subscription, we&apos;ll provide a full refund. Cancel anytime with no long-term commitments.
                   </AccordionContent>
                 </AccordionItem>

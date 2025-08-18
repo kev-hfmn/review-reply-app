@@ -12,10 +12,13 @@ import {
   Menu,
   X,
   Moon,
-  Sun
+  Sun,
+  Building2,
+  User
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -29,6 +32,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { businessName } = useAuth();
 
   return (
     <>
@@ -63,10 +67,10 @@ export function Sidebar() {
         <div className="flex h-full flex-col">
           {/* Logo area - hidden on mobile since it's in TopBar */}
           <div className="hidden lg:flex h-16 items-center px-6 border-b border-border">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⭐</span>
-              <span className="font-medium text-foreground">
-                Jah Shaka Surf Shop
+            <div className="flex items-center gap-1">
+            <User className="h-4 w-4" />
+              <span className="font-normal leading-tighter text-foreground/90">
+                {businessName || 'Your Business'}
               </span>
             </div>
           </div>
@@ -118,7 +122,7 @@ export function Sidebar() {
             </div>
 
             <div className="text-xs text-muted-foreground">
-              © 2024 Flowrise Reviews
+              © 2025 RepliFast
             </div>
           </div>
         </div>

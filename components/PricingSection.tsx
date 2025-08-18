@@ -24,6 +24,7 @@ const pricingTiers = [
       "Automatically generate replies for newly fetched reviews",
       "Standard tone presets only (friendly, professional, casual, etc.)",
       "Manual approval of all replies",
+      "Email notifications when new reviews and replies are ready",
       "Basic review dashboard showing review and reply counts"
     ],
     cta: "Get Started",
@@ -41,7 +42,6 @@ const pricingTiers = [
       "Automatically generate replies for newly fetched reviews",
       "Custom brand instructions field to fine-tune tone and style",
       "Auto-approve rules for certain star ratings (for example 4 or 5 stars)",
-      "Email notifications when new reviews and replies are ready",
       "Advanced insights including customer sentiment breakdown"
     ],
     cta: "Get Started",
@@ -85,9 +85,9 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.1 }}
           onClick={() => handleTierClick(tier.id)}
-          className={`relative rounded-2xl p-8 shadow-lg cursor-pointer transition-all duration-300 h-fit ${
+          className={`relative group rounded-2xl p-8 shadow-lg hover:bg-primary/5 hover:shadow-sm cursor-pointer transition-all duration-300 h-fit ${
             selectedTier === tier.id
-              ? 'bg-primary/5 dark:bg-primary/10 ring-2 ring-primary transform scale-105'
+              ? 'bg-white dark:bg-primary/10 ring-2 ring-primary transform scale-105'
               : 'bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-primary/50'
           }`}
         >
@@ -103,7 +103,7 @@ export function PricingSection() {
             <span className="ml-1 text-slate-500 dark:text-slate-400">{tier.interval}</span>
           </div>
           <p className="mt-4 text-slate-500 dark:text-slate-400">{tier.description}</p>
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-8 space-y-3">
             {tier.features.map((feature) => (
               <li key={feature} className="flex items-center flex-row gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
@@ -115,7 +115,7 @@ export function PricingSection() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleCTAClick}
-            className={`mt-8 w-full py-3 px-4 rounded-lg text-center font-medium transition-colors ${
+            className={`mt-8 w-full py-3 px-4 rounded-lg text-center font-medium transition-colors group-hover:bg-primary/80 group-hover:text-white ${
               selectedTier === tier.id
                 ? 'bg-primary text-white hover:bg-primary-dark'
                 : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600'
