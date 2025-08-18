@@ -28,6 +28,8 @@ interface AuthContextType {
   updateEmail: (newEmail: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isSubscriber: boolean;
+  businessName: string | null;
+  businessId: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -44,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscriber, setIsSubscriber] = useState(false);
+  const [businessName, setBusinessName] = useState<string | null>(null);
+  const [businessId, setBusinessId] = useState<string | null>(null);
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
@@ -79,6 +83,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loadBusinessInfo = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('id, name')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('Business info load error:', error);
+        setBusinessName(null);
+        setBusinessId(null);
+        return;
+      }
+
+      setBusinessName(data?.name || null);
+      setBusinessId(data?.id || null);
+    } catch (error) {
+      console.error('Business info load error:', error);
+      setBusinessName(null);
+      setBusinessId(null);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     console.log("AuthContext - mounted useEffect:", mounted);
@@ -103,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (currentUser) {
           await checkSubscription(currentUser.id);
+          await loadBusinessInfo(currentUser.id);
         }
         
         // Then set up listener for future changes
@@ -116,8 +146,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (newUser) {
               await checkSubscription(newUser.id);
+              await loadBusinessInfo(newUser.id);
             } else {
               setIsSubscriber(false);
+              setBusinessName(null);
+              setBusinessId(null);
             }
           }
         );
@@ -136,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [checkSubscription]);
+  }, [checkSubscription, loadBusinessInfo]);
 
   const value = {
     user,
@@ -256,6 +289,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
     },
     isSubscriber,
+    businessName,
+    businessId,
   };
 
 

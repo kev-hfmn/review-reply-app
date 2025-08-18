@@ -2,10 +2,14 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Mail, MessageSquare, Heart } from 'lucide-react';
+import { Mail, Heart, Sun, Moon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/contexts/ThemeContext';
+import Image from 'next/image';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { theme, toggleTheme } = useTheme();
 
   const footerLinks = {
     product: [
@@ -26,7 +30,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+    <footer className="bg-primary/10 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-16">
@@ -38,11 +42,15 @@ export function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <Link href="/" className="flex items-center space-x-2 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <MessageSquare className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold text-slate-900 dark:text-white">
+                <Link href="/" className="flex items-center space-x-1 mb-4">
+              <Image
+                src="/icons/icon.png"
+                alt="RepliFast"
+                width={30}
+                height={30}
+                className="rounded-md"
+              />
+                  <span className="text-xl font-bold leading-tight text-slate-900 dark:text-white">
                     RepliFast
                   </span>
                 </Link>
@@ -56,18 +64,30 @@ export function Footer() {
                   <motion.a
                     href="/login"
                     whileHover={{ scale: 1.05 }}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-primary hover:bg-primary/80 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     Sign Up
                   </motion.a>
                   <motion.a
                     href="mailto:hello@replifast.com"
                     whileHover={{ scale: 1.05 }}
-                    className="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 hover:border-blue-600 dark:hover:border-blue-400 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium rounded-lg transition-colors"
+                    className="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 hover:border-primary dark:hover:border-primary text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium rounded-lg transition-colors"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Contact Us
                   </motion.a>
+                </div>
+
+                {/* Theme Toggle */}
+                <div className="flex items-center gap-2 mt-4">
+                  <Sun className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <Switch
+                    checked={theme === 'dark'}
+                    onCheckedChange={toggleTheme}
+                    aria-label="Toggle theme"
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <Moon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 </div>
               </motion.div>
             </div>

@@ -201,7 +201,7 @@ export async function syncReviews(
     }
 
     // Determine sync type: initial backfill or incremental
-    const needsBackfill = !business.last_review_sync || 
+    const needsBackfill = !business.last_review_sync ||
       (new Date().getTime() - new Date(business.last_review_sync).getTime()) > 30 * 24 * 60 * 60 * 1000; // 30+ days ago
 
     if (needsBackfill) {
@@ -229,7 +229,11 @@ export async function syncReviews(
       .insert({
         business_id: businessId,
         type: 'review_received',
-        description: `${result.syncType === 'initial_backfill' ? 'Initial backfill' : 'Incremental sync'}: ${result.totalFetched} reviews processed`,
+        description: result.syncType === 'initial_backfill'
+          ? `Initial backfill completed: ${result.newReviews} new reviews found (${result.totalFetched} total processed)`
+          : result.newReviews > 0
+            ? `Incremental sync: ${result.newReviews} new reviews found`
+            : `Incremental sync: No new reviews found`,
         metadata: {
           syncType: result.syncType,
           totalFetched: result.totalFetched,
@@ -241,7 +245,11 @@ export async function syncReviews(
 
     result.success = result.errors.length < result.totalFetched / 2; // Success if less than 50% errors
     result.message = result.success
-      ? `${result.syncType === 'initial_backfill' ? 'Initial backfill' : 'Incremental sync'} completed: ${result.totalFetched} reviews processed (${result.newReviews} new)`
+      ? result.syncType === 'initial_backfill'
+        ? `Initial backfill completed: ${result.newReviews} new reviews found (${result.totalFetched} total processed)`
+        : result.newReviews > 0
+          ? `Incremental sync completed: ${result.newReviews} new reviews found`
+          : `Incremental sync completed: No new reviews found`
       : `Sync completed with errors. ${result.totalFetched} reviews processed, ${result.errors.length} errors.`;
 
     return result;
@@ -259,7 +267,7 @@ export async function syncReviews(
 async function performInitialBackfill(businessId: string, result: SyncResult): Promise<void> {
   const twoYearsAgo = new Date();
   twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-  
+
   console.log(`📅 Backfill cutoff date: ${twoYearsAgo.toISOString()}`);
 
   let pageToken: string | undefined = undefined;
@@ -280,14 +288,14 @@ async function performInitialBackfill(businessId: string, result: SyncResult): P
         for (const googleReview of reviewsResponse.reviews) {
           try {
             const reviewDate = new Date(googleReview.createTime);
-            
+
             // Check if review is too old (beyond 2-year cutoff)
             if (reviewDate < twoYearsAgo) {
               oldReviewsInBatch++;
               consecutiveOldReviews++;
-              
+
               console.log(`📅 Old review found: ${reviewDate.toLocaleDateString()} vs cutoff ${twoYearsAgo.toLocaleDateString()} (${consecutiveOldReviews} consecutive old)`);
-              
+
               // If we find 5 consecutive old reviews, stop backfill (much more aggressive)
               if (consecutiveOldReviews >= 5) {
                 console.log(`⏹️ Found ${consecutiveOldReviews} consecutive old reviews beyond 2-year cutoff, stopping backfill`);
@@ -388,7 +396,7 @@ async function performIncrementalSync(businessId: string, result: SyncResult): P
     return;
   }
 
-  const newestReviewDate = newestReview?.[0]?.review_date 
+  const newestReviewDate = newestReview?.[0]?.review_date
     ? new Date(newestReview[0].review_date)
     : new Date(0); // If no reviews, start from epoch
 
@@ -413,12 +421,12 @@ async function performIncrementalSync(businessId: string, result: SyncResult): P
         for (const googleReview of reviewsResponse.reviews) {
           try {
             const reviewDate = new Date(googleReview.createTime);
-            
+
             // Skip reviews older than our newest review
             if (reviewDate <= newestReviewDate) {
               oldReviewsInBatch++;
               consecutiveDuplicates++;
-              
+
               // If we find many consecutive old reviews, we've caught up
               if (consecutiveDuplicates >= 10) {
                 console.log(`⏹️ Found ${consecutiveDuplicates} consecutive old/duplicate reviews, sync complete`);
@@ -565,7 +573,7 @@ export async function postReplyToGoogle(
   replyText: string
 ): Promise<{ success: boolean; message: string; error?: string }> {
   console.log('🔄 Starting Google Business Profile reply posting...');
-  
+
   try {
     // Get business credentials - EXACT same pattern as fetchReviews
     const { data: business, error } = await supabaseAdmin
@@ -659,7 +667,7 @@ export async function postReplyToGoogle(
             if (!retryResponse.ok) {
               const errorData = await retryResponse.json().catch(() => ({}));
               console.error('❌ Google API error after token refresh:', retryResponse.status, errorData);
-              
+
               if (retryResponse.status === 404) {
                 return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
               } else if (retryResponse.status === 403) {
@@ -684,7 +692,7 @@ export async function postReplyToGoogle(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('❌ Google API error:', response.status, errorData);
-        
+
         if (response.status === 404) {
           return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
         } else if (response.status === 403) {
@@ -704,10 +712,10 @@ export async function postReplyToGoogle(
 
   } catch (error) {
     console.error('❌ Failed to post reply to Google:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Unknown error occurred', 
-      error: 'UNKNOWN_ERROR' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: 'UNKNOWN_ERROR'
     };
   }
 }

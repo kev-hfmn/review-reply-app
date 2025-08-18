@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 // import { supabase } from '@/utils/supabase';
@@ -50,9 +51,16 @@ export default function TopBar() {
   return (
     <div className="w-full bg-primary/5 border-b border-border">
       <div className="mx-auto flex justify-between items-center px-4 py-3">
-        <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="text-2xl"></span>
-          <span className="font-sans">RepliFast</span>
+        <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-1 hover:opacity-80 transition-opacity">
+          <Image
+            src="/icons/icon.png"
+            alt="RepliFast"
+            width={30}
+            height={30}
+            className="rounded-md"
+          />
+          <span className="text-xl font-bold text-foreground tracking-tight">RepliFast</span>
+
         </Link>
 
         <div className="flex items-center gap-4">

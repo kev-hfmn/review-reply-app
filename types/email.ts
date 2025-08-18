@@ -96,6 +96,57 @@ export interface BillingEmailData extends BaseEmailData {
   actionMessage?: string;
 }
 
+// Automation summary email data
+export interface AutomationSummaryData extends BaseEmailData {
+  slotId: string;
+  syncResult: {
+    newReviews: number;
+    totalReviews: number;
+    syncTime: string;
+  };
+  automationResult: {
+    processedReviews: number;
+    generatedReplies: number;
+    autoApproved: number;
+    autoPosted: number;
+    emailsSent: number;
+    errors: number;
+  };
+  timeSlot: string; // "12:00 PM UTC (Europe/Africa)" or "12:00 AM UTC (Americas/Asia)"
+}
+
+// Automation error email data
+export interface AutomationErrorData extends BaseEmailData {
+  errorType: string;
+  errorMessage: string;
+  errorTimestamp: string;
+  affectedReviews?: number;
+  retryAttempts?: number;
+  requiresAttention: boolean;
+  recoveryActions?: Array<{
+    action: string;
+    description: string;
+    url?: string;
+  }>;
+}
+
+// New review alert email data
+export interface NewReviewAlertData extends BaseEmailData {
+  reviews: Array<{
+    id: string;
+    customerName: string;
+    rating: number;
+    text: string;
+    reviewDate: string;
+    aiReply?: string;
+    status: 'pending' | 'approved' | 'posted';
+  }>;
+  totalNewReviews: number;
+  averageRating: number;
+  automationEnabled: boolean;
+  dashboardUrl: string;
+}
+
 // System alert email data
 export interface SystemAlertData extends BaseEmailData {
   alertType: 'google_integration_failure' | 'sync_failure' | 'api_quota_exceeded' | 'credential_expired' | 'general_error';
@@ -115,7 +166,10 @@ export type EmailTemplateData =
   | ReplyConfirmationData 
   | OnboardingEmailData 
   | BillingEmailData 
-  | SystemAlertData;
+  | SystemAlertData
+  | AutomationSummaryData
+  | AutomationErrorData
+  | NewReviewAlertData;
 
 // Email template type enum
 export enum EmailTemplateType {
@@ -124,7 +178,10 @@ export enum EmailTemplateType {
   REPLY_CONFIRMATION = 'reply_confirmation',
   ONBOARDING = 'onboarding',
   BILLING = 'billing',
-  SYSTEM_ALERT = 'system_alert'
+  SYSTEM_ALERT = 'system_alert',
+  AUTOMATION_SUMMARY = 'automation_summary',
+  AUTOMATION_ERROR = 'automation_error',
+  NEW_REVIEW_ALERT = 'new_review_alert'
 }
 
 // Email send response

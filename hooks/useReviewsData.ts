@@ -76,7 +76,7 @@ export function useReviewsData() {
       });
     };
 
-    const truncateText = (text: string, maxLength: number = 160) => {
+    const truncateText = (text: string, maxLength: number = 500) => {
       return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
     };
 
@@ -119,7 +119,7 @@ export function useReviewsData() {
       setBusinesses(data || []);
 
       // Update sync status based on current business
-      const currentBusiness = data?.find(b => 
+      const currentBusiness = data?.find(b =>
         filters.businessId === 'all' ? true : b.id === filters.businessId
       ) || data?.[0];
 
@@ -144,7 +144,7 @@ export function useReviewsData() {
 
     try {
       setError(null);
-      
+
       let query = supabase
         .from('reviews')
         .select('*')
@@ -273,7 +273,7 @@ export function useReviewsData() {
       // Show success toast with appropriate message
       const isInitialBackfill = result.syncType === 'initial_backfill';
       const title = isInitialBackfill ? 'Initial Import Complete' : 'Sync Complete';
-      
+
       let message: string;
       if (result.newReviews === 0) {
         message = 'No new reviews found. Your reviews are up to date!';
@@ -282,7 +282,7 @@ export function useReviewsData() {
       } else {
         message = `${result.newReviews} new reviews imported.`;
       }
-      
+
       // Add processing info ONLY for initial backfill or when there are new reviews AND many duplicates
       if (isInitialBackfill || (result.newReviews > 0 && result.totalFetched > result.newReviews + 10)) {
         message += ` ${result.totalFetched} total processed.`;
@@ -387,7 +387,7 @@ export function useReviewsData() {
     post: async (reviewId: string) => {
       try {
         setIsUpdating(true);
-        
+
         // Get the review to find the reply text - EXACT same pattern as other operations
         const review = reviews.find(r => r.id === reviewId);
         if (!review) {
@@ -421,8 +421,8 @@ export function useReviewsData() {
 
         // Update local state only after successful Google posting - EXACT same pattern as other operations
         const postedAt = result.postedAt || new Date().toISOString();
-        updateReviewInState(reviewId, { 
-          status: 'posted', 
+        updateReviewInState(reviewId, {
+          status: 'posted',
           posted_at: postedAt,
           final_reply: replyText
         });
@@ -737,8 +737,8 @@ export function useReviewsData() {
 
             // Update local state only after successful Google posting - EXACT same pattern as single post
             const postedAt = result.postedAt || new Date().toISOString();
-            updateReviewInState(reviewId, { 
-              status: 'posted', 
+            updateReviewInState(reviewId, {
+              status: 'posted',
               posted_at: postedAt,
               final_reply: replyText
             });

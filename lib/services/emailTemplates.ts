@@ -8,7 +8,10 @@ import {
   ReplyConfirmationData,
   OnboardingEmailData,
   BillingEmailData,
-  SystemAlertData
+  SystemAlertData,
+  AutomationSummaryData,
+  AutomationErrorData,
+  NewReviewAlertData
 } from '@/types/email';
 
 // Base email styles matching RepliFast branding
@@ -628,6 +631,277 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
 }
 
 /**
+ * Automation summary email template
+ */
+function automationSummaryTemplate(data: AutomationSummaryData): EmailTemplate {
+  const subject = `🤖 Automation Summary - ${data.automationResult.processedReviews} reviews processed`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Automation Summary</title>
+      ${baseStyles}
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <h1 class="logo">RepliFast 🤖</h1>
+          <p style="color: #E0E7FF; margin: 0;">Automation Summary Report</p>
+        </div>
+        
+        <div class="content">
+          <h2 style="color: #1F2937; margin: 0 0 20px 0;">Hello ${data.userName}! 👋</h2>
+          
+          <p>Your automated review management system has completed processing for ${data.timeSlot}.</p>
+
+          <div class="card">
+            <h3 style="margin: 0 0 16px 0; color: #374151;">📊 Review Sync Results</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span class="metric">📥 ${data.syncResult.newReviews} New Reviews</span>
+              <span class="metric">📋 ${data.syncResult.totalReviews} Total Reviews</span>
+              <span class="metric">🕐 ${new Date(data.syncResult.syncTime).toLocaleTimeString()}</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin: 0 0 16px 0; color: #374151;">⚡ Automation Results</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span class="metric">🔄 ${data.automationResult.processedReviews} Processed</span>
+              <span class="metric">🤖 ${data.automationResult.generatedReplies} AI Replies</span>
+              <span class="metric">✅ ${data.automationResult.autoApproved} Auto-Approved</span>
+              <span class="metric">📤 ${data.automationResult.autoPosted} Auto-Posted</span>
+              <span class="metric">📧 ${data.automationResult.emailsSent} Emails Sent</span>
+              ${data.automationResult.errors > 0 ? `<span class="metric" style="background-color: #FEF2F2; border-color: #FECACA; color: #991B1B;">❌ ${data.automationResult.errors} Errors</span>` : ''}
+            </div>
+          </div>
+
+          ${data.automationResult.errors > 0 ? `
+          <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #991B1B;">⚠️ Attention Required</h4>
+            <p style="margin: 0; color: #991B1B;">${data.automationResult.errors} error${data.automationResult.errors === 1 ? '' : 's'} occurred during automation. Please check your dashboard for details.</p>
+          </div>
+          ` : `
+          <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #166534;">✅ All Systems Operational</h4>
+            <p style="margin: 0; color: #166534;">Automation completed successfully with no errors!</p>
+          </div>
+          `}
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://app.replifast.com/dashboard" class="button">View Dashboard 📊</a>
+          </div>
+
+          <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #0369A1;">💡 Pro Tip</h4>
+            <p style="margin: 0; color: #0369A1;">Your automation is working 24/7 to manage your reviews. Check your settings to fine-tune the process!</p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Automated by RepliFast at ${new Date().toLocaleString()} 🕐</p>
+          <p>
+            <a href="https://app.replifast.com/settings?tab=integrations" style="color: #3B82F6;">Automation Settings</a> | 
+            <a href="https://app.replifast.com/reviews" style="color: #3B82F6;">Manage Reviews</a> |
+            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, htmlContent };
+}
+
+/**
+ * Automation error email template
+ */
+function automationErrorTemplate(data: AutomationErrorData): EmailTemplate {
+  const subject = `🚨 Automation Error - ${data.errorType}`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Automation Error Alert</title>
+      ${baseStyles}
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header" style="background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);">
+          <h1 class="logo">RepliFast 🚨</h1>
+          <p style="color: #FEE2E2; margin: 0;">Automation Error Alert</p>
+        </div>
+        
+        <div class="content">
+          <h2 style="color: #1F2937; margin: 0 0 20px 0;">Hello ${data.userName},</h2>
+          
+          <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #991B1B;">🚨 Automation Error Detected</h3>
+            <p style="margin: 0 0 8px 0; color: #991B1B;"><strong>Error Type:</strong> ${data.errorType}</p>
+            <p style="margin: 0 0 8px 0; color: #991B1B;"><strong>Time:</strong> ${new Date(data.errorTimestamp).toLocaleString()}</p>
+            <p style="margin: 0; color: #991B1B;"><strong>Message:</strong> ${data.errorMessage}</p>
+          </div>
+
+          ${data.affectedReviews ? `
+          <div class="card">
+            <h4 style="margin: 0 0 8px 0; color: #374151;">📊 Impact</h4>
+            <p style="margin: 0;">Affected Reviews: <strong>${data.affectedReviews}</strong></p>
+            ${data.retryAttempts ? `<p style="margin: 8px 0 0 0;">Retry Attempts: <strong>${data.retryAttempts}</strong></p>` : ''}
+          </div>
+          ` : ''}
+
+          ${data.requiresAttention ? `
+          <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #92400E;">⚡ Immediate Attention Required</h4>
+            <p style="margin: 0; color: #92400E;">This error requires your immediate attention to restore full automation functionality.</p>
+          </div>
+          ` : ''}
+
+          ${data.recoveryActions && data.recoveryActions.length > 0 ? `
+          <div class="card">
+            <h4 style="margin: 0 0 12px 0; color: #374151;">🔧 Recommended Actions</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${data.recoveryActions.map(action => `
+                <li style="margin: 8px 0;">
+                  <strong>${action.action}:</strong> ${action.description}
+                  ${action.url ? `<br><a href="${action.url}" style="color: #3B82F6;">Take Action →</a>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          ` : ''}
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://app.replifast.com/settings?tab=integrations" class="button" style="background-color: #DC2626;">Check Settings 🔧</a>
+          </div>
+
+          <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #0369A1;">💡 Need Help?</h4>
+            <p style="margin: 0; color: #0369A1;">Our support team is ready to help you resolve this issue quickly. Include this error reference when contacting support.</p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Error detected at ${new Date().toLocaleString()} 🕐</p>
+          <p>
+            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> | 
+            <a href="https://app.replifast.com/dashboard" style="color: #3B82F6;">Dashboard</a> |
+            <a href="https://docs.replifast.com/troubleshooting" style="color: #3B82F6;">Troubleshooting</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, htmlContent };
+}
+
+/**
+ * New review alert email template
+ */
+function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
+  const subject = `⭐ ${data.totalNewReviews} New Review${data.totalNewReviews === 1 ? '' : 's'} for ${data.businessName}`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Reviews Alert</title>
+      ${baseStyles}
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <h1 class="logo">RepliFast ⭐</h1>
+          <p style="color: #E0E7FF; margin: 0;">New Reviews Alert</p>
+        </div>
+        
+        <div class="content">
+          <h2 style="color: #1F2937; margin: 0 0 20px 0;">Hello ${data.userName}! 👋</h2>
+          
+          <p>Great news! Your business <strong>${data.businessName}</strong> has received ${data.totalNewReviews} new review${data.totalNewReviews === 1 ? '' : 's'}.</p>
+
+          <div class="card">
+            <h3 style="margin: 0 0 16px 0; color: #374151;">📊 Summary</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span class="metric">⭐ ${data.totalNewReviews} New Review${data.totalNewReviews === 1 ? '' : 's'}</span>
+              <span class="metric">📊 ${data.averageRating.toFixed(1)} Avg Rating</span>
+              ${data.automationEnabled ? '<span class="metric" style="background-color: #DCFCE7; border-color: #BBF7D0; color: #166534;">🤖 Automation Active</span>' : '<span class="metric" style="background-color: #FEF3C7; border-color: #FCD34D; color: #92400E;">📝 Manual Review Needed</span>'}
+            </div>
+          </div>
+
+          ${data.reviews.slice(0, 3).map((review, index) => `
+          <div class="card" style="border-left: 4px solid ${review.rating >= 4 ? '#10B981' : review.rating >= 3 ? '#F59E0B' : '#EF4444'};">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <strong style="color: #374151;">${review.customerName}</strong>
+              <div>
+                <span class="rating">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
+                <span style="color: #6B7280; font-size: 12px; margin-left: 8px;">${new Date(review.reviewDate).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <p style="margin: 0 0 12px 0; color: #4B5563; line-height: 1.5;">"${review.text.length > 200 ? review.text.substring(0, 200) + '...' : review.text}"</p>
+            ${review.aiReply ? `
+            <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 6px; padding: 12px; margin-top: 12px;">
+              <p style="margin: 0; color: #0369A1; font-size: 14px;"><strong>🤖 AI Reply Generated:</strong></p>
+              <p style="margin: 4px 0 0 0; color: #0369A1; font-size: 14px;">"${review.aiReply.length > 150 ? review.aiReply.substring(0, 150) + '...' : review.aiReply}"</p>
+              <p style="margin: 8px 0 0 0; color: #6B7280; font-size: 12px;">Status: <strong>${review.status}</strong></p>
+            </div>
+            ` : ''}
+          </div>
+          `).join('')}
+
+          ${data.reviews.length > 3 ? `
+          <div style="text-align: center; margin: 20px 0; padding: 16px; background-color: #F9FAFB; border-radius: 8px;">
+            <p style="margin: 0; color: #6B7280;">+ ${data.reviews.length - 3} more review${data.reviews.length - 3 === 1 ? '' : 's'}</p>
+          </div>
+          ` : ''}
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.dashboardUrl}" class="button">Manage Reviews 🎯</a>
+          </div>
+
+          ${!data.automationEnabled ? `
+          <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #92400E;">💡 Automate Your Responses</h4>
+            <p style="margin: 0; color: #92400E;">Enable automation to automatically generate and post AI replies to new reviews!</p>
+            <div style="margin-top: 12px;">
+              <a href="https://app.replifast.com/settings?tab=integrations" style="color: #92400E; text-decoration: underline;">Enable Automation →</a>
+            </div>
+          </div>
+          ` : `
+          <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #166534;">🤖 Automation Active</h4>
+            <p style="margin: 0; color: #166534;">Your automation system is working to generate and post replies automatically!</p>
+          </div>
+          `}
+        </div>
+        
+        <div class="footer">
+          <p>Keep engaging with your customers! 🚀</p>
+          <p>
+            <a href="${data.dashboardUrl}" style="color: #3B82F6;">Dashboard</a> | 
+            <a href="https://app.replifast.com/reviews" style="color: #3B82F6;">All Reviews</a> |
+            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return { subject, htmlContent };
+}
+
+/**
  * Get all email templates
  */
 export function getEmailTemplates() {
@@ -637,6 +911,9 @@ export function getEmailTemplates() {
     replyConfirmation: replyConfirmationTemplate,
     onboarding: onboardingTemplate,
     billing: billingTemplate,
-    systemAlert: systemAlertTemplate
+    systemAlert: systemAlertTemplate,
+    automationSummary: automationSummaryTemplate,
+    automationError: automationErrorTemplate,
+    newReviewAlert: newReviewAlertTemplate
   };
 }

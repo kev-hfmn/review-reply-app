@@ -127,7 +127,7 @@ export function GoogleReviewCard({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 max-w-md ${className}`}>
+    <div className={`bg-white rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 p-4 max-w-md ${className}`}>
       {/* User Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">

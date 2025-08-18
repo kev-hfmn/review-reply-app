@@ -8,9 +8,9 @@ import {
   SkipForward,
   Edit3,
   Calendar,
-  User,
   Loader2
 } from 'lucide-react';
+import { Avatar } from '@/components/Avatar';
 import type { ReviewTableProps } from '@/types/reviews';
 import type { Review } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
@@ -240,22 +240,11 @@ export default function ReviewsTable({
 
                 {/* Customer & Date */}
                 <div className="flex items-center space-x-2 text-sm mb-3">
-                  <div className="relative flex-shrink-0">
-                    {review.customer_avatar_url ? (
-                      <img
-                        src={review.customer_avatar_url}
-                        alt={`${review.customerDisplayName}'s avatar`}
-                        className="h-8 w-8 rounded-full object-cover border border-muted"
-                        onError={(e) => {
-                          // Fallback to user icon if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <User className={`h-4 w-4 text-slate-400 ${review.customer_avatar_url ? 'hidden' : ''}`} />
-                  </div>
+                  <Avatar 
+                    src={review.customer_avatar_url}
+                    alt={`${review.customerDisplayName}'s avatar`}
+                    size="md"
+                  />
                   <span className="font-medium text-foreground text-md self-center">
                     {review.customerDisplayName}
                   </span>
