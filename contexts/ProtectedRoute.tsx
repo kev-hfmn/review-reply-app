@@ -12,7 +12,11 @@ const PUBLIC_ROUTES = [
   '/signup',
   '/verify-email',
   '/reset-password',
-  '/update-password'
+  '/update-password',
+  // Public legal & policy pages
+  '/privacy',
+  '/cookies',
+  '/terms'
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
