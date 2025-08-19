@@ -62,8 +62,8 @@ export function PublicNavigation({
                       onSetActive={() => setActiveSection(section.id)}
                       className={`cursor-pointer transition-colors duration-200 ${
                         activeSection === section.id
-                          ? 'text-blue-600 dark:text-blue-400 font-medium'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
+                          ? 'text-black dark:text-slate-50 font-medium'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-slate-400'
                       }`}
                     >
                       {section.title}
@@ -78,7 +78,7 @@ export function PublicNavigation({
                           router.push(`/#${section.id}`);
                         }
                       }}
-                      className="cursor-pointer transition-colors duration-200 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400"
+                      className="cursor-pointer transition-colors duration-200 text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-slate-50"
                     >
                       {section.title}
                     </button>

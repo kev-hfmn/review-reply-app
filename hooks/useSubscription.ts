@@ -47,14 +47,14 @@ export function useSubscription() {
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .in('status', ['active', 'trialing'])
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .maybeSingle();
 
       if (error) throw error;
 
       const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
+        data.status === 'active' && 
         new Date(data.current_period_end) > new Date();
 
       const result = isValid ? data : null;
@@ -81,7 +81,7 @@ export function useSubscription() {
 
   const checkValidSubscription = useCallback((data: Subscription[]): boolean => {
     return data.some(sub => 
-      ['active', 'trialing'].includes(sub.status) &&
+      sub.status === 'active' &&
       new Date(sub.current_period_end) > new Date()
     );
   }, []);

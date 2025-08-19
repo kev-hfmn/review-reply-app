@@ -93,7 +93,7 @@ export default function ContactPage() {
 
       <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
         {/* Navigation */}
-        <PublicNavigation 
+        <PublicNavigation
           navigationSections={navigationSections}
           showScrollLinks={false}
         />
@@ -103,7 +103,7 @@ export default function ContactPage() {
           <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <div className="pt-20 pb-16 sm:pt-32 sm:pb-24">
+            <div className="pt-10 pb-16 sm:pt-20 sm:pb-24">
               <motion.div
                 ref={heroRef}
                 initial={{ opacity: 0, y: 20 }}
@@ -130,7 +130,7 @@ export default function ContactPage() {
 
         {/* Contact Form Section */}
         <section className="py-24 bg-slate-50 dark:bg-[#0f1629]">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
               {/* Left Side - Contact Info */}
               <motion.div
@@ -192,7 +192,7 @@ export default function ContactPage() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
               >
-                <Card className="shadow-lg border-0 bg-white dark:bg-slate-800/50">
+                <Card className="shadow-lg rounded-xl border-0 bg-white dark:bg-slate-800/50">
                   <CardHeader className="pb-6">
                     <CardTitle className="text-2xl text-slate-900 dark:text-white">
                       Send us a message

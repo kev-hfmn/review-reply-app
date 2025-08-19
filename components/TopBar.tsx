@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useTrialStatus } from '@/hooks/useTrialStatus';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -16,7 +15,7 @@ export default function TopBar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { subscription, isLoading: isLoadingSubscription } = useSubscription();
-  const { isInTrial } = useTrialStatus();
+  // Removed trial system - users are either basic or premium subscribers
 
   // State for tracking logout process
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -78,7 +77,7 @@ export default function TopBar() {
           ) : (
             // Show subscription and profile for authenticated users
             <>
-              {!isLoadingSubscription && (!isInTrial) && (
+              {!isLoadingSubscription && (
                 !subscription ||
                 subscription.status === 'canceled' ||
                 (subscription.cancel_at_period_end && new Date(subscription.current_period_end) > new Date())
@@ -118,11 +117,7 @@ export default function TopBar() {
                     <Link
                       href="/profile"
                       className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setIsDropdownOpen(false);
-                        window.location.href = '/profile';
-                      }}
+                      onClick={() => setIsDropdownOpen(false)}
                     >
                       Profile & Subscription
                     </Link>

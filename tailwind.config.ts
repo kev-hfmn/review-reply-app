@@ -9,6 +9,9 @@ export default {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			'indie-flower': ['var(--font-indie-flower)', 'cursive'],
+  		},
   		colors: {
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',

@@ -85,7 +85,7 @@ export function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.1 }}
           onClick={() => handleTierClick(tier.id)}
-          className={`relative group rounded-2xl p-8 shadow-lg hover:bg-primary/5 hover:shadow-sm cursor-pointer transition-all duration-300 h-fit ${
+          className={`relative group rounded-2xl p-8 shadow-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:shadow-sm dark:hover:border-primary/50 cursor-pointer transition-all duration-300 h-fit ${
             selectedTier === tier.id
               ? 'bg-white dark:bg-primary/10 ring-2 ring-primary transform scale-105'
               : 'bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-primary/50'

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
@@ -23,7 +22,7 @@ export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { fetchSubscription } = useSubscription();
   const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
-  const { isInTrial, isLoading: isTrialLoading } = useTrialStatus();
+  // Removed trial system - users are either basic or premium subscribers
   const [authTimeout, setAuthTimeout] = useState(false);
 
   // Fetch dashboard data
@@ -55,16 +54,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!user && (isAuthLoading || isTrialLoading)) {
+      if (!user && isAuthLoading) {
         setAuthTimeout(true);
       }
     }, AUTH_TIMEOUT);
 
     return () => clearTimeout(timer);
-  }, [user, isAuthLoading, isTrialLoading]);
+  }, [user, isAuthLoading]);
 
   // Update the loading check
-  if (!user && (isAuthLoading || isTrialLoading) && !hasCheckedSubscription) {
+  if (!user && isAuthLoading && !hasCheckedSubscription) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -139,7 +138,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-muted-foreground">
-            {isInTrial ? "Trial Period" : "Premium Plan"}
+            Basic User
           </span>
           {isDashboardLoading && (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
