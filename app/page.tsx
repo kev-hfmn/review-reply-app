@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import { useRef, useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VideoModal } from '@/components/VideoModal';
@@ -28,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { GoogleReviewCard } from '@/components/GoogleReviewCard';
 import { Footer } from '@/components/Footer';
 import { PublicNavigation } from '@/components/PublicNavigation';
+import { HowItWorksSteps } from '@/components/HowItWorksSteps';
 import {
   Accordion,
   AccordionContent,
@@ -35,6 +37,16 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Head from 'next/head';
+import Image from 'next/image';
+
+// Declare global particlesJS
+declare global {
+  interface Window {
+    particlesJS: {
+      load: (id: string, path: string, callback?: () => void) => void;
+    };
+  }
+}
 
 // Core features of RepliFast
 const features = [
@@ -141,6 +153,7 @@ const navigationSections = [
   { id: "contact", title: "Contact" }
 ];
 
+
 // Sample reviews for showcase
 const sampleReviews = [
   {
@@ -191,6 +204,23 @@ export default function LandingPage() {
     threshold: 0.1
   });
 
+  useEffect(() => {
+    // Simple particles.js initialization
+    const initParticles = async () => {
+      // Load the script dynamically
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js';
+      script.onload = () => {
+        if (window.particlesJS) {
+          window.particlesJS.load('particles-js', '/particlesjs-config.json');
+        }
+      };
+      document.head.appendChild(script);
+    };
+
+    initParticles();
+  }, []);
+
   return (
     <>
       <Head>
@@ -217,7 +247,8 @@ export default function LandingPage() {
       />
 
       {/* Hero Section */}
-      <section id="home" className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-[#0B1120] dark:via-[#0B1120] dark:to-[#1a1a2e]">
+      <section id="home" className="relative overflow-hidden bg-gradient-to-br from-primary/40 via-accent/20 to-secondary/20 ">
+        <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -279,7 +310,7 @@ export default function LandingPage() {
                     Start now
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">No credit card required</p>
+                  {/* <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">No credit card required</p> */}
                 </div>
 {/*                 <Button
                   size="lg"
@@ -297,18 +328,18 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 40 }}
               animate={heroInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="mt-20 relative"
+              className="mt-24 relative"
             >
               <div className="relative mx-auto max-w-6xl">
                 {/* Toggle Section */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-lg border border-slate-200 dark:border-slate-700">
+                <div className="relative text-center mb-5">
+                  <div className="inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
                     <button
                       onClick={() => setShowReplies(false)}
-                      className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                      className={`px-6 py-3  rounded-full text-sm font-medium transition-all duration-200 ${
                         !showReplies
-                          ? 'bg-slate-900 text-white dark:bg-slate-700'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-slate-100  text-muted-foreground dark:text-slate-300 border border-slate-200 dark:bg-slate-700'
+                          : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       Without Replies
@@ -317,16 +348,49 @@ export default function LandingPage() {
                       onClick={() => setShowReplies(true)}
                       className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                         showReplies
-                          ? 'bg-primary text-white'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-primary border border-primary text-white'
+                          : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      With AI Replies
+                      With Replies
                     </button>
                   </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-3">
-                    See the difference replies make to your business reputation
-                  </p>
+
+                  {/* Arrow pointing to toggle */}
+                  <div className="absolute -top-40 left-1/2 transform translate-x-36 flex flex-col items-center">
+                    <div className="translate-y-16">
+                      <p className="text-xl text-slate-600 dark:text-slate-200 translate-x-16 font-medium max-w-[200px] text-center leading-tight font-indie-flower">
+                        See the difference replies make to your reputation
+                      </p>
+                    </div>
+                    <motion.div
+                      animate={{
+                        x: [0, -8, 0],
+                        y: [0, 2, 0]
+                      }}
+                      transition={{
+                        duration: 3,
+                        ease: "easeInOut",
+                        repeat: Infinity,
+                        repeatType: "loop"
+                      }}
+                    >
+                      <Image
+                        src="/arrow.png"
+                        alt="Click to toggle"
+                        width={190}
+                        height={190}
+                        className="transform rotate-[25deg] filter drop-shadow-lg block dark:hidden opacity-80"
+                      />
+                      <Image
+                        src="/arrow_white.png"
+                        alt="Click to toggle"
+                        width={190}
+                        height={190}
+                        className="transform rotate-[25deg] filter drop-shadow-lg hidden dark:block"
+                      />
+                    </motion.div>
+                  </div>
                 </div>
 
                 {/* Review Cards Grid */}
@@ -486,10 +550,10 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30 rounded-2xl border border-blue-200 dark:border-blue-700/50"
+                className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-primary/10 dark:to-primary/20 rounded-2xl border border-blue-200 dark:border-primary/50"
               >
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">89%</div>
-                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                <div className="text-3xl font-bold text-blue-600 dark:text-primary mb-2">89%</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                   of consumers are highly likely to use a business that responds to all its online reviews
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -502,10 +566,10 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30 rounded-2xl border border-green-200 dark:border-green-700/50"
+                className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-accent/10 dark:to-accent/20 rounded-2xl border border-green-200 dark:border-accent/50"
               >
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">Better</div>
-                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                <div className="text-3xl font-bold text-green-600 dark:text-accent mb-2">Better</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                   ratings over time when businesses actively respond to reviews
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -518,10 +582,10 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.4 }}
-                className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/30 rounded-2xl border border-purple-200 dark:border-purple-700/50"
+                className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-secondary/10 dark:to-secondary/15 rounded-2xl border border-purple-200 dark:border-purple-700/50"
               >
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">Higher</div>
-                <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                <div className="text-3xl font-bold text-purple-600 dark:text-secondary mb-2">Higher</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                   local search rankings for businesses that respond to reviews
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -534,23 +598,23 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mt-20 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8 lg:p-12 text-center"
+            className="mt-20 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/10 rounded-2xl p-8 lg:p-12 text-center max-w-4xl mx-auto"
           >
             <div className="flex justify-center mb-6">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
               ))}
             </div>
-            <blockquote className="text-xl lg:text-2xl font-medium text-slate-900 dark:text-white mb-6">
+            <blockquote className="text-xl lg:text-xl font-thin text-slate-900 dark:text-white mb-6">
               &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
             </blockquote>
-            <div className="flex items-center justify-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-white" />
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                <Image src="/icons/jahshaka.avif" alt="Jah Shaka Surf Shop" width={40} height={40} />
               </div>
               <div className="text-left">
                 <div className="font-semibold text-slate-900 dark:text-white">Griff</div>
-                <div className="text-slate-600 dark:text-slate-300">Jah Shaka Surf Shop</div>
+                <div className="text-slate-600 font-thin text-sm dark:text-slate-300">Jah Shaka Surf Shop</div>
               </div>
             </div>
           </motion.div>
@@ -586,134 +650,13 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="max-w-5xl mx-auto">
-            <div className="relative">
-              {/* Connection Line - Height limited to connect only between steps */}
-              <div className="absolute left-8 top-8 h-[calc(100%-8rem)] w-0.5 bg-gradient-to-b from-blue-200 via-blue-300 to-blue-400 dark:from-blue-800 dark:via-blue-700 dark:to-blue-600 hidden lg:block"></div>
-
-              <div className="space-y-6">
-                {/* Step 1 */}
-                <motion.div
-                  initial={{ opacity: 0, x: -40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1, duration: 0.6 }}
-                  className="relative"
-                >
-                  <div className="flex items-start space-x-8">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl border border-blue-500/30">
-                        1
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 border border-white/20 dark:border-slate-700/50 shadow-xl">
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-4">
-                        We request approval from Google for you
-                      </h4>
-                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-                        Google requires each business to approve access before review management tools like ours can connect. We take care of the request process on your behalf so you don&apos;t have to deal with any of the technical steps.
-                      </p>
-
-                      {/* Expandable Why Section */}
-                      <details className="group">
-                        <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-1">
-                          <span>Why?</span>
-                          <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                            We have already applied for general access with Google, which will eventually remove the need for individual approvals. Since this process can take time, we currently follow the individual approval approach so you can start using RepliFast right away.
-                          </p>
-                        </div>
-                      </details>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Step 2 */}
-                <motion.div
-                  initial={{ opacity: 0, x: -40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                  className="relative"
-                >
-                  <div className="flex items-start space-x-8">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl border border-blue-500/30">
-                        2
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 border border-white/20 dark:border-slate-700/50 shadow-xl">
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-4">
-                        Google approves your access
-                      </h4>
-                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed">
-                        Once Google approves, you will receive a confirmation. This is the green light for you to connect your account to RepliFast.
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Step 3 */}
-                <motion.div
-                  initial={{ opacity: 0, x: -40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                  className="relative"
-                >
-                  <div className="flex items-start space-x-8">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl border border-blue-500/30">
-                        3
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 border border-white/20 dark:border-slate-700/50 shadow-xl">
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-4">
-                        Connect and bring in your reviews
-                      </h4>
-                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed">
-                        After approval, you simply enter your Google connection details into RepliFast. From there, you can bring in your existing reviews and start replying to them.
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Step 4 */}
-                <motion.div
-                  initial={{ opacity: 0, x: -40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="relative"
-                >
-                  <div className="flex items-start space-x-8">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm text-blue-400 rounded-2xl flex items-center justify-center font-bold text-xl border border-blue-500/30">
-                        4
-                      </div>
-                    </div>
-                    <div className="flex-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 border border-white/20 dark:border-slate-700/50 shadow-xl">
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-4">
-                        Keep your reviews up to date
-                      </h4>
-                      <p className="text-md text-slate-600 dark:text-slate-300 leading-relaxed">
-                        From that moment on, new reviews will appear in RepliFast so you can respond quickly and keep your reputation in great shape.
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-
+            <HowItWorksSteps />
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-slate-50 dark:bg-[#0f1629]">
+      <section id="pricing" className="py-24 bg-slate-50 dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -776,7 +719,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="py-24 bg-background">
+      <section id="how-it-works" className="py-24 bg-slate-50 dark:bg-[#0B1120]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -814,10 +757,10 @@ export default function LandingPage() {
           </div>
       </section>
       {/* Final CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary to-secondary via-secondary/50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/10 bg-[length:40px_40px]" />
+      <section className="py-16 bg-gradient-to-br from-primary to-secondary/45 via-accent/20 relative overflow-hidden">
+        <div className="absolute inset-0 dark:bg-grid-white/10 bg-[length:40px_40px] bg-slate-700/50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-8">
+          <div className="text-center mb-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -846,7 +789,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   onClick={() => router.push('/dashboard')}
-                  className="bg-white text-primary hover:bg-slate-50 px-8 py-4 text-lg font-semibold mb-2"
+                  className="bg-white text-primary hover:bg-slate-50 px-6 py-4 text-lg font-semibold mb-2"
                 >
                   Start now
                   <ChevronRight className="h-5 w-5 ml-2" />
@@ -863,7 +806,7 @@ export default function LandingPage() {
               </Button> */}
             </div>
 
-            <div className="mt-8 flex items-center justify-center space-x-6 text-sm opacity-80">
+            <div className="mt-5 flex items-center justify-center space-x-6 text-sm opacity-80">
               <div className="flex items-center">
                 <CheckCircle className="h-5 w-5 mr-2" />
                 Only pay after you start using RepliFast
@@ -893,7 +836,7 @@ export default function LandingPage() {
                 Frequently asked questions
               </h2>
               <p className="text-slate-600 dark:text-slate-300 mb-4">
-                <button 
+                <button
                   onClick={() => router.push('/contact')}
                   className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
                 >

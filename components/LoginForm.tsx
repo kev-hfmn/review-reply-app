@@ -11,11 +11,11 @@ interface LoginFormProps {
   error?: string;
 }
 
-export function LoginForm({ 
-  onSubmit, 
-  onGoogleSignIn, 
-  isLoading, 
-  error 
+export function LoginForm({
+  onSubmit,
+  onGoogleSignIn,
+  isLoading,
+  error
 }: LoginFormProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -31,9 +31,9 @@ export function LoginForm({
     <div className="w-full space-y-8 p-8 bg-surface-light dark:bg-surface-dark rounded-2xl shadow-subtle border border-gray-200 dark:border-gray-700">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
-          <span className="text-3xl">🎬</span>
+          <span className="text-3xl">⭐️</span>
           <h2 className="text-2xl font-medium text-text dark:text-text-dark">
-            NextTemp
+            RepliFast
           </h2>
         </div>
       </div>
@@ -100,13 +100,13 @@ export function LoginForm({
           </button>
         </div>
 
-        <ForgotPasswordModal 
+        <ForgotPasswordModal
           isOpen={isForgotPasswordOpen}
           onClose={() => setIsForgotPasswordOpen(false)}
         />
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isLoading}
           className="w-full py-2.5 px-4 border border-transparent rounded-full shadow-sm text-white bg-primary hover:bg-primary-dark disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
         >

@@ -11,8 +11,6 @@ import { Suspense } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { StripeBuyButton } from '@/components/StripeBuyButton';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
-// import { PricingSection } from '@/components/PricingSection';
-// import { StripeBuyButton } from '@/components/StripeBuyButton';
 
 function ProfileContent() {
   const { user } = useAuth();
@@ -77,13 +75,6 @@ function ProfileContent() {
     };
   }, [isLoadingSubscription, fetchSubscription]);
 
-  // Add useEffect for auth check
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
-
   // Add refresh effect
   useEffect(() => {
     if (user?.id) {
@@ -135,17 +126,6 @@ function ProfileContent() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-4 mx-auto"></div>
-          <p className="text-foreground">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <ErrorBoundary
       fallback={
@@ -154,44 +134,47 @@ function ProfileContent() {
         </div>
       }
     >
-      <div className="min-h-screen bg-surface-light dark:bg-surface-dark p-8 max-w-4xl mx-auto">
+      <div className="space-y-8">
         {paymentStatus === 'success' && (
-          <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+          <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
             <p className="text-green-600 dark:text-green-400">
               🎉 Thank you for your subscription! Your payment was successful.
             </p>
           </div>
         )}
         
-        <h1 className="text-3xl font-bold mb-8">Profile</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+          <p className="text-muted-foreground mt-2">Manage your account and subscription settings</p>
+        </div>
         
         <AccountManagement />
 
         {/* Subscription Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Subscription Status</h2>
+        <div className="bg-card rounded-lg shadow-subtle p-6">
+          <h2 className="text-xl font-semibold mb-4 text-foreground">Subscription Status</h2>
           {error ? (
             <div className="text-red-500 dark:text-red-400">{error}</div>
           ) : isLoadingSubscription ? (
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>Loading subscription details...</span>
+              <span className="text-muted-foreground">Loading subscription details...</span>
             </div>
           ) : subscription ? (
             <div className="space-y-2">
-              <p>
+              <p className="text-foreground">
                 <span className="font-medium">Status:</span>{' '}
                 <span className={`${subscription.status === 'active' ? 'text-green-500' : 'text-yellow-500'}`}>
                   {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                 </span>
               </p>
-              <p><span className="font-medium">Started:</span> {new Date(subscription.created_at).toLocaleDateString()}</p>
+              <p className="text-foreground"><span className="font-medium">Started:</span> {new Date(subscription.created_at).toLocaleDateString()}</p>
               
               {subscription.status === 'canceled' ? (
                 <div className="mt-4">
                   <Link
                     href="/pay"
-                    className="inline-block px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-full shadow-subtle hover:shadow-hover transition-all"
+                    className="inline-block px-6 py-3 bg-primary hover:bg-primary-dark text-primary-foreground rounded-lg shadow-subtle hover:shadow-hover transition-all"
                   >
                     Resubscribe
                   </Link>
@@ -203,7 +186,7 @@ function ProfileContent() {
                   </p>
                   <button
                     onClick={handleReactivateSubscription}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     Resume Subscription
                   </button>
@@ -211,7 +194,7 @@ function ProfileContent() {
               ) : (subscription.status === 'active' || subscription.status === 'trialing') ? (
                 <button
                   onClick={() => setIsCancelModalOpen(true)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-4"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
                 >
                   Cancel Subscription
                 </button>
@@ -225,7 +208,7 @@ function ProfileContent() {
                     You are currently in your 48-hour trial period. Your trial will end on {' '}
                     {trialEndTime ? new Date(trialEndTime).toLocaleDateString() : 'soon'}.
                   </p>
-                  <p>Subscribe now to continue using the app after the trial ends.</p>
+                  <p className="text-muted-foreground">Subscribe now to continue using the app after the trial ends.</p>
                 </>
               ) : trialEndTime ? (
                 <>
@@ -233,11 +216,11 @@ function ProfileContent() {
                     <p className="text-red-600 dark:text-red-400">
                       Your trial period ended on {new Date(trialEndTime).toLocaleDateString()}.
                     </p>
-                    <p className="mt-2">Subscribe now to regain access to the cooking experience.</p>
+                    <p className="mt-2 text-muted-foreground">Subscribe now to regain access to the review management experience.</p>
                   </div>
                 </>
               ) : (
-                <p>Subscribe to unlock the amazing cooking experience.</p>
+                <p className="text-muted-foreground">Subscribe to unlock the amazing review management experience.</p>
               )}
               
               <StripeBuyButton
@@ -248,30 +231,25 @@ function ProfileContent() {
           )}
         </div>
 
-        {/* Show pricing section if user doesn't have an active subscription */}
-        {/* {(!subscription || subscription.status === 'canceled') && (
-          <PricingSection showFullDetails={true} />
-        )} */}
-
         {/* Cancel Confirmation Modal */}
         {isCancelModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-xl font-semibold mb-4">Cancel Subscription?</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+            <div className="bg-card rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Cancel Subscription?</h3>
+              <p className="text-muted-foreground mb-6">
                 You&apos;ll continue to have access until the end of your billing period on {new Date(subscription?.current_period_end || '').toLocaleDateString()}. No refunds are provided for cancellations.
               </p>
               <div className="flex gap-4 justify-end">
                 <button
                   onClick={() => setIsCancelModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
                   disabled={isCancelling}
                 >
                   Keep Subscription
                 </button>
                 <button
                   onClick={handleCancelSubscription}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                   disabled={isCancelling}
                 >
                   {isCancelling ? (
@@ -290,8 +268,7 @@ function ProfileContent() {
       </div>
     </ErrorBoundary>
   );
-};
-
+}
 
 export default function ProfilePage() {
   return (

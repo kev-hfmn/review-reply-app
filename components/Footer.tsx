@@ -30,7 +30,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-primary/10 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+    <footer className="bg-primary/10 border-t border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-16">

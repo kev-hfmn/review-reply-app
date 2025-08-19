@@ -5,8 +5,7 @@ import { supabase } from '@/utils/supabase';
 import { 
   Session, 
   User, 
-  SupabaseClient, 
-  AuthTokenResponse 
+  SupabaseClient
 } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -34,13 +33,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-interface SubscriptionPayload {
-  new: {
-    user_id: string;
-    [key: string]: any;
-  };
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -51,10 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
-      // TEMPORARY: Skip subscription checks for MVP development
-      // TODO: Re-enable subscription checks in production
-      if (process.env.NODE_ENV === 'development') {
-        setIsSubscriber(true);
+      // Add safety check for valid user ID
+      if (!userId || userId.length < 10) {
+        console.warn('Invalid user ID for subscription check:', userId);
+        setIsSubscriber(false);
         return;
       }
 
@@ -62,18 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .in('status', ['active', 'trialing'])
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .maybeSingle();
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Subscription check error:', error);
         setIsSubscriber(false);
         return;
       }
 
+      // Only consider active subscriptions (no trials)
       const isValid = data && 
-        ['active', 'trialing'].includes(data.status) && 
+        data.status === 'active' && 
         new Date(data.current_period_end) > new Date();
 
       setIsSubscriber(!!isValid);
@@ -90,10 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('id, name')
         .eq('user_id', userId)
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        console.error('Business info load error:', error);
+        // Only log error if it's not a "no rows" error (PGRST116)
+        if (error.code !== 'PGRST116') {
+          console.error('Business info load error:', error);
+        }
+        // For new users without business records, this is expected
         setBusinessName(null);
         setBusinessId(null);
         return;
@@ -141,10 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!mounted) return;
             
             const newUser = newSession?.user ?? null;
-            setSession(newSession);
             setUser(newUser);
             
             if (newUser) {
+              // Load subscription and business data for all authenticated users
               await checkSubscription(newUser.id);
               await loadBusinessInfo(newUser.id);
             } else {
