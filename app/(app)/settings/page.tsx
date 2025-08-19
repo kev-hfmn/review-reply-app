@@ -407,10 +407,36 @@ export default function SettingsPage() {
   }, []);
 
   const handleSaveProfile = async () => {
-    if (!currentBusinessId) return;
+    // Create business record if it doesn't exist
+    if (!currentBusinessId) {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .insert({
+            user_id: user.id,
+            name: businessProfile.name || 'My Business'
+          })
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        setCurrentBusinessId(data.id);
+      } catch (error) {
+        console.error('Failed to create business record:', error);
+        showToast({
+          type: 'error',
+          title: 'Failed to save profile',
+          message: 'Could not create business record. Please try again.'
+        });
+        return;
+      }
+    }
 
     setIsSaving(true);
     try {
+      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('businesses')
         .update({
@@ -419,7 +445,7 @@ export default function SettingsPage() {
           industry: businessProfile.industry || null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', currentBusinessId);
+        .eq('id', businessIdToUse);
 
       if (error) throw error;
 
@@ -441,10 +467,36 @@ export default function SettingsPage() {
   };
 
   const handleSaveBrandVoice = async () => {
-    if (!currentBusinessId) return;
+    // Create business record if it doesn't exist
+    if (!currentBusinessId) {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .insert({
+            user_id: user.id,
+            name: businessProfile.name || 'My Business'
+          })
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        setCurrentBusinessId(data.id);
+      } catch (error) {
+        console.error('Failed to create business record:', error);
+        showToast({
+          type: 'error',
+          title: 'Failed to save voice settings',
+          message: 'Could not create business record. Please try again.'
+        });
+        return;
+      }
+    }
 
     setIsSaving(true);
     try {
+      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('business_settings')
         .update({
@@ -455,7 +507,7 @@ export default function SettingsPage() {
           custom_instruction: brandVoice.customInstruction || null,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', currentBusinessId);
+        .eq('business_id', businessIdToUse);
 
       if (error) throw error;
 
@@ -477,17 +529,43 @@ export default function SettingsPage() {
   };
 
   const handleSaveApproval = async () => {
-    if (!currentBusinessId) return;
+    // Create business record if it doesn't exist
+    if (!currentBusinessId) {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .insert({
+            user_id: user.id,
+            name: businessProfile.name || 'My Business'
+          })
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        setCurrentBusinessId(data.id);
+      } catch (error) {
+        console.error('Failed to create business record:', error);
+        showToast({
+          type: 'error',
+          title: 'Failed to save approval settings',
+          message: 'Could not create business record. Please try again.'
+        });
+        return;
+      }
+    }
 
     setIsSaving(true);
     try {
+      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('business_settings')
         .update({
           approval_mode: approvalSettings.mode,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', currentBusinessId);
+        .eq('business_id', businessIdToUse);
 
       if (error) throw error;
 
@@ -532,12 +610,12 @@ export default function SettingsPage() {
         title: 'Auto-Sync Settings Saved',
         message: `Automated review sync ${autoSyncSettings.enabled ? `enabled for ${slotTime} (${slotDescription})` : 'disabled'} successfully`
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving auto-sync settings:', error);
       showToast({
         type: 'error',
         title: 'Save Failed',
-        message: error.message || 'Failed to save auto-sync settings'
+        message: error instanceof Error ? error.message : 'Failed to save auto-sync settings'
       });
     } finally {
       setIsSaving(false);
@@ -573,12 +651,12 @@ export default function SettingsPage() {
           ? `Enabled: ${enabledFeatures.join(', ')}`
           : 'All automation features disabled'
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving automation settings:', error);
       showToast({
         type: 'error',
         title: 'Save Failed',
-        message: error.message || 'Failed to save automation settings'
+        message: error instanceof Error ? error.message : 'Failed to save automation settings'
       });
     } finally {
       setIsSaving(false);

@@ -5,7 +5,7 @@ import { ForgotPasswordModal } from './ForgotPasswordModal';
 import Image from 'next/image';
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string, isSignUp: boolean) => Promise<void>;
+  onSubmit: (email: string, password: string, isSignUp: boolean, businessName?: string) => Promise<void>;
   onGoogleSignIn: () => Promise<void>;
   isLoading: boolean;
   error?: string;
@@ -20,11 +20,12 @@ export function LoginForm({
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(email, password, isSignUp);
+    await onSubmit(email, password, isSignUp, businessName);
   };
 
   return (
@@ -88,6 +89,16 @@ export function LoginForm({
             placeholder="Password"
             className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
           />
+          {isSignUp && (
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Business name"
+              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              required
+            />
+          )}
         </div>
 
         <div className="flex items-center justify-between">
@@ -107,7 +118,7 @@ export function LoginForm({
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || (isSignUp && !businessName.trim())}
           className="w-full py-2.5 px-4 border border-transparent rounded-full shadow-sm text-white bg-primary hover:bg-primary-dark disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
         >
           {isSignUp ? 'Sign up' : 'Sign in'} with Email

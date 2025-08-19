@@ -10,7 +10,6 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { StripeBuyButton } from '@/components/StripeBuyButton';
-import { useTrialStatus } from '@/hooks/useTrialStatus';
 
 function ProfileContent() {
   const { user } = useAuth();
@@ -21,7 +20,6 @@ function ProfileContent() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isInTrial, trialEndTime } = useTrialStatus();
 
   // Show payment success message if redirected from successful payment
   useEffect(() => {
@@ -202,26 +200,7 @@ function ProfileContent() {
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              {isInTrial ? (
-                <>
-                  <p className="text-yellow-600 dark:text-yellow-400">
-                    You are currently in your 48-hour trial period. Your trial will end on {' '}
-                    {trialEndTime ? new Date(trialEndTime).toLocaleDateString() : 'soon'}.
-                  </p>
-                  <p className="text-muted-foreground">Subscribe now to continue using the app after the trial ends.</p>
-                </>
-              ) : trialEndTime ? (
-                <>
-                  <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg mb-4">
-                    <p className="text-red-600 dark:text-red-400">
-                      Your trial period ended on {new Date(trialEndTime).toLocaleDateString()}.
-                    </p>
-                    <p className="mt-2 text-muted-foreground">Subscribe now to regain access to the review management experience.</p>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted-foreground">Subscribe to unlock the amazing review management experience.</p>
-              )}
+              <p className="text-muted-foreground">Subscribe to unlock the amazing review management experience.</p>
               
               <StripeBuyButton
                 buyButtonId={process.env.NEXT_PUBLIC_STRIPE_BUTTON_ID || ''}
