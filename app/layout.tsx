@@ -6,7 +6,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
 import ProtectedRoute from '@/contexts/ProtectedRoute';
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
+import CookieConsent from '@/components/CookieConsent';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 // import { PostHogProvider } from '@/contexts/PostHogContext';
 // import { PostHogErrorBoundary } from '@/components/PostHogErrorBoundary';
 
@@ -28,6 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geist.className} ${indieFlower.variable}`}>
         <Analytics mode="auto" />
+        <GoogleAnalytics />
         <ThemeProvider>
           {/* <PostHogErrorBoundary>
             <PostHogProvider> */}
@@ -39,6 +42,9 @@ export default function RootLayout({
               </AuthProvider>
             {/* </PostHogProvider>
           </PostHogErrorBoundary> */}
+          
+          {/* Cookie Consent Banner */}
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

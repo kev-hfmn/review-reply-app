@@ -6,6 +6,7 @@ import { Mail, Heart, Sun, Moon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/contexts/ThemeContext';
 import Image from 'next/image';
+import { showCookiePreferences } from '@/lib/cookieConsent';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -163,6 +164,14 @@ export function Footer() {
                       </Link>
                     </li>
                   ))}
+                  <li>
+                    <button
+                      onClick={() => showCookiePreferences()}
+                      className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm text-left"
+                    >
+                      Manage Cookies
+                    </button>
+                  </li>
                 </ul>
               </motion.div>
             </div>

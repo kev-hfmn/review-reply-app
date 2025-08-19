@@ -33,8 +33,7 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-              RepliFast (“we”, “our”, or “the Service”) is a product operated by SOULRISE LLC, a limited liability company registered in the United States. This Privacy Policy explains how we collect, use, store, and protect information when you use RepliFast.
-                We operate an online platform ("Service") that helps businesses manage Google reviews and generate review replies. This Privacy Policy explains how we collect, use, share, and protect your information when you use our Service. By using RepliFast, you agree to the terms of this Privacy Policy.
+                RepliFast is a product operated by SOULRISE LLC, a limited liability company registered in the United States (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). This Privacy Policy explains how we collect, use, share, store, and protect your information when you use RepliFast (&quot;the Service&quot;). By using the Service, you agree to this Privacy Policy.
               </p>
             </CardContent>
           </Card>
@@ -50,24 +49,25 @@ export default function PrivacyPolicyPage() {
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <h3>Information You Provide</h3>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Account details such as name, email address, and payment information (via Stripe).</li>
-                <li>Business details including Google Business Profile information.</li>
-                <li>Preferences, settings, and instructions you provide within the platform.</li>
+                <li>Account details such as name, email address, and password.</li>
+                <li>Business details, including Google Business Profile information you connect.</li>
+                <li>Preferences, settings, and instructions you provide in the platform.</li>
+                <li>Payment information processed securely by Stripe.</li>
+                <li>Support requests and communication you send us.</li>
               </ul>
 
-              <h3>Information We Access From Google</h3>
-              <p>With your authorization, we access:</p>
+              <h3>Information We Access From Google (with your authorization)</h3>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Business profile information.</li>
                 <li>Customer reviews and associated metadata.</li>
-                <li>Permissions to post replies on your behalf.</li>
+                <li>Permission to draft and post replies on your behalf.</li>
               </ul>
-              <p>We use this data solely to provide the Service and do not sell or share it with third parties outside of our subprocessors.</p>
+              <p>We use this data solely to provide the Service. We do not sell or share it with third parties except subprocessors listed in Section 5.</p>
 
               <h3>Information Collected Automatically</h3>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Log data such as IP address, browser type, and usage metrics.</li>
-                <li>Device information and cookies to improve functionality and analytics.</li>
+                <li>Device information and cookies for authentication, security, and analytics.</li>
               </ul>
             </CardContent>
           </Card>
@@ -81,13 +81,15 @@ export default function PrivacyPolicyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
+              <p>We use the information we collect to:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>To provide, operate, and maintain the Service.</li>
-                <li>To fetch and manage your business reviews and generate replies.</li>
-                <li>To customize replies based on your selected settings.</li>
-                <li>To send notifications about new reviews, replies, and account activity.</li>
-                <li>To process payments and manage subscriptions.</li>
-                <li>To comply with legal and regulatory obligations.</li>
+                <li>Provide, operate, and maintain the Service.</li>
+                <li>Fetch and manage your business reviews and generate replies.</li>
+                <li>Draft replies based on your preferences and settings.</li>
+                <li>Notify you about new reviews, replies, and account activity.</li>
+                <li>Process payments and manage subscriptions.</li>
+                <li>Comply with legal and regulatory obligations.</li>
+                <li>Improve Service performance, reliability, and security.</li>
               </ul>
             </CardContent>
           </Card>
@@ -102,16 +104,15 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                Our Service connects to your Google Business Profile with your permission for the sole purpose of helping you manage and reply to customer reviews.
+                The Service connects to your Google Business Profile only with your explicit consent.
               </p>
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li><strong>Limited Use:</strong> We only use Google data to provide review management services. We do not resell, share, or use Google data for advertising or unrelated purposes.</li>
-                <li><strong>Data Retention:</strong> Review data retrieved from Google may be stored for up to 30 days for operational purposes. After 30 days, data is automatically deleted or refreshed directly from Google.</li>
-                <li><strong>Transparency:</strong> All replies are either approved by you or sent using rules you configure. We do not make changes to your account without your knowledge.</li>
-                <li><strong>Data Deletion:</strong> If you disconnect your account or terminate your subscription, all Google data associated with your account will be deleted within 7 days.</li>
-                <li><strong>Security:</strong> We securely store access tokens and use them only to communicate with Google's APIs. We never ask for or store your Google password.</li>
-                <li><strong>Independence:</strong> We are not owned by, operated by, or formally affiliated with Google. Our platform uses the official Google Business Profile API under their Terms of Service.</li>
-                <li><strong>Policy Compliance:</strong> We comply with the Google API Services User Data Policy, including the Limited Use requirements.</li>
+                <li><strong>Limited Use.</strong> Google data is used only to provide review management and reply functionality. We do not resell Google data, use it for advertising, or for unrelated purposes.</li>
+                <li><strong>30-Day Retention.</strong> Review content and related data retrieved from Google may be cached for operational purposes but never longer than 30 calendar days. After 30 days, cached data is deleted or refreshed directly from Google.</li>
+                <li><strong>Deletion on Disconnect.</strong> If you disconnect your Google account or terminate your subscription, all associated Google data is deleted within 7 days.</li>
+                <li><strong>Transparency.</strong> Replies are posted only after you approve them or under rules you configure. No changes are made to your Google account without your knowledge.</li>
+                <li><strong>Security.</strong> Access tokens are stored securely, encrypted in transit and at rest. We never ask for or store your Google password.</li>
+                <li><strong>Independence.</strong> RepliFast is not affiliated with Google. We comply with the Google API Services User Data Policy and Google Business Profile API policies.</li>
               </ul>
             </CardContent>
           </Card>
@@ -126,7 +127,7 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                Replies may be generated using third-party AI services (e.g., OpenAI). While you may edit or approve replies, you remain responsible for the final content posted under your business profile. RepliFast is not liable for any harm or claims resulting from AI-generated content.
+                We may use third-party AI services (such as OpenAI) to draft review replies. You remain responsible for reviewing, approving, and publishing responses under your Google Business Profile. We are not liable for harm, claims, or reputational damage resulting from AI-generated content.
               </p>
             </CardContent>
           </Card>
@@ -140,15 +141,15 @@ export default function PrivacyPolicyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
-              <p>We do not sell your information. We only share it with trusted third-party service providers essential for operating the Service:</p>
+              <p>We do not sell your data. We share it only with service providers who help us operate the Service, under strict contractual obligations:</p>
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>Supabase (database and authentication)</li>
                 <li>Stripe (billing and payments)</li>
                 <li>OpenAI (reply generation)</li>
-                <li>Email service provider (transactional email delivery)</li>
-                <li>Analytics tools (for product improvement)</li>
+                <li>Email service provider (transactional emails)</li>
+                <li>Analytics tools (product improvement)</li>
               </ul>
-              <p>Each third party only processes data on our behalf under strict contractual obligations.</p>
+              <p>We may also disclose information if required by law or to protect rights, safety, or property.</p>
             </CardContent>
           </Card>
 
@@ -162,9 +163,11 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Account data and reviews are retained while your account is active.</li>
-                <li>Upon request or account termination, your data will be deleted within 30 days, except where legally required to retain it.</li>
-                <li>You may contact us at hello@soulrise.us to request deletion of your data.</li>
+                <li>Account data is retained while your account is active.</li>
+                <li>Google review data is cached for up to 30 days and then deleted or refreshed.</li>
+                <li>On account closure or Google disconnect, all Google data is deleted within 7 days.</li>
+                <li>Backup copies are overwritten on a rolling basis.</li>
+                <li>You can request deletion at any time by contacting hello@soulrise.us.</li>
               </ul>
             </CardContent>
           </Card>
@@ -179,25 +182,68 @@ export default function PrivacyPolicyPage() {
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                We use encryption, secure storage, and access controls to protect your data. No system is 100% secure, and you use the Service at your own risk.
+                We implement encryption, access controls, and secure storage to protect your data. While we take industry-standard measures, no system is fully secure. You are responsible for keeping your account credentials safe.
               </p>
             </CardContent>
           </Card>
 
-          {/* International Users */}
+          {/* International Users and Data Transfers */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
-                8. International Users
+                8. International Users and Data Transfers
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                If you are located in the European Economic Area (EEA) or the UK, you have rights under GDPR, including the right to access, correct, or delete your data, and the right to data portability.
+                If you are located outside the United States, your data may be transferred to and processed in the US or other jurisdictions with different data protection laws. Where required, we rely on Standard Contractual Clauses or equivalent legal safeguards for such transfers.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Your Rights */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                9. Your Rights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-slate dark:prose-invert max-w-none">
+              <h3>For EEA & UK Users (GDPR/UK GDPR):</h3>
+              <p>You have the right to:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Access, correct, or delete your personal data.</li>
+                <li>Restrict or object to processing.</li>
+                <li>Data portability.</li>
+                <li>Lodge a complaint with your local supervisory authority.</li>
+              </ul>
+
+              <h3>For California Users (CCPA):</h3>
+              <p>You have the right to:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Know what categories of personal information we collect and how we use it.</li>
+                <li>Request deletion of your personal information.</li>
+                <li>Opt out of &quot;sale&quot; of personal information (we do not sell data).</li>
+                <li>Exercise rights without discrimination.</li>
+              </ul>
+
+              <p>Contact hello@soulrise.us to exercise these rights.</p>
+            </CardContent>
+          </Card>
+
+          {/* Cookies and Tracking */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                10. Cookies and Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                If you are a California resident, you have rights under CCPA, including the right to know what data we collect and to request deletion.
+                We use cookies and similar technologies for login sessions, security, and basic analytics. You can manage cookies through your browser settings, but some features may not work if cookies are disabled.
               </p>
             </CardContent>
           </Card>
@@ -207,12 +253,12 @@ export default function PrivacyPolicyPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Baby className="h-5 w-5" />
-                9. Children's Privacy
+                11. Children&apos;s Privacy
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                Our Service is not directed at children under 13, and we do not knowingly collect data from them. If we learn that we have inadvertently collected such data, we will delete it promptly.
+                The Service is not directed to children under 13. We do not knowingly collect data from children under 13. If we learn we have inadvertently collected such data, we will delete it promptly.
               </p>
             </CardContent>
           </Card>
@@ -222,15 +268,15 @@ export default function PrivacyPolicyPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                10. Service Limitations and Liability
+                12. Service Limitations and Liability
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Access to Google services depends on Google's approval process. Initial setup may require you to authorize RepliFast to access your account, and approval can take up to two weeks.</li>
-                <li>We are not responsible for delays, denials, or interruptions caused by Google's approval process or API availability.</li>
-                <li>We are not liable for lost business, reputational damage, or indirect damages arising from use of the Service.</li>
-              </ul>
+              <p>
+                Access to Google services depends on Google&apos;s approval and API availability. Initial setup may require authorization and Google&apos;s review, which may take up to two weeks.
+              </p>
+              <p>We are not responsible for delays, denials, or interruptions caused by Google.</p>
+              <p>We are not liable for lost business, reputational damage, or indirect damages resulting from use of the Service.</p>
             </CardContent>
           </Card>
 
@@ -239,12 +285,12 @@ export default function PrivacyPolicyPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                11. Changes to This Policy
+                13. Changes to This Policy
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
               <p>
-                We may update this Privacy Policy from time to time. Updates will be posted on this page with a new "Last Updated" date. Continued use of the Service after updates constitutes acceptance.
+                We may update this Privacy Policy periodically. Updates will be posted on this page with a revised &quot;Last Updated&quot; date. Material changes will be communicated where legally required. Continued use of the Service means acceptance of the updated Policy.
               </p>
             </CardContent>
           </Card>
@@ -254,15 +300,15 @@ export default function PrivacyPolicyPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                12. Contact Us
+                14. Contact Us
               </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
-              <p>If you have questions about this Privacy Policy, contact us at:</p>
               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
-                <p><strong>Soulrise LLC</strong></p>
+                <p><strong>SOULRISE LLC</strong></p>
+                <p>2125 Biscayne Boulevard, STE 204 #13423</p>
+                <p>Miami, Florida 33137, USA</p>
                 <p>Email: hello@soulrise.us</p>
-                <p>Address: 2125 Biscayne Boulevard, STE 204 #13423, Miami, Florida 33137</p>
               </div>
             </CardContent>
           </Card>
