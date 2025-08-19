@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
+import { PublicNavigation } from '@/components/PublicNavigation';
+import { Footer } from '@/components/Footer';
 
 export default function LoginPage() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -28,16 +30,16 @@ export default function LoginPage() {
         if (!businessName?.trim()) {
           throw new Error('Business name is required for signup');
         }
-        
+
         const { data, error } = await signUpWithEmail(email, password, businessName.trim());
         if (error) throw error;
-        
+
         // Check if the user needs to verify their email
         if (data?.user && !data.user.email_confirmed_at) {
           router.replace(`/verify-email?email=${encodeURIComponent(email)}`);
           return;
         }
-        
+
         router.replace('/dashboard');
       } else {
         await signInWithEmail(email, password);
@@ -52,25 +54,30 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-foreground">Loading...</div>
+      <div className="min-h-screen flex flex-col">
+        <PublicNavigation />
+        <div className="flex-1 flex items-center justify-center bg-background">
+          <div className="text-foreground">Loading...</div>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex mt-20 justify-center bg-background px-4">
-      <div className="w-full max-w-md">
-        {/* <h1 className="text-4xl font-bold text-center mb-8 text-primary dark:text-white">
-          NextTemp
-        </h1> */}
-        <LoginForm
-          onSubmit={handleSubmit}
-          onGoogleSignIn={signInWithGoogle}
-          isLoading={isLoading}
-          error={error}
-        />
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <PublicNavigation />
+      <main className="flex-1 flex items-center justify-center bg-background py-16 px-4">
+        <div className="w-full max-w-md min-h-[70vh]">
+          <LoginForm
+            onSubmit={handleSubmit}
+            onGoogleSignIn={signInWithGoogle}
+            isLoading={isLoading}
+            error={error}
+          />
+        </div>
+      </main>
+      <Footer />
     </div>
   );
-} 
+}
