@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
-import type { 
-  DashboardStats, 
-  Business, 
-  Review, 
-  Activity, 
+import type {
+  DashboardStats,
+  Business,
+  Review,
+  Activity,
   ChartDataPoint,
-  OnboardingStep 
+  OnboardingStep
 } from '@/types/dashboard';
 
 export function useDashboardData() {
@@ -21,9 +21,9 @@ export function useDashboardData() {
   const [error, setError] = useState<string | null>(null);
 
   const calculateStats = useCallback((
-    reviewsThisMonth: Review[], 
-    reviewsLastMonth: Review[], 
-    activities: Activity[], 
+    reviewsThisMonth: Review[],
+    reviewsLastMonth: Review[],
+    activities: Activity[],
     allReviews: Review[]
   ): DashboardStats => {
     // Use proper calendar months with date-fns
@@ -35,24 +35,24 @@ export function useDashboardData() {
     // Reviews this month (already filtered at DB level)
     const reviewsThisMonthCount = reviewsThisMonth.length;
     const reviewsLastMonthCount = reviewsLastMonth.length;
-    
-    const reviewsThisMonthChange = reviewsLastMonthCount > 0 
-      ? ((reviewsThisMonthCount - reviewsLastMonthCount) / reviewsLastMonthCount) * 100 
+
+    const reviewsThisMonthChange = reviewsLastMonthCount > 0
+      ? ((reviewsThisMonthCount - reviewsLastMonthCount) / reviewsLastMonthCount) * 100
       : reviewsThisMonthCount > 0 ? 100 : 0;
 
     // Replies posted this month (activities with reply_posted type)
-    const repliesThisMonth = activities.filter(a => 
+    const repliesThisMonth = activities.filter(a =>
       a.type === 'reply_posted' && new Date(a.created_at) >= thisMonthStart
     ).length;
-    
-    const repliesLastMonth = activities.filter(a => 
-      a.type === 'reply_posted' && 
-      new Date(a.created_at) >= lastMonthStart && 
+
+    const repliesLastMonth = activities.filter(a =>
+      a.type === 'reply_posted' &&
+      new Date(a.created_at) >= lastMonthStart &&
       new Date(a.created_at) <= lastMonthEnd
     ).length;
-    
-    const repliesPostedChange = repliesLastMonth > 0 
-      ? ((repliesThisMonth - repliesLastMonth) / repliesLastMonth) * 100 
+
+    const repliesPostedChange = repliesLastMonth > 0
+      ? ((repliesThisMonth - repliesLastMonth) / repliesLastMonth) * 100
       : repliesThisMonth > 0 ? 100 : 0;
 
     // Average rating (this month only - using DB-filtered reviews)
@@ -70,15 +70,15 @@ export function useDashboardData() {
       : 0;
 
     // Pending approvals (only true pending items - not posted ones) - use all reviews
-    const pendingApprovals = allReviews.filter(r => 
+    const pendingApprovals = allReviews.filter(r =>
       r.status === 'pending' || r.status === 'needs_edit'
     ).length;
 
     // Calculate change in pending approvals (current vs last month)
-    const previousPendingApprovals = reviewsLastMonth.filter(r => 
+    const previousPendingApprovals = reviewsLastMonth.filter(r =>
       r.status === 'pending' || r.status === 'needs_edit'
     ).length;
-    
+
     const pendingApprovalsChange = previousPendingApprovals > 0
       ? ((pendingApprovals - previousPendingApprovals) / previousPendingApprovals) * 100
       : pendingApprovals > 0 ? 100 : 0;
@@ -105,10 +105,10 @@ export function useDashboardData() {
     });
 
     return last14Days.map(date => {
-      const dayReviews = reviews.filter(r => 
+      const dayReviews = reviews.filter(r =>
         r.review_date.startsWith(date)
       );
-      
+
       const avgRating = dayReviews.length > 0
         ? dayReviews.reduce((sum, r) => sum + r.rating, 0) / dayReviews.length
         : 0;
@@ -121,42 +121,56 @@ export function useDashboardData() {
     });
   }, []);
 
-  const generateOnboardingSteps = useCallback((businesses: Business[]): OnboardingStep[] => {
+  const generateOnboardingSteps = useCallback((businesses: Business[], businessSettings?: any): OnboardingStep[] => {
     const hasBusiness = businesses.length > 0;
-    const hasGoogleIntegration = businesses.some(b => b.google_business_id);
-    
+    const hasGoogleCredentials = businesses.some(b => b.google_access_token || b.google_refresh_token);
+    const hasGoogleTokens = businesses.some(b => b.google_access_token && b.google_refresh_token);
+    const hasBrandVoiceSettings = businessSettings && businessSettings.brand_voice_preset;
+    const hasAutoReplyEnabled = businessSettings && businessSettings.approval_mode !== 'manual';
+
     return [
       {
-        id: 'google-access',
-        title: 'Approve Google access',
-        description: 'Grant access to post replies to your Google Business reviews',
-        completed: hasGoogleIntegration,
-        actionText: 'Start Setup',
+        id: 'api-approval',
+        title: 'Apply for Google Business API access (free)',
+        description: 'Schedule a video call with us to help you guide you through the Google Business Profile API application process. It takes around 10 minutes to apply and maximum 2 weeks to get approved. This API access and our support are free of charge!',
+        completed: hasGoogleTokens,
+        actionText: 'Schedule Call',
         action: () => {
-          // TODO: Open Google API approval modal
-          console.log('Open Google API modal');
+          // Open Calendly link in new tab
+          window.open('https://calendly.com/replifast/30min', '_blank');
+        }
+      },
+      {
+        id: 'google-credentials',
+        title: 'Enter Google details',
+        description: 'Once your Google Business API access gets approved, you can add your Google Business Profile credentials in the settings and connect your account. Then you can start using RepliFast right away!',
+        completed: hasGoogleCredentials,
+        actionText: 'Add Credentials',
+        action: () => {
+          // Navigate to settings integrations tab
+          window.location.href = '/settings?tab=integrations';
         }
       },
       {
         id: 'brand-voice',
         title: 'Pick your brand voice',
-        description: 'Customize how AI generates replies to match your business tone',
-        completed: hasBusiness, // Simplified for now
+        description: 'Customize how AI generates replies to match your business tone and personality.',
+        completed: hasBrandVoiceSettings,
         actionText: 'Customize Voice',
         action: () => {
-          // TODO: Navigate to settings
-          console.log('Navigate to brand voice settings');
+          // Navigate to settings voice tab
+          window.location.href = '/settings?tab=voice';
         }
       },
       {
         id: 'auto-replies',
         title: 'Start auto-replies',
-        description: 'Enable automatic reply posting for high-rated reviews',
-        completed: false, // This would check business settings
+        description: 'Enable automatic reply generation and posting for your reviews.',
+        completed: hasAutoReplyEnabled,
         actionText: 'Enable Auto-replies',
         action: () => {
-          // TODO: Navigate to settings
-          console.log('Navigate to approval settings');
+          // Navigate to settings approval tab
+          window.location.href = '/settings?tab=approval';
         }
       }
     ];
@@ -212,7 +226,7 @@ export function useDashboardData() {
           };
         });
         setChartData(mockChartData);
-        setOnboardingSteps(generateOnboardingSteps([]));
+        setOnboardingSteps(generateOnboardingSteps([], null));
         setIsLoading(false);
         return;
       }
@@ -223,13 +237,13 @@ export function useDashboardData() {
       const thisMonthEnd = endOfMonth(now);
       const lastMonthStart = startOfMonth(subMonths(now, 1));
       const lastMonthEnd = endOfMonth(subMonths(now, 1));
-      
+
       // Format dates for DB queries (YYYY-MM-DD format)
       const thisMonthStartStr = format(thisMonthStart, 'yyyy-MM-dd');
       const thisMonthEndStr = format(thisMonthEnd, 'yyyy-MM-dd');
       const lastMonthStartStr = format(lastMonthStart, 'yyyy-MM-dd');
       const lastMonthEndStr = format(lastMonthEnd, 'yyyy-MM-dd');
-      
+
       console.log('📅 Dashboard date ranges:');
       console.log(`This month: ${thisMonthStartStr} to ${thisMonthEndStr}`);
       console.log(`Last month: ${lastMonthStartStr} to ${lastMonthEndStr}`);
@@ -283,11 +297,25 @@ export function useDashboardData() {
         throw new Error(`Failed to fetch activities: ${activitiesError.message}`);
       }
 
+      // Fetch business settings for the first business (assuming single business per user for now)
+      let businessSettingsData = null;
+      if (businessIds.length > 0) {
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('business_settings')
+          .select('*')
+          .eq('business_id', businessIds[0])
+          .maybeSingle();
+
+        if (!settingsError) {
+          businessSettingsData = settingsData;
+        }
+      }
+
       // Calculate stats using DB-filtered data
       const calculatedStats = calculateStats(
-        reviewsThisMonth || [], 
-        reviewsLastMonth || [], 
-        activitiesData || [], 
+        reviewsThisMonth || [],
+        reviewsLastMonth || [],
+        activitiesData || [],
         allReviewsData || []
       );
       setStats(calculatedStats);
@@ -296,8 +324,8 @@ export function useDashboardData() {
       const chartData = generateChartData(allReviewsData || []);
       setChartData(chartData);
 
-      // Generate onboarding steps
-      const steps = generateOnboardingSteps(businessesData || []);
+      // Generate onboarding steps with business settings
+      const steps = generateOnboardingSteps(businessesData || [], businessSettingsData);
       setOnboardingSteps(steps);
 
     } catch (err) {

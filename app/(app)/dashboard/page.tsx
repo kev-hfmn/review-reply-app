@@ -20,7 +20,7 @@ const AUTH_TIMEOUT = 15000; // 15 seconds
 
 export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { fetchSubscription } = useSubscription();
+  const { subscription, fetchSubscription } = useSubscription();
   const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
   // Removed trial system - users are either basic or premium subscribers
   const [authTimeout, setAuthTimeout] = useState(false);
@@ -138,7 +138,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-muted-foreground">
-            Basic User
+            {subscription?.status === 'active' ? 'Premium User' : 'Basic User'}
           </span>
           {isDashboardLoading && (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
@@ -146,29 +146,39 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Show onboarding for new users */}
-      {businesses.length === 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <OnboardingCard
-            steps={onboardingSteps}
-            onStepAction={(stepId) => {
-              console.log('Onboarding step clicked:', stepId);
-              // TODO: Handle onboarding step actions
-            }}
-          />
-          <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-6 flex flex-col justify-center">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Welcome to RepliFast! 👋
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Start by connecting your Google Business account to automatically manage your reviews with AI-powered replies.
-            </p>
-            <div className="text-sm text-muted-foreground">
-              <strong>Next:</strong> Complete the setup steps to get started
+      {/* Show onboarding for basic users who haven't completed Google integration setup */}
+      {(() => {
+        // Show onboarding only for basic users (no active subscription) who don't have Google integration complete
+        const hasGoogleIntegration = businesses.some(b => b.google_access_token && b.google_refresh_token);
+        const isBasicUser = !subscription || subscription.status !== 'active';
+        const shouldShowOnboarding = isBasicUser && !hasGoogleIntegration;
+
+        return shouldShowOnboarding && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <OnboardingCard
+              steps={onboardingSteps}
+              onStepAction={(stepId) => {
+                console.log('Onboarding step clicked:', stepId);
+                // Steps now handle their own actions via the action property
+              }}
+            />
+            <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-6 flex flex-col justify-center">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Welcome to RepliFast! 👋
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {businesses.length === 0
+                  ? "Start by setting up your Google Business API access to automatically manage your reviews with AI-powered replies."
+                  : "Complete your Google Business Profile setup to start managing reviews with AI-powered replies."
+                }
+              </p>
+              <div className="text-sm text-muted-foreground">
+                <strong>Next:</strong> {businesses.length === 0 ? "Schedule API approval call" : "Complete remaining setup steps"}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -267,16 +277,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Additional Onboarding for existing users */}
-      {businesses.length > 0 && onboardingSteps.some(step => !step.completed) && (
-        <OnboardingCard
-          steps={onboardingSteps}
-          onStepAction={(stepId) => {
-            console.log('Onboarding step clicked:', stepId);
-            // TODO: Handle onboarding step actions
-          }}
-        />
-      )}
+
     </div>
   );
 }

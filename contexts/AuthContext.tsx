@@ -19,7 +19,7 @@ interface AuthContextType {
     session: Session | null;
   }>;
   signOut: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ 
+  signUpWithEmail: (email: string, password: string, businessName: string) => Promise<{ 
     data: { user: User | null } | null; 
     error: Error | null;
   }>;
@@ -105,6 +105,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const ensureBusinessRecord = useCallback(async (userId: string) => {
+    try {
+      // Check if business record already exists
+      const { data: existingBusiness } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      // If no business record exists, create one
+      if (!existingBusiness) {
+        const { data, error } = await supabase
+          .from('businesses')
+          .insert({
+            user_id: userId,
+            name: 'My Business'
+          })
+          .select('id, name')
+          .single();
+        
+        if (error) {
+          console.error('Failed to create business record:', error);
+          return;
+        }
+        
+        // Update state with new business info
+        setBusinessName(data.name);
+        setBusinessId(data.id);
+        
+        console.log('Created business record for user:', userId);
+      }
+    } catch (error) {
+      console.error('Error ensuring business record:', error);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     console.log("AuthContext - mounted useEffect:", mounted);
@@ -130,6 +166,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentUser) {
           await checkSubscription(currentUser.id);
           await loadBusinessInfo(currentUser.id);
+          
+          // Create business record if missing (for Google OAuth users)
+          await ensureBusinessRecord(currentUser.id);
         }
         
         // Then set up listener for future changes
@@ -144,6 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Load subscription and business data for all authenticated users
               await checkSubscription(newUser.id);
               await loadBusinessInfo(newUser.id);
+              
+              // Ensure business record exists
+              await ensureBusinessRecord(newUser.id);
             } else {
               setIsSubscriber(false);
               setBusinessName(null);
@@ -166,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [checkSubscription, loadBusinessInfo]);
+  }, [checkSubscription, loadBusinessInfo, ensureBusinessRecord]);
 
   const value = {
     user,
@@ -229,7 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error signing out:', error);
       }
     },
-    signUpWithEmail: async (email: string, password: string) => {
+    signUpWithEmail: async (email: string, password: string, businessName: string) => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -238,6 +280,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       if (error) throw error;
+      
+      // Create business record immediately after successful signup
+      if (data.user) {
+        try {
+          const { error: businessError } = await supabase
+            .from('businesses')
+            .insert({
+              user_id: data.user.id,
+              name: businessName
+            });
+          
+          if (businessError) {
+            console.error('Failed to create business record:', businessError);
+            // Don't throw here - auth was successful, business can be created later
+          }
+        } catch (businessError) {
+          console.error('Error creating business record:', businessError);
+          // Don't throw here - auth was successful, business can be created later
+        }
+      }
+      
       return { data, error };
     },
     updatePassword: async (newPassword: string) => {

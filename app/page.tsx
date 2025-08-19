@@ -247,7 +247,7 @@ export default function LandingPage() {
       />
 
       {/* Hero Section */}
-      <section id="home" className="relative overflow-hidden bg-gradient-to-br from-primary/40 via-accent/20 to-secondary/20 ">
+      <section id="home" className="relative overflow-hidden bg-gradient-to-br from-primary/40 via-accent/20 to-secondary/10 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
 
@@ -380,7 +380,7 @@ export default function LandingPage() {
                         alt="Click to toggle"
                         width={190}
                         height={190}
-                        className="transform rotate-[25deg] filter drop-shadow-lg block dark:hidden opacity-80"
+                        className="transform rotate-[25deg] filter drop-shadow-lg block dark:hidden"
                       />
                       <Image
                         src="/arrow_white.png"
