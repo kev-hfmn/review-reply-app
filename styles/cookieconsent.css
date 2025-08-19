@@ -1,0 +1,295 @@
+/* Custom styles for Cookie Consent to match RepliFast design */
+
+/* Import base cookieconsent styles */
+@import 'vanilla-cookieconsent/dist/cookieconsent.css';
+
+/* Override default styles with RepliFast theme */
+:root {
+  --cc-bg: theme('colors.white');
+  --cc-text: theme('colors.slate.900');
+  --cc-btn-primary-bg: theme('colors.blue.600');
+  --cc-btn-primary-text: theme('colors.white');
+  --cc-btn-primary-hover-bg: theme('colors.blue.700');
+  --cc-btn-secondary-bg: theme('colors.slate.200');
+  --cc-btn-secondary-text: theme('colors.slate.900');
+  --cc-btn-secondary-hover-bg: theme('colors.slate.300');
+  --cc-separator: theme('colors.slate.200');
+  --cc-overlay-bg: rgba(0, 0, 0, 0.4);
+  --cc-webkit-scrollbar-bg: theme('colors.slate.100');
+  --cc-webkit-scrollbar-bg-hover: theme('colors.slate.200');
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+  --cc-bg: theme('colors.slate.800');
+  --cc-text: theme('colors.white');
+  --cc-btn-primary-bg: theme('colors.blue.600');
+  --cc-btn-primary-text: theme('colors.white');
+  --cc-btn-primary-hover-bg: theme('colors.blue.700');
+  --cc-btn-secondary-bg: theme('colors.slate.700');
+  --cc-btn-secondary-text: theme('colors.white');
+  --cc-btn-secondary-hover-bg: theme('colors.slate.600');
+  --cc-separator: theme('colors.slate.600');
+  --cc-webkit-scrollbar-bg: theme('colors.slate.700');
+  --cc-webkit-scrollbar-bg-hover: theme('colors.slate.600');
+}
+
+/* Main consent modal styling */
+#cc-main {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Consent modal */
+#c-inr-i {
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+}
+
+/* Modal title */
+.c-ttl {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+/* Modal description */
+.c-txt {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* Buttons container */
+.c-bns {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Primary button */
+.c-bn {
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  transition: all 0.15s ease-in-out;
+  border: none;
+  cursor: pointer;
+}
+
+.c-bn:focus {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+}
+
+/* Footer links */
+.cc-link {
+  color: theme('colors.blue.600');
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.cc-link:hover {
+  color: theme('colors.blue.700');
+}
+
+[data-theme="dark"] .cc-link {
+  color: theme('colors.blue.400');
+}
+
+[data-theme="dark"] .cc-link:hover {
+  color: theme('colors.blue.300');
+}
+
+/* Preferences modal */
+#s-inr {
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.s-ttl {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Section headings in preferences */
+.s-bl .s-ttl {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.s-bl .s-txt {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+/* Toggle switches */
+.c-tgl {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.c-tgl input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.c-tgl .c-tg {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: theme('colors.slate.300');
+  transition: .15s;
+  border-radius: 24px;
+}
+
+.c-tgl .c-tg:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .15s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.c-tgl input:checked + .c-tg {
+  background-color: theme('colors.blue.600');
+}
+
+.c-tgl input:checked + .c-tg:before {
+  transform: translateX(20px);
+}
+
+[data-theme="dark"] .c-tgl .c-tg {
+  background-color: theme('colors.slate.600');
+}
+
+[data-theme="dark"] .c-tgl input:checked + .c-tg {
+  background-color: theme('colors.blue.600');
+}
+
+/* Cookie table */
+.c-tbl {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--cc-separator);
+}
+
+.c-tbl th,
+.c-tbl td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--cc-separator);
+}
+
+.c-tbl th {
+  background-color: theme('colors.slate.50');
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+[data-theme="dark"] .c-tbl th {
+  background-color: theme('colors.slate.700');
+}
+
+.c-tbl td {
+  font-size: 0.875rem;
+}
+
+/* Service counter */
+.s-cnt {
+  background-color: theme('colors.blue.100');
+  color: theme('colors.blue.800');
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .s-cnt {
+  background-color: theme('colors.blue.900');
+  color: theme('colors.blue.200');
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #c-inr-i {
+    margin: 1rem;
+    border-radius: 8px;
+  }
+  
+  .c-bns {
+    flex-direction: column;
+  }
+  
+  .c-bn {
+    width: 100%;
+  }
+  
+  #s-inr {
+    margin: 0;
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+/* Animation improvements */
+#cc-main.cc--anim {
+  animation: cc-fadeIn 0.3s ease-out;
+}
+
+@keyframes cc-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Overlay */
+#c-vb {
+  backdrop-filter: blur(4px);
+}
+
+/* Close button */
+.c-x {
+  color: var(--cc-text);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.c-x:hover {
+  background-color: var(--cc-btn-secondary-bg);
+}
+
+.c-x:focus {
+  outline: 2px solid theme('colors.blue.500');
+  outline-offset: 2px;
+}

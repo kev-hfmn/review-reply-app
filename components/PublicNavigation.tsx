@@ -28,7 +28,7 @@ export function PublicNavigation({
   const router = useRouter();
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/90 shadow-lg dark:bg-[#0B1120]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <nav className="sticky top-0 z-50 bg-white/75 shadow-lg dark:bg-[#0B1120]/75 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center py-4">
           {/* Logo */}
