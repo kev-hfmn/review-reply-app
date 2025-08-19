@@ -29,7 +29,7 @@ export function LoginForm({
   };
 
   return (
-    <div className="w-full space-y-8 p-8 bg-surface-light dark:bg-surface-dark rounded-2xl shadow-subtle border border-gray-200 dark:border-gray-700">
+    <div className="w-full space-y-8 p-8 bg-primary/5 border-primary/40 dark:bg-surface-dark rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <span className="text-3xl">⭐️</span>
