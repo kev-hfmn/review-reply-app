@@ -36,8 +36,29 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import Head from 'next/head';
 import Image from 'next/image';
+import { faqItems } from '@/lib/faq';
+import Script from 'next/script';
+
+const toPlain = (s: string) =>
+  s
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[–—]/g, '-')
+    .trim();
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: toPlain(item.question),
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: toPlain(item.answer).slice(0, 1000),
+    },
+  })),
+};
 
 // Declare global particlesJS
 declare global {
@@ -51,20 +72,20 @@ declare global {
 // Core features of RepliFast
 const features = [
   {
-    title: "Replies in seconds",
+    title: "Replies to Google reviews automatically",
     description: "Professional, on‑brand responses are ready instantly so you can focus on running your business instead of drafting replies.",
     icon: <Sparkles className="h-6 w-6 text-primary" />,
     bgGradient: "from-blue-500/10 to-purple-500/10"
   },
   {
-    title: "Set and forget",
+    title: "Auto-approve rules",
     description: "Runs quietly in the background so you never miss a review, even when you are away or busy with customers.",
     icon: <Star className="h-6 w-6 text-primary" />,
     bgGradient: "from-yellow-500/10 to-orange-500/10"
   },
   {
     title: "Your tone, your way",
-    description: "Friendly, formal, or anything in between. Add custom instructions so every reply matches your exact style.",
+    description: "Friendly, formal, or anything in between. Add custom instructions so every reply matches your exact style and brand voice.",
     icon: <Settings className="h-6 w-6 text-primary" />,
     bgGradient: "from-indigo-500/10 to-blue-500/10"
   },
@@ -75,13 +96,13 @@ const features = [
     bgGradient: "from-purple-500/10 to-pink-500/10"
   },
   {
-    title: "Daily auto-sync",
+    title: "Daily auto-sync from Google",
     description: "New reviews are fetched automatically every day at the time you choose, so you never have to worry about missing updates.",
     icon: <Clock className="h-6 w-6 text-primary" />,
     bgGradient: "from-red-500/10 to-orange-500/10"
   },
   {
-    title: "Performance insights",
+    title: "Analytics and sentiment",
     description: "Track reply rates, review trends, and customer sentiment to see exactly how your reputation is improving over time.",
     icon: <BarChart3 className="h-6 w-6 text-primary" />,
     bgGradient: "from-green-500/10 to-emerald-500/10"
@@ -92,22 +113,22 @@ const features = [
 const reviewMatters = [
   {
     title: "Show customers you care",
-    description: "Let customers know you value their feedback and are paying attention to their experience.",
+    description: "Responding to Google reviews shows customers you value their feedback and care about their experience. It proves you’re listening and strengthens your customer relationships.",
     icon: <Heart className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Build trust with new customers",
-    description: "Public replies help potential customers feel confident in choosing your business.",
+    description: "Public replies make your Google business profile look professional and trustworthy. When potential customers see active, thoughtful responses, they feel confident choosing you over competitors.",
     icon: <UserCheck className="h-6 w-6 text-blue-400" />
   },
   {
-    title: "Boost local SEO",
-    description: "Regular replies keep your profile active and can improve your search rankings.",
+    title: "Boost local SEO rankings",
+    description: "Google favors businesses that engage. Consistent replies keep your profile active, strengthen your visibility in local search, and help you rank higher on Google Maps.",
     icon: <Search className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Recover unhappy customers",
-    description: "Responding well to negative feedback can turn one-time complaints into long-term loyalty.",
+    description: "A timely and empathetic reply to negative feedback can turn a one-time complaint into long-term loyalty, and show others that you take customer care seriously.",
     icon: <RefreshCw className="h-6 w-6 text-blue-400" />
   }
 ];
@@ -116,22 +137,22 @@ const reviewMatters = [
 const benefits = [
   {
     title: "Handle reviews in minutes, not hours",
-    description: "Stop manually crafting replies and focus on what matters most.",
+    description: "Stop manually crafting replies and focus on what matters most. RepliFast handles it for you.",
     icon: <Clock className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Improve response rate and consistency",
-    description: "Never miss a review again and maintain professional standards.",
+    description: "Never miss a review again and show up with reliable, professional replies every time.",
     icon: <TrendingUp className="h-6 w-6 text-blue-400" />
   },
   {
     title: "Keep your profile looking active and cared for",
-    description: "Show customers you value their feedback with timely responses.",
+    description: "Show customers their feedback matters and build trust by always staying engaged.",
     icon: <Shield className="h-6 w-6 text-blue-400" />
   },
   {
-    title: "Boost local SEO without lifting a finger",
-    description: "Active review engagement improves your search rankings automatically.",
+    title: "Stand out from competitors",
+    description: "Customers prefer businesses that reply to reviews. With RepliFast, you’ll show you care, and win over those who don’t.",
     icon: <Star className="h-6 w-6 text-blue-400" />
   }
 ];
@@ -152,7 +173,6 @@ const navigationSections = [
   { id: "pricing", title: "Pricing" },
   { id: "contact", title: "Contact" }
 ];
-
 
 // Sample reviews for showcase
 const sampleReviews = [
@@ -222,22 +242,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <>
-      <Head>
-        <title>RepliFast - AI-Powered Google Review Management for Small Business</title>
-        <meta name="description" content="Save 10+ hours per week with AI-generated Google review replies. Manage all your customer feedback in one dashboard. Never miss responding to a review again. Start now." />
-        <meta name="keywords" content="google reviews, review management, AI replies, customer feedback, business reputation, review automation, small business" />
-        <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="RepliFast - AI-Powered Google Review Management" />
-        <meta property="og:description" content="Turn customer feedback into business growth with AI-powered review replies. Save time and never miss responding to a review." />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="/og-image.jpg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="RepliFast - AI Review Management" />
-        <meta name="twitter:description" content="Save 10+ hours per week with AI-generated Google review replies. Start now." />
-        <link rel="canonical" href="https://flowrise-reviews.com" />
-      </Head>
-      <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
+    <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
       {/* Navigation */}
       <PublicNavigation
         navigationSections={navigationSections}
@@ -264,17 +269,18 @@ export default function LandingPage() {
                 <Sparkles className="h-4 w-4 mr-2" />
                 AI-Powered Review Management
               </div>
+<div className="max-w-3xl mx-auto">
 
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight">
-                Never Miss a Review Again
+              <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+              Automatic Replies for Your Google Reviews
               </h1>
 
-              <p className="mt-8 max-w-3xl mx-auto text-xl text-slate-600 dark:text-slate-300">
-                Running your business leaves little time for everything else. RepliFast replies to your Google reviews automatically, in your own tone, so you can focus on what matters most and still keep customers happy.
+              <p className="mt-8  text-xl text-slate-600 dark:text-slate-200">
+              RepliFast makes sure every review gets a reply in your tone of voice, helping you save time, build trust with customers, and keep your reputation strong.
               </p>
-
+</div>
               {/* Social Proof Metrics */}
-{/*               <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+              {/* <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
                 {metrics.map((metric, index) => (
                   <motion.div
                     key={metric.label}
@@ -312,7 +318,7 @@ export default function LandingPage() {
                   </Button>
                   {/* <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">No credit card required</p> */}
                 </div>
-{/*                 <Button
+                {/* <Button
                   size="lg"
                   variant="outline"
                   onClick={() => setIsVideoModalOpen(true)}
@@ -510,11 +516,10 @@ export default function LandingPage() {
               💬 Customer Engagement
             </motion.div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Why replying to reviews matters
+            Why replying to Google reviews matters
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-              Every review is an opportunity to strengthen your reputation and connect with customers. When you reply consistently and thoughtfully, you build trust, improve your visibility, and turn more first-time buyers into loyal customers.
-            </p>
+            Every Google review is a chance to boost your online reputation and connect with customers. When you reply consistently and thoughtfully, you show customers you care, build trust, improve local SEO, and turn first-time buyers into loyal fans.            </p>
 
 
           </motion.div>
@@ -697,13 +702,13 @@ export default function LandingPage() {
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-relaxed">
               Most other review tools come as part of big, expensive packages filled with features many small businesses never use.
               RepliFast does one thing well: replying to reviews.
-              That means it's simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
+              That means it&apos;s simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium">No bloated feature packs you don't need</span>
+                <span className="text-sm font-medium">No bloated feature packs you don&apos;t need</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -713,13 +718,17 @@ export default function LandingPage() {
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium">Priced for small businesses</span>
               </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium">Optional auto‑approve for 4–5★ review replies</span>
+              </div>
             </div>
           </motion.div>
 
         </div>
       </section>
 
-      <section id="how-it-works" className="py-24 bg-slate-50 dark:bg-[#0B1120]">
+      <section id="why-replifast" className="py-24 bg-slate-50 dark:bg-[#0B1120]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -731,6 +740,9 @@ export default function LandingPage() {
         <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
         Why businesses choose RepliFast
         </h3>
+        <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        Small business owners choose RepliFast because it saves them several hours each month, keeps their Google Business Profile active, and helps them build trust with every reply.
+        </p>
         </motion.div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
             {benefits.map((benefit, index) => (
@@ -796,7 +808,7 @@ export default function LandingPage() {
                 </Button>
                 <p className="text-sm opacity-80 mb-4">No credit card required</p>
               </div>
-{/*               <Button
+              {/* <Button
                 size="lg"
                 variant="outline"
                 onClick={() => setIsVideoModalOpen(true)}
@@ -821,29 +833,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* FAQ Section */}
       <section className="py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
             {/* Left Sidebar */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="lg:col-span-1"
-            >
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-                Frequently asked questions
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 mb-4">
-                <button
-                  onClick={() => router.push('/contact')}
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
+            <div className="lg:col-span-1 h-full relative">
+              <div className="sticky top-32">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
                 >
-                  Contact us via support
-                </button> if you have any more questions.
-              </p>
-            </motion.div>
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
+                    Frequently asked questions
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-300 mb-4">
+                    <button
+                      onClick={() => router.push('/contact')}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
+                    >
+                      Contact us via support
+                    </button> if you have any more questions.
+                  </p>
+                </motion.div>
+              </div>
+            </div>
 
             {/* Right Content */}
             <motion.div
@@ -854,50 +876,20 @@ export default function LandingPage() {
               className="lg:col-span-2"
             >
               <Accordion type="single" collapsible className="w-full space-y-4">
-                <AccordionItem value="item-1" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
-                    What is RepliFast?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
-                    RepliFast is an AI-powered review management platform that automatically generates professional responses to your Google Business Profile reviews. It helps you save time while maintaining consistent engagement with your customers.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-2" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
-                    How can I get started?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
-                    Simply sign up for a free trial, connect your Google Business Profile, and customize your response tone. RepliFast will start generating replies for your reviews automatically. You can approve or edit responses before they&apos;re posted.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-3" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
-                    Do I need to approve every reply?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
-                    You have full control over your replies. You can choose to approve each response individually, set up auto-approval for 4 and 5-star reviews, or use bulk approval features to manage multiple responses at once.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-4" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
-                    Can I customize the tone of responses?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
-                    Absolutely! RepliFast allows you to customize your brand voice and response tone. Whether you prefer friendly, formal, or something in between, our AI adapts to match your business personality and communication style.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-5" className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6">
-                  <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-6 text-lg font-medium">
-                    What is your refund policy?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
-                    We offer a 14-day free trial with no credit card required. If you&apos;re not satisfied within the first 30 days of your paid subscription, we&apos;ll provide a full refund. Cancel anytime with no long-term commitments.
-                  </AccordionContent>
-                </AccordionItem>
+                {faqItems.map((item, index) => (
+                  <AccordionItem
+                    key={index}
+                    value={`item-${index + 1}`}
+                    className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6 hover:scale-[1.01] transition-all duration-200"
+                  >
+                    <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent py-4 text-lg font-normal">
+                      {item.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
+                      {item.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
               </Accordion>
             </motion.div>
           </div>
@@ -910,10 +902,9 @@ export default function LandingPage() {
         onClose={() => setIsVideoModalOpen(false)}
         videoId="S1cnQG0-LP4"
       />
-      </div>
 
       {/* Footer */}
       <Footer />
-    </>
+    </div>
   );
 }
