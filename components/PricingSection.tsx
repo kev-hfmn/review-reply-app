@@ -1,3 +1,5 @@
+'use client'
+
 // File: /components/PricingSection.tsx
 
 // import Link from 'next/link';

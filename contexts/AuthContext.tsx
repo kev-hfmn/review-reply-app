@@ -143,32 +143,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
     console.log("AuthContext - mounted useEffect:", mounted);
     
     const initializeAuth = async () => {
       try {
+        if (!mounted) return;
+        
         setIsLoading(true);
         console.log("AuthContext - Starting Try in InitializeAuth!");
 
-        // // First, get initial session
+        // First, get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error || !mounted) {
-          setIsLoading(false);
+          if (mounted) setIsLoading(false);
           return;
         }
 
         // Update initial state
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        if (mounted) {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
 
-        if (currentUser) {
-          await checkSubscription(currentUser.id);
-          await loadBusinessInfo(currentUser.id);
-          
-          // Create business record if missing (for Google OAuth users)
-          await ensureBusinessRecord(currentUser.id);
+          if (currentUser && mounted) {
+            // Run user data loading in background - don't block initial render
+            Promise.all([
+              checkSubscription(currentUser.id),
+              loadBusinessInfo(currentUser.id),
+              ensureBusinessRecord(currentUser.id)
+            ]).catch(error => {
+              console.error('Error loading user data:', error);
+              // Don't throw - allow app to continue with basic auth
+            });
+          }
         }
         
         // Then set up listener for future changes
@@ -177,30 +186,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!mounted) return;
             
             const newUser = newSession?.user ?? null;
-            setUser(newUser);
-            
-            if (newUser) {
-              // Load subscription and business data for all authenticated users
-              await checkSubscription(newUser.id);
-              await loadBusinessInfo(newUser.id);
+            if (mounted) {
+              setUser(newUser);
               
-              // Ensure business record exists
-              await ensureBusinessRecord(newUser.id);
-            } else {
-              setIsSubscriber(false);
-              setBusinessName(null);
-              setBusinessId(null);
+              if (newUser) {
+                // Run these in background - don't block auth state update
+                Promise.all([
+                  checkSubscription(newUser.id),
+                  loadBusinessInfo(newUser.id),
+                  ensureBusinessRecord(newUser.id)
+                ]).catch(error => {
+                  console.error('Error loading user data in background:', error);
+                });
+              } else {
+                setIsSubscriber(false);
+                setBusinessName(null);
+                setBusinessId(null);
+              }
             }
           }
         );
 
+        authSubscription = subscription;
+
         // Only set loading to false after everything is initialized
         if (mounted) setIsLoading(false);
         
-        return () => {
-          mounted = false;
-          subscription.unsubscribe();
-        };
       } catch (error) {
         console.error("Auth initialization error:", error);
         if (mounted) setIsLoading(false);
@@ -208,7 +219,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-  }, [checkSubscription, loadBusinessInfo, ensureBusinessRecord]);
+    
+    // Cleanup function
+    return () => {
+      mounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
+  }, []); // Empty dependency array - critical fix!
 
   const value = {
     user,

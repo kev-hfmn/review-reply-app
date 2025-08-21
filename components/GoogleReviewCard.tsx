@@ -127,7 +127,7 @@ export function GoogleReviewCard({
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 p-4 max-w-md ${className}`}>
+    <div className={`relative bg-white min-h-[300px] rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 p-4 max-w-md overflow-hidden ${className}`}>
       {/* User Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
@@ -182,20 +182,19 @@ export function GoogleReviewCard({
         </p>
       </div>
 
-      {/* Tumbleweed Animation */}
+      {/* Tumbleweed Animation - Positioned absolutely at bottom of card */}
       <AnimatePresence>
         {!showReply && showTumbleweed && (
-          <div className="relative h-16 -mx-4 mt-auto overflow-hidden" style={{ marginBottom: '-14px' }}>
+          <div className="absolute bottom-0 left-0 right-0 h-16 overflow-visible pointer-events-none">
             <motion.div
               key={`tumbleweed-${animationKey}`}
               initial={{
-                x: -100,
+                x: -80,
                 opacity: 1,
-                rotate: 0,
-                y: 10
+                rotate: 0
               }}
               animate={{
-                x: 420,
+                x: 400,
                 rotate: randomValues.rotations,
               }}
               transition={{
@@ -212,7 +211,7 @@ export function GoogleReviewCard({
                 opacity: 0,
                 transition: { duration: 0.5 }
               }}
-              className="absolute"
+              className="absolute bottom-2"
             >
               <motion.div
                 animate={{
@@ -228,9 +227,9 @@ export function GoogleReviewCard({
                 <Image
                   src="/icons/tumbleweed.png"
                   alt="Tumbleweed"
-                  width={64}
-                  height={64}
-                  className="w-16 h-16"
+                  width={48}
+                  height={48}
+                  className="w-16 h-16 opacity-70"
                 />
               </motion.div>
             </motion.div>
