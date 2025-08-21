@@ -188,8 +188,10 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadSettings = async () => {
-      if (!user) return;
+      if (!user || !user.id || !mounted) return;
 
       setIsLoading(true);
       try {
@@ -206,7 +208,7 @@ export default function SettingsPage() {
 
         if (businessError) throw businessError;
 
-        if (businesses && businesses.length > 0) {
+        if (businesses && businesses.length > 0 && mounted) {
           const business = businesses[0];
           setCurrentBusinessId(business.id);
 
@@ -241,18 +243,20 @@ export default function SettingsPage() {
 
             if (createError) throw createError;
 
-            setBrandVoice({
-              preset: 'friendly',
-              formality: 5,
-              warmth: 7,
-              brevity: 5,
-              customInstruction: ''
-            });
+            if (mounted) {
+              setBrandVoice({
+                preset: 'friendly',
+                formality: 5,
+                warmth: 7,
+                brevity: 5,
+                customInstruction: ''
+              });
 
-            setApprovalSettings({
-              mode: 'manual'
-            });
-          } else if (settings) {
+              setApprovalSettings({
+                mode: 'manual'
+              });
+            }
+          } else if (settings && mounted) {
             setBrandVoice({
               preset: settings.brand_voice_preset as 'friendly' | 'professional' | 'playful' | 'custom',
               formality: settings.formality_level,
@@ -306,7 +310,7 @@ export default function SettingsPage() {
               hasGoogleCredentials = credentialsData.hasCredentials || false;
               hasGoogleTokens = credentialsData.hasTokens || false;
 
-              if (credentialsData.hasCredentials && credentialsData.credentials) {
+              if (credentialsData.hasCredentials && credentialsData.credentials && mounted) {
                 loadedCredentials = {
                   clientId: credentialsData.credentials.clientId || '',
                   clientSecret: credentialsData.credentials.clientSecret || '',
@@ -353,25 +357,34 @@ export default function SettingsPage() {
           };
 
           console.log('Setting integration state:', integrationState);
-          setIntegrations(integrationState);
+          if (mounted) {
+            setIntegrations(integrationState);
 
-          setBilling({
-            plan: 'trial',
-            status: 'active',
-            trialEnds: '2025-08-26T23:59:59Z'
-          });
+            setBilling({
+              plan: 'trial',
+              status: 'active',
+              trialEnds: '2025-08-26T23:59:59Z'
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading settings:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    if (user) {
+    if (user && user.id) {
       loadSettings();
     }
-  }, [user]);
+    
+    // Cleanup function
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]); // Only depend on user.id for stability
 
   // Handle OAuth callback feedback
   useEffect(() => {
@@ -410,7 +423,7 @@ export default function SettingsPage() {
     // Create business record if it doesn't exist
     if (!currentBusinessId) {
       if (!user) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('businesses')
@@ -420,7 +433,7 @@ export default function SettingsPage() {
           })
           .select('id')
           .single();
-        
+
         if (error) throw error;
         setCurrentBusinessId(data.id);
       } catch (error) {
@@ -470,7 +483,7 @@ export default function SettingsPage() {
     // Create business record if it doesn't exist
     if (!currentBusinessId) {
       if (!user) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('businesses')
@@ -480,7 +493,7 @@ export default function SettingsPage() {
           })
           .select('id')
           .single();
-        
+
         if (error) throw error;
         setCurrentBusinessId(data.id);
       } catch (error) {
@@ -532,7 +545,7 @@ export default function SettingsPage() {
     // Create business record if it doesn't exist
     if (!currentBusinessId) {
       if (!user) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('businesses')
@@ -542,7 +555,7 @@ export default function SettingsPage() {
           })
           .select('id')
           .single();
-        
+
         if (error) throw error;
         setCurrentBusinessId(data.id);
       } catch (error) {
@@ -1025,7 +1038,7 @@ export default function SettingsPage() {
                       onClick={() => setBrandVoice(prev => ({ ...prev, preset }))}
                       className={`p-3 rounded-lg border-2 text-center transition-colors ${
                         brandVoice.preset === preset
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary'
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary dark:text-foreground/80'
                           : 'border-border hover:border-border/80 text-muted-foreground hover:text-foreground/80'
                       }`}
                     >
