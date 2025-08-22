@@ -36,14 +36,18 @@ export const config = {
 };
 
 async function checkExistingSubscription(customerId: string): Promise<boolean> {
-  const { data: existingSubs } = await supabaseAdmin
+  const { data: existingSubs, error } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
     .eq('stripe_customer_id', customerId)
-    .in('status', ['active', 'trialing'])
-    .single();
+    .in('status', ['active', 'trialing']);
 
-  return !!existingSubs;
+  // If there's an error or no data, return false (no existing subscription)
+  if (error || !existingSubs || existingSubs.length === 0) {
+    return false;
+  }
+
+  return existingSubs.length > 0;
 }
 
 // Currently Handled Events:

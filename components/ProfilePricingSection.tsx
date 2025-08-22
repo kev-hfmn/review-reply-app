@@ -12,23 +12,6 @@ interface ProfilePricingSectionProps {
 
 const pricingTiers = [
   {
-    id: "basic",
-    name: "Basic",
-    price: "Free",
-    interval: "",
-    priceId: '',
-    description: "Get started with basic review management",
-    icon: <CheckCircle2 className="h-6 w-6" />,
-    features: [
-      "View existing reviews",
-      "Basic review dashboard",
-      "Limited access to features"
-    ],
-    cta: "Current Plan",
-    popular: false,
-    color: "from-gray-500 to-gray-600"
-  },
-  {
     id: "starter",
     name: "Starter",
     price: "$19",
@@ -88,15 +71,15 @@ const pricingTiers = [
   }
 ];
 
-export function ProfilePricingSection({ currentPlan = 'basic', onUpgrade }: ProfilePricingSectionProps) {
+export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: ProfilePricingSectionProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const handleUpgrade = async (tier: typeof pricingTiers[0]) => {
     if (!user?.id) return;
-    
+
     setIsLoading(tier.id);
-    
+
     try {
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
@@ -129,7 +112,8 @@ export function ProfilePricingSection({ currentPlan = 'basic', onUpgrade }: Prof
   };
 
   const shouldShowUpgrade = (tierId: string) => {
-    if (currentPlan === 'basic') return true;
+    // Allow upgrades for users without a subscription (basic/null)
+    if (!currentPlan || currentPlan === 'basic') return true;
     if (currentPlan === 'starter' && (tierId === 'pro' || tierId === 'pro-plus')) return true;
     if (currentPlan === 'pro' && tierId === 'pro-plus') return true;
     return false;
@@ -144,7 +128,7 @@ export function ProfilePricingSection({ currentPlan = 'basic', onUpgrade }: Prof
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {pricingTiers.map((tier, i) => (
           <motion.div
             key={tier.id}
@@ -203,12 +187,6 @@ export function ProfilePricingSection({ currentPlan = 'basic', onUpgrade }: Prof
                     Your Current Plan
                   </span>
                 </div>
-              ) : tier.id === 'basic' ? (
-                <div className="w-full py-3 px-4 bg-muted/50 border border-border rounded-lg text-center">
-                  <span className="text-muted-foreground font-medium">
-                    Free Plan
-                  </span>
-                </div>
               ) : shouldShowUpgrade(tier.id) ? (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -244,7 +222,7 @@ export function ProfilePricingSection({ currentPlan = 'basic', onUpgrade }: Prof
 
       <div className="mt-8 text-center">
         <p className="text-sm text-muted-foreground">
-          All plans include a 14-day free trial. Cancel anytime.
+          All plans include a 30 day money back guarantee. Cancel anytime.
         </p>
       </div>
     </div>
