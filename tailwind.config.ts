@@ -10,6 +10,7 @@ export default {
   theme: {
   	extend: {
   		fontFamily: {
+  			sans: ['Noto Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
   			'indie-flower': ['var(--font-indie-flower)', 'cursive'],
   		},
   		colors: {

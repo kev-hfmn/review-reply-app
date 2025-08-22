@@ -181,8 +181,9 @@ export const POST = withCors(async function POST(request: NextRequest) {
           .from('subscriptions')
           .update({
             status: subscription.status,
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
             updated_at: new Date().toISOString()
           })
           .eq('stripe_subscription_id', subscription.id);
@@ -233,6 +234,19 @@ export const POST = withCors(async function POST(request: NextRequest) {
   }
 });
 
+function getPlanFromPriceId(priceId: string | undefined): string {
+  if (!priceId) return 'starter'; // Default fallback
+  
+  // Map Stripe price IDs to plan names
+  const priceIdToPlan: Record<string, string> = {
+    [process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || '']: 'starter',
+    [process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '']: 'pro',
+    [process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || '']: 'pro_plus'
+  };
+  
+  return priceIdToPlan[priceId] || 'starter'; // Default to starter if not found
+}
+
 async function createSubscription(subscriptionId: string, userId: string, customerId: string) {
   logWebhookEvent('Starting createSubscription', { subscriptionId, userId, customerId });
 
@@ -255,6 +269,7 @@ async function createSubscription(subscriptionId: string, userId: string, custom
         .from('subscriptions')
         .update({
           status: stripeSubscription.status,
+          current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
           cancel_at_period_end: stripeSubscription.cancel_at_period_end,
           updated_at: new Date().toISOString()
@@ -273,12 +288,14 @@ async function createSubscription(subscriptionId: string, userId: string, custom
       .from('subscriptions')
       .insert({
         user_id: userId,
+        status: stripeSubscription.status,
+        plan_id: getPlanFromPriceId(stripeSubscription.items.data[0]?.price.id),
+        current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: stripeSubscription.cancel_at_period_end,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
         stripe_price_id: stripeSubscription.items.data[0]?.price.id,
-        status: stripeSubscription.status,
-        current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-        cancel_at_period_end: stripeSubscription.cancel_at_period_end,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
