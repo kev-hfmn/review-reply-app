@@ -1,9 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Crown, Zap, Building2 } from 'lucide-react';
+import { CheckCircle2, Crown, Zap, Building2, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProfilePricingSectionProps {
   currentPlan?: string;
@@ -120,13 +121,17 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-subtle p-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Choose Your Plan</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Choose Your Plan
+        </CardTitle>
         <p className="text-muted-foreground">
           Upgrade your subscription to unlock more powerful features
         </p>
-      </div>
+      </CardHeader>
+      <CardContent>
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
         {pricingTiers.map((tier, i) => (
@@ -159,13 +164,11 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
               </div>
             )}
 
-            <div className="text-center mb-6">
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-r ${tier.color} text-white mb-4`}>
-                {tier.icon}
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">{tier.name}</h3>
-              <div className="flex items-baseline justify-center">
-                <span className="text-3xl font-bold text-foreground">{tier.price}</span>
+            <div className="text-center my-5">
+
+              <h3 className="text-2xl font-semibold text-foreground mb-2">{tier.name}</h3>
+              <div className="flex items-baseline justify-center mt-4">
+                <span className="text-3xl font-medium text-foreground">{tier.price}</span>
                 <span className="text-muted-foreground ml-1">{tier.interval}</span>
               </div>
               <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
@@ -174,7 +177,7 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
             <ul className="space-y-3 mb-6">
               {tier.features.map((feature, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground">{feature}</span>
                 </li>
               ))}
@@ -220,11 +223,12 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
         ))}
       </div>
 
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          All plans include a 30 day money back guarantee. Cancel anytime.
-        </p>
-      </div>
-    </div>
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            All plans include a 30 day money back guarantee. Cancel anytime.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

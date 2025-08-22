@@ -50,13 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Get ALL active subscriptions for this user (including those marked for cancellation)
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+        .order('created_at', { ascending: false });
       
       if (error && error.code !== 'PGRST116') {
         console.error('Subscription check error:', error);
@@ -64,12 +64,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Only consider active subscriptions (no trials)
-      const isValid = data && 
-        data.status === 'active' && 
-        new Date(data.current_period_end) > new Date();
+      if (!data || data.length === 0) {
+        setIsSubscriber(false);
+        return;
+      }
 
-      setIsSubscriber(!!isValid);
+      // Find the most recent TRULY active subscription (not marked for cancellation)
+      const activeSubscription = data.find(sub => 
+        sub.status === 'active' && 
+        sub.cancel_at_period_end === false && 
+        new Date(sub.current_period_end) > new Date()
+      );
+
+      // Log subscription status for debugging duplicate issues
+      if (data.length > 1) {
+        console.warn(`User ${userId} has ${data.length} active subscriptions:`, 
+          data.map(sub => ({
+            id: sub.stripe_subscription_id,
+            cancel_at_period_end: sub.cancel_at_period_end,
+            created_at: sub.created_at
+          }))
+        );
+      }
+
+      setIsSubscriber(!!activeSubscription);
     } catch (error) {
       console.error('Subscription check error:', error);
       setIsSubscriber(false);

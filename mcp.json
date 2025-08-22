@@ -20,9 +20,9 @@
     },
     "stripe": {
       "command": "npx",
-      "args": ["-y", "@stripe/mcp-server"],
+      "args": ["-y", "@stripe/mcp", "--tools=all"],
       "env": {
-        "STRIPE_SECRET_KEY": "$STRIPE_SECRET_KEY"
+        "STRIPE_SECRET_KEY": "sk_test_51PflsREjtehCd2h5wiuNWqcEl9eQaOXPKpV80EcjqPE1nOmbzXSSWe6XMN3pq2GW2GKssu1hFf6ZqwqXUCxjYlKD00Izy2nwWp"
       }
     }
   }

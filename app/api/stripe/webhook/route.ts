@@ -24,6 +24,37 @@ interface StoredSubscriptionData {
   customer: string;
 }
 
+interface SubscriptionRecord {
+  id: string;
+  user_id: string;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  status: string;
+  cancel_at_period_end: boolean;
+  current_period_end: string;
+  created_at: string;
+  superseded_by?: string;
+  replacement_reason?: string;
+}
+
+interface SubscriptionCheckResult {
+  hasActive: boolean;
+  subscriptionsToReplace: SubscriptionRecord[];
+  details: {
+    totalFound: number;
+    trulyActive: number;
+    toReplace: number;
+    subscriptions: Array<{
+      id: string;
+      status: string;
+      cancel_at_period_end: boolean;
+      current_period_end: string;
+      created_at: string;
+    }>;
+    error?: unknown;
+  };
+}
+
 // Store both checkout sessions and subscriptions temporarily
 const checkoutSessionMap = new Map<string, StoredSessionData>();
 const pendingSubscriptions = new Map<string, StoredSubscriptionData>();
@@ -35,19 +66,176 @@ export const config = {
   },
 };
 
-async function checkExistingSubscription(customerId: string): Promise<boolean> {
-  const { data: existingSubs, error } = await supabaseAdmin
+// Enhanced subscription checker with proper cancel_at_period_end handling
+async function checkExistingActiveSubscription(customerId: string, userId?: string): Promise<SubscriptionCheckResult> {
+  logWebhookEvent('Enhanced subscription check', { customerId, userId });
+  
+  // Check by customer ID - get ALL active subscriptions
+  const { data: existingSubsByCustomer, error: customerError } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
     .eq('stripe_customer_id', customerId)
-    .in('status', ['active', 'trialing']);
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
 
-  // If there's an error or no data, return false (no existing subscription)
-  if (error || !existingSubs || existingSubs.length === 0) {
-    return false;
+  if (customerError) {
+    logWebhookEvent('Error checking subscriptions by customer ID', customerError);
+    return { 
+      hasActive: false, 
+      subscriptionsToReplace: [], 
+      details: { 
+        totalFound: 0,
+        trulyActive: 0,
+        toReplace: 0,
+        subscriptions: [],
+        error: customerError 
+      } 
+    };
   }
 
-  return existingSubs.length > 0;
+  // Also check by user ID if provided
+  let existingSubsByUser = null;
+  if (userId) {
+    const { data, error: userError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+    
+    if (userError) {
+      logWebhookEvent('Error checking subscriptions by user ID', userError);
+    }
+    existingSubsByUser = data;
+  }
+
+  // Combine and deduplicate subscriptions
+  const allSubscriptions = new Map();
+  
+  existingSubsByCustomer?.forEach(sub => {
+    allSubscriptions.set(sub.stripe_subscription_id, sub);
+  });
+  
+  existingSubsByUser?.forEach(sub => {
+    allSubscriptions.set(sub.stripe_subscription_id, sub);
+  });
+
+  const subscriptions = Array.from(allSubscriptions.values());
+  
+  // Find truly active subscriptions (not marked for cancellation and not expired)
+  const trulyActiveSubscriptions = subscriptions.filter(sub => {
+    const isActive = sub.status === 'active';
+    const notCancelled = sub.cancel_at_period_end === false;
+    const notExpired = new Date(sub.current_period_end) > new Date();
+    return isActive && notCancelled && notExpired;
+  });
+  
+  // Find subscriptions that can be replaced (cancelled or expired)
+  const subscriptionsToReplace = subscriptions.filter(sub => {
+    const isCancelled = sub.cancel_at_period_end === true;
+    const isExpired = new Date(sub.current_period_end) <= new Date();
+    return isCancelled || isExpired;
+  });
+  
+  const details = {
+    totalFound: subscriptions.length,
+    trulyActive: trulyActiveSubscriptions.length,
+    toReplace: subscriptionsToReplace.length,
+    subscriptions: subscriptions.map(sub => ({
+      id: sub.stripe_subscription_id,
+      status: sub.status,
+      cancel_at_period_end: sub.cancel_at_period_end,
+      current_period_end: sub.current_period_end,
+      created_at: sub.created_at
+    }))
+  };
+  
+  logWebhookEvent('Enhanced subscription check results', details);
+
+  return {
+    hasActive: trulyActiveSubscriptions.length > 0,
+    subscriptionsToReplace,
+    details
+  };
+}
+
+// Subscription replacement logic
+async function replaceSubscription(
+  oldSubscriptionId: string, 
+  newSubscriptionId: string, 
+  reason: string
+): Promise<boolean> {
+  try {
+    logWebhookEvent('Replacing subscription', { oldSubscriptionId, newSubscriptionId, reason });
+    
+    // Mark old subscription as superseded in a transaction
+    const { error: updateError } = await supabaseAdmin
+      .from('subscriptions')
+      .update({
+        superseded_by: newSubscriptionId,
+        replacement_reason: reason,
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', oldSubscriptionId);
+    
+    if (updateError) {
+      logWebhookEvent('Error marking old subscription as superseded', updateError);
+      return false;
+    }
+    
+    // Cancel old subscription on Stripe side if it's still active
+    try {
+      const oldStripeSubscription = await stripe.subscriptions.retrieve(oldSubscriptionId);
+      if (oldStripeSubscription.status === 'active' && !oldStripeSubscription.cancel_at_period_end) {
+        await stripe.subscriptions.cancel(oldSubscriptionId);
+        logWebhookEvent('Cancelled old Stripe subscription', { oldSubscriptionId });
+      }
+    } catch (stripeError) {
+      logWebhookEvent('Error cancelling old Stripe subscription (may already be cancelled)', stripeError);
+    }
+    
+    return true;
+  } catch (error) {
+    logWebhookEvent('Error in replaceSubscription', error);
+    return false;
+  }
+}
+
+// Webhook event deduplication
+async function isEventAlreadyProcessed(eventId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('webhook_events_processed')
+      .select('id')
+      .eq('stripe_event_id', eventId)
+      .maybeSingle();
+    
+    return !error && !!data;
+  } catch (error) {
+    logWebhookEvent('Error checking event deduplication', error);
+    return false;
+  }
+}
+
+// Mark event as processed
+async function markEventAsProcessed(
+  eventId: string, 
+  eventType: string, 
+  subscriptionId?: string, 
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await supabaseAdmin
+      .from('webhook_events_processed')
+      .insert({
+        stripe_event_id: eventId,
+        event_type: eventType,
+        subscription_id: subscriptionId,
+        metadata
+      });
+  } catch (error) {
+    logWebhookEvent('Error marking event as processed', error);
+  }
 }
 
 // Currently Handled Events:
@@ -97,24 +285,61 @@ export const POST = withCors(async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Check for existing active subscription
-        const hasActiveSubscription = await checkExistingSubscription(session.customer as string);
+        // Check for event deduplication first
+        const alreadyProcessed = await isEventAlreadyProcessed(event.id);
+        if (alreadyProcessed) {
+          logWebhookEvent('Event already processed, skipping', { eventId: event.id });
+          return NextResponse.json({ status: 'already_processed' });
+        }
 
-        if (hasActiveSubscription) {
-          logWebhookEvent('Duplicate subscription attempt blocked', {
-            customerId: session.customer,
-            sessionId: session.id
-          });
+        // Enhanced subscription check with replacement logic
+        const subscriptionCheck = await checkExistingActiveSubscription(
+          session.customer as string, 
+          session.client_reference_id || undefined
+        );
 
+        if (subscriptionCheck.hasActive) {
+          logWebhookEvent('Active subscription found, blocking duplicate', subscriptionCheck.details);
+          
           // Cancel the new subscription immediately
           if (session.subscription) {
-            await stripe.subscriptions.cancel(session.subscription as string);
+            try {
+              await stripe.subscriptions.cancel(session.subscription as string);
+              logWebhookEvent('Successfully canceled duplicate subscription', {
+                subscriptionId: session.subscription
+              });
+            } catch (cancelError) {
+              logWebhookEvent('Error canceling duplicate subscription', cancelError);
+            }
           }
+          
+          // Mark event as processed even if blocked
+          await markEventAsProcessed(event.id, event.type, session.subscription as string, {
+            reason: 'blocked_duplicate',
+            existingSubscriptions: subscriptionCheck.details.subscriptions
+          });
 
           return NextResponse.json({
             status: 'blocked',
-            message: 'Customer already has an active subscription'
+            message: 'Customer already has an active subscription',
+            details: subscriptionCheck.details
           });
+        }
+
+        // Handle subscription replacement if there are cancelled subscriptions
+        if (subscriptionCheck.subscriptionsToReplace.length > 0) {
+          logWebhookEvent('Found subscriptions to replace', {
+            count: subscriptionCheck.subscriptionsToReplace.length,
+            subscriptions: subscriptionCheck.subscriptionsToReplace
+          });
+          
+          for (const oldSub of subscriptionCheck.subscriptionsToReplace) {
+            await replaceSubscription(
+              oldSub.stripe_subscription_id,
+              session.subscription as string,
+              'checkout_session_replacement'
+            );
+          }
         }
 
         logWebhookEvent('Processing checkout.session.completed', {
@@ -140,6 +365,13 @@ export const POST = withCors(async function POST(request: NextRequest) {
             session.customer as string
           );
           logWebhookEvent('Successfully created subscription', subscription);
+          
+          // Mark event as processed after successful creation
+          await markEventAsProcessed(event.id, event.type, session.subscription as string, {
+            userId: session.client_reference_id,
+            customerId: session.customer,
+            subscriptionId: subscription?.id
+          });
         } catch (error) {
           logWebhookEvent('Failed to create subscription', error);
           throw error;
@@ -149,6 +381,58 @@ export const POST = withCors(async function POST(request: NextRequest) {
 
       case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // Check for event deduplication
+        const alreadyProcessed = await isEventAlreadyProcessed(event.id);
+        if (alreadyProcessed) {
+          logWebhookEvent('Subscription created event already processed', { eventId: event.id });
+          return NextResponse.json({ status: 'already_processed' });
+        }
+
+        // Enhanced subscription check
+        const subscriptionCheck = await checkExistingActiveSubscription(
+          subscription.customer as string
+        );
+
+        if (subscriptionCheck.hasActive) {
+          logWebhookEvent('Duplicate subscription creation blocked', {
+            customerId: subscription.customer,
+            subscriptionId: subscription.id,
+            details: subscriptionCheck.details
+          });
+
+          // Cancel this subscription immediately
+          try {
+            await stripe.subscriptions.cancel(subscription.id);
+            logWebhookEvent('Successfully canceled duplicate subscription', {
+              subscriptionId: subscription.id
+            });
+          } catch (cancelError) {
+            logWebhookEvent('Error canceling duplicate subscription', cancelError);
+          }
+          
+          // Mark as processed even if blocked
+          await markEventAsProcessed(event.id, event.type, subscription.id, {
+            reason: 'blocked_duplicate',
+            existingSubscriptions: subscriptionCheck.details.subscriptions
+          });
+
+          return NextResponse.json({
+            status: 'blocked',
+            message: 'Customer already has an active subscription'
+          });
+        }
+
+        // Handle replacement subscriptions
+        if (subscriptionCheck.subscriptionsToReplace.length > 0) {
+          for (const oldSub of subscriptionCheck.subscriptionsToReplace) {
+            await replaceSubscription(
+              oldSub.stripe_subscription_id,
+              subscription.id,
+              'subscription_created_replacement'
+            );
+          }
+        }
 
         // Check if we have the session data already
         const sessionData = checkoutSessionMap.get(subscription.id);
@@ -160,22 +444,96 @@ export const POST = withCors(async function POST(request: NextRequest) {
             sessionData.customerId
           );
           checkoutSessionMap.delete(subscription.id);
+          
+          // Mark as processed
+          await markEventAsProcessed(event.id, event.type, subscription.id, {
+            userId: sessionData.userId,
+            customerId: sessionData.customerId
+          });
         } else {
           // Store the subscription data until we get the session
           pendingSubscriptions.set(subscription.id, {
             id: subscription.id,
             customer: subscription.customer as string
           });
+          
+          logWebhookEvent('Stored pending subscription, waiting for session data', {
+            subscriptionId: subscription.id
+          });
         }
         break;
       }
 
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        // Check for event deduplication
+        const alreadyProcessed = await isEventAlreadyProcessed(event.id);
+        if (alreadyProcessed) {
+          return NextResponse.json({ status: 'already_processed' });
+        }
+
+        const { error } = await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (error) {
+          logWebhookEvent('Error updating subscription', error);
+        } else {
+          await markEventAsProcessed(event.id, event.type, subscription.id, {
+            subscriptionStatus: subscription.status,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end
+          });
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+
+        // Check for event deduplication
+        const alreadyProcessed = await isEventAlreadyProcessed(event.id);
+        if (alreadyProcessed) {
+          return NextResponse.json({ status: 'already_processed' });
+        }
+
+        const { error } = await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            status: 'canceled',
+            cancel_at_period_end: false,
+            current_period_end: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (error) {
+          logWebhookEvent('Error updating deleted subscription', error);
+        } else {
+          await markEventAsProcessed(event.id, event.type, subscription.id, {
+            reason: 'subscription_deleted'
+          });
+        }
+        break;
+      }
+
       case 'customer.subscription.pending_update_applied':
       case 'customer.subscription.pending_update_expired':
       case 'customer.subscription.trial_will_end': {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // Check for event deduplication
+        const alreadyProcessed = await isEventAlreadyProcessed(event.id);
+        if (alreadyProcessed) {
+          return NextResponse.json({ status: 'already_processed' });
+        }
 
         await supabaseAdmin
           .from('subscriptions')
@@ -188,22 +546,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
           })
           .eq('stripe_subscription_id', subscription.id);
 
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-
-        await supabaseAdmin
-          .from('subscriptions')
-          .update({
-            status: subscription.status,
-            cancel_at_period_end: false,
-            current_period_end: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('stripe_subscription_id', subscription.id);
-
+        await markEventAsProcessed(event.id, event.type, subscription.id);
         break;
       }
 
