@@ -243,15 +243,14 @@ async function createSubscription(subscriptionId: string, userId: string, custom
     const { data: existingData, error: checkError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
-      .eq('stripe_subscription_id', subscriptionId)
-      .single();
+      .eq('stripe_subscription_id', subscriptionId);
 
     if (checkError) {
       logWebhookEvent('Error checking existing subscription', checkError);
     }
 
-    if (existingData) {
-      logWebhookEvent('Found existing subscription', existingData);
+    if (existingData && existingData.length > 0) {
+      logWebhookEvent('Found existing subscription', existingData[0]);
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
@@ -260,15 +259,13 @@ async function createSubscription(subscriptionId: string, userId: string, custom
           cancel_at_period_end: stripeSubscription.cancel_at_period_end,
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_subscription_id', subscriptionId)
-        .select()
-        .single();
+        .eq('stripe_subscription_id', subscriptionId);
 
       if (updateError) {
         logWebhookEvent('Error updating existing subscription', updateError);
         throw updateError;
       }
-      return existingData;
+      return existingData[0];
     }
 
     logWebhookEvent('Creating new subscription record');
@@ -278,15 +275,14 @@ async function createSubscription(subscriptionId: string, userId: string, custom
         user_id: userId,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
+        stripe_price_id: stripeSubscription.items.data[0]?.price.id,
         status: stripeSubscription.status,
-        price_id: stripeSubscription.items.data[0]?.price.id,
         current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
         cancel_at_period_end: stripeSubscription.cancel_at_period_end,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .select()
-      .single();
+      .select();
 
     if (insertError) {
       logWebhookEvent('Error inserting new subscription', insertError);
@@ -294,7 +290,7 @@ async function createSubscription(subscriptionId: string, userId: string, custom
     }
 
     logWebhookEvent('Successfully created new subscription', data);
-    return data;
+    return data?.[0];
   } catch (error) {
     logWebhookEvent('Error in createSubscription', error);
     throw error;
