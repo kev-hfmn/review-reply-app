@@ -92,10 +92,15 @@ export async function POST(request: NextRequest) {
 
     const eventId = `${meta.event_name}_${data.id}`;
 
-    // Check for event deduplication
-    if (await isEventAlreadyProcessed(eventId)) {
+    // Check for event deduplication (temporarily bypass for debugging)
+    const alreadyProcessed = await isEventAlreadyProcessed(eventId);
+    if (alreadyProcessed && eventId !== 'subscription_created_1431545') {
       console.log('Event already processed:', eventId);
       return NextResponse.json({ status: 'already_processed' });
+    }
+    
+    if (alreadyProcessed && eventId === 'subscription_created_1431545') {
+      console.log('Reprocessing failed subscription_created event for debugging:', eventId);
     }
 
     console.log('Processing Lemon Squeezy webhook event:', meta.event_name, data.id);
@@ -120,6 +125,21 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ status: 'subscription_already_exists' });
         }
 
+        // Map Lemon Squeezy variant to plan_id based on your pricing tiers
+        let planId = 'pro'; // Default fallback for unknown variants
+        const variantId = subscription.attributes.variant_id?.toString();
+        
+        // Based on your env file: Pro variant is 962821, Starter is 615994
+        if (variantId === '615994') {
+          planId = 'starter';
+        } else if (variantId === '962821') {
+          planId = 'pro';
+        } else if (variantId === '12347') { // Pro Plus (placeholder)
+          planId = 'pro-plus';
+        }
+        
+        console.log(`Mapped variant ${variantId} to plan: ${planId}`);
+
         // Create subscription record
         const subscriptionData = {
           user_id: customData.user_id,
@@ -134,6 +154,7 @@ export async function POST(request: NextRequest) {
           // Fix date mapping - use renews_at for current period end, and created_at for start
           current_period_start: subscription.attributes.created_at,
           current_period_end: subscription.attributes.renews_at || subscription.attributes.ends_at,
+          plan_id: planId, // Add the required plan_id
         };
 
         console.log('Attempting to create subscription with data:', JSON.stringify(subscriptionData, null, 2));
