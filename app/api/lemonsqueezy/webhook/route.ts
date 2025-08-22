@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
         // Create subscription record
         const subscriptionData = {
           user_id: customData.user_id,
-          lemonsqueezy_subscription_id: subscription.id,
+          lemonsqueezy_subscription_id: subscription.id.toString(),
           lemonsqueezy_customer_id: subscription.attributes.customer_id?.toString(),
           lemonsqueezy_order_id: subscription.attributes.order_id?.toString(),
           lemonsqueezy_variant_id: subscription.attributes.variant_id?.toString(),
@@ -131,9 +131,12 @@ export async function POST(request: NextRequest) {
           status: subscription.attributes.status,
           payment_processor: 'lemonsqueezy',
           cancel_at_period_end: subscription.attributes.cancelled || false,
-          current_period_start: subscription.attributes.renews_at,
-          current_period_end: subscription.attributes.ends_at || subscription.attributes.renews_at,
+          // Fix date mapping - use renews_at for current period end, and created_at for start
+          current_period_start: subscription.attributes.created_at,
+          current_period_end: subscription.attributes.renews_at || subscription.attributes.ends_at,
         };
+
+        console.log('Attempting to create subscription with data:', JSON.stringify(subscriptionData, null, 2));
 
         const { error } = await supabaseAdmin
           .from('subscriptions')
@@ -141,6 +144,8 @@ export async function POST(request: NextRequest) {
 
         if (error) {
           console.error('Error creating subscription:', error);
+          console.error('Failed subscription data:', subscriptionData);
+          await markEventAsProcessed(eventId, meta.event_name, subscription.id, { error: 'database_insert_failed', details: error });
           return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
         }
 
@@ -161,8 +166,8 @@ export async function POST(request: NextRequest) {
         const updateData = {
           status: subscription.attributes.status,
           cancel_at_period_end: subscription.attributes.cancelled || false,
-          current_period_start: subscription.attributes.renews_at,
-          current_period_end: subscription.attributes.ends_at || subscription.attributes.renews_at,
+          current_period_start: subscription.attributes.created_at,
+          current_period_end: subscription.attributes.renews_at || subscription.attributes.ends_at,
           updated_at: new Date().toISOString(),
         };
 
@@ -224,8 +229,8 @@ export async function POST(request: NextRequest) {
         const updateData = {
           status: subscription.attributes.status,
           cancel_at_period_end: false,
-          current_period_start: subscription.attributes.renews_at,
-          current_period_end: subscription.attributes.ends_at || subscription.attributes.renews_at,
+          current_period_start: subscription.attributes.created_at,
+          current_period_end: subscription.attributes.renews_at || subscription.attributes.ends_at,
           updated_at: new Date().toISOString(),
         };
 
