@@ -1,4 +1,4 @@
-import { Geist, Indie_Flower } from "next/font/google";
+import { Noto_Sans, Indie_Flower } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -13,7 +13,7 @@ import GoogleAnalytics from '@/components/GoogleAnalytics';
 // Re-export sitewide metadata so Next.js applies it from the root layout
 export { metadata } from './metadata';
 
-const geist = Geist({ subsets: ['latin'] });
+const notoSans = Noto_Sans({ subsets: ['latin'] });
 const indieFlower = Indie_Flower({ 
   weight: '400',
   subsets: ['latin'],
@@ -77,7 +77,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geist.className} ${indieFlower.variable}`}>
+      <body className={`${notoSans.className} ${indieFlower.variable}`}>
         <Analytics mode="auto" />
         <GoogleAnalytics />
         <ThemeProvider>
