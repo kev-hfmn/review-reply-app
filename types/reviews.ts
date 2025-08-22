@@ -126,6 +126,8 @@ export interface ReviewTableProps {
   onInlineEdit: (reviewId: string, reply: string) => void;
   onQuickAction: (reviewId: string, action: 'approve' | 'post' | 'skip') => void;
   onGenerateReply: (reviewId: string) => Promise<void>;
+  isSubscriber?: boolean;
+  onUpgradeRequired?: () => void;
 }
 
 export interface ReviewFiltersProps {
@@ -144,6 +146,8 @@ export interface ReviewDrawerProps {
   onApprove: (reviewId: string) => Promise<void>;
   onPost: (reviewId: string) => Promise<void>;
   onRegenerate: (reviewId: string, tone: string) => Promise<void>;
+  isSubscriber?: boolean;
+  onUpgradeRequired?: () => void;
 }
 
 export interface BulkActionsBarProps {
@@ -153,6 +157,8 @@ export interface BulkActionsBarProps {
   onSkip: () => void;
   onClearSelection: () => void;
   isLoading?: boolean;
+  isSubscriber?: boolean;
+  onUpgradeRequired?: () => void;
 }
 
 // Constants

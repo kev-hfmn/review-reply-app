@@ -88,26 +88,26 @@ export const POST = withCors(async function POST(request: NextRequest) {
 
     const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     logWebhookEvent(`Event received: ${event.type}`, event.data.object);
-    
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        
+
         // Check for existing active subscription
         const hasActiveSubscription = await checkExistingSubscription(session.customer as string);
-        
+
         if (hasActiveSubscription) {
           logWebhookEvent('Duplicate subscription attempt blocked', {
             customerId: session.customer,
             sessionId: session.id
           });
-          
+
           // Cancel the new subscription immediately
           if (session.subscription) {
             await stripe.subscriptions.cancel(session.subscription as string);
           }
-          
-          return NextResponse.json({ 
+
+          return NextResponse.json({
             status: 'blocked',
             message: 'Customer already has an active subscription'
           });
@@ -145,7 +145,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
 
       case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
-        
+
         // Check if we have the session data already
         const sessionData = checkoutSessionMap.get(subscription.id);
         if (sessionData) {
@@ -172,7 +172,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
       case 'customer.subscription.pending_update_expired':
       case 'customer.subscription.trial_will_end': {
         const subscription = event.data.object as Stripe.Subscription;
-        
+
         await supabaseAdmin
           .from('subscriptions')
           .update({
@@ -182,13 +182,13 @@ export const POST = withCors(async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('stripe_subscription_id', subscription.id);
-        
+
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        
+
         await supabaseAdmin
           .from('subscriptions')
           .update({
@@ -198,7 +198,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('stripe_subscription_id', subscription.id);
-        
+
         break;
       }
 
@@ -295,4 +295,4 @@ async function createSubscription(subscriptionId: string, userId: string, custom
     logWebhookEvent('Error in createSubscription', error);
     throw error;
   }
-} 
+}

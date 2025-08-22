@@ -17,7 +17,7 @@ import { REPLY_TONES } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 
 export default function ReviewsPage() {
-  const { } = useAuth();
+  const { isSubscriber } = useAuth();
   const {
     businesses,
     reviews,
@@ -230,15 +230,30 @@ export default function ReviewsPage() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button
-            onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
-            disabled={isFetchingReviews || isUpdating}
-            variant="primary"
-            className="flex items-center space-x-2 px-3 py-2 "
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
-            <span>Fetch New Reviews</span>
-          </Button>
+          {isSubscriber ? (
+            <Button
+              onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
+              disabled={isFetchingReviews || isUpdating}
+              variant="primary"
+              className="flex items-center space-x-2 px-3 py-2 "
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
+              <span>Fetch New Reviews</span>
+            </Button>
+          ) : (
+            <Button
+              onClick={() => showToast({
+                type: 'info',
+                message: 'Review syncing requires an active subscription. Please upgrade your plan to access this feature.',
+                title: 'Subscription Required'
+              })}
+              variant="outline"
+              className="flex items-center space-x-2 px-3 py-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Fetch New Reviews (Upgrade Required)</span>
+            </Button>
+          )}
 
 {/*           <Button
             onClick={handleExport}
@@ -295,6 +310,12 @@ export default function ReviewsPage() {
         onInlineEdit={handleInlineEdit}
         onQuickAction={handleQuickAction}
         onGenerateReply={reviewActions.regenerateReply}
+        isSubscriber={isSubscriber}
+        onUpgradeRequired={() => showToast({
+          type: 'info',
+          message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
+          title: 'Subscription Required'
+        })}
       />
 
       {/* Pagination */}
@@ -337,6 +358,12 @@ export default function ReviewsPage() {
         onSkip={handleBulkSkip}
         onClearSelection={handleClearSelection}
         isLoading={isUpdating}
+        isSubscriber={isSubscriber}
+        onUpgradeRequired={() => showToast({
+          type: 'info',
+          message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
+          title: 'Subscription Required'
+        })}
       />
 
       {/* Review Drawer */}
@@ -347,6 +374,12 @@ export default function ReviewsPage() {
         onApprove={handleDrawerApprove}
         onPost={handleDrawerPost}
         onRegenerate={handleDrawerRegenerate}
+        isSubscriber={isSubscriber}
+        onUpgradeRequired={() => showToast({
+          type: 'info',
+          message: 'Generating AI replies requires an active subscription. Please upgrade your plan to access this feature.',
+          title: 'Subscription Required'
+        })}
       />
 
       {/* Toast Notifications */}

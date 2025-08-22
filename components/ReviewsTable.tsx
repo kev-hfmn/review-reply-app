@@ -8,7 +8,8 @@ import {
   SkipForward,
   Edit3,
   Calendar,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import type { ReviewTableProps } from '@/types/reviews';
@@ -26,7 +27,9 @@ export default function ReviewsTable({
   onReviewClick,
   onInlineEdit,
   onQuickAction,
-  onGenerateReply
+  onGenerateReply,
+  isSubscriber = false,
+  onUpgradeRequired
 }: ReviewTableProps) {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
@@ -340,12 +343,17 @@ export default function ReviewsTable({
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleGenerateReply(review.id);
+                        if (isSubscriber) {
+                          handleGenerateReply(review.id);
+                        } else {
+                          onUpgradeRequired?.();
+                        }
                       }}
                       size="sm"
-                      variant="primary"
-                      title="Generate AI reply"
+                      variant={isSubscriber ? "primary" : "outline"}
+                      title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
+                      className={isSubscriber ? "" : "text-gray-500"}
                     >
                       {generatingReviewId === review.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -353,7 +361,7 @@ export default function ReviewsTable({
                         <MessageSquare className="h-4 w-4" />
                       )}
                       <span>
-                        {generatingReviewId === review.id ? 'Generating...' : 'Generate Reply'}
+                        {generatingReviewId === review.id ? 'Generating...' : isSubscriber ? 'Generate Reply' : 'Generate (Upgrade)'}
                       </span>
                     </Button>
                   )}
@@ -374,19 +382,52 @@ export default function ReviewsTable({
                     </Button>
                   )}
 
+                  {/* Show Regenerate button when AI reply exists and status is pending */}
+                  {review.ai_reply && review.status === 'pending' && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isSubscriber) {
+                          onGenerateReply(review.id);
+                        } else {
+                          onUpgradeRequired?.();
+                        }
+                      }}
+                      size="sm"
+                      variant="outline"
+                      title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
+                      disabled={generatingReviewId === review.id}
+                      className={isSubscriber ? "" : "text-gray-500"}
+                    >
+                      {generatingReviewId === review.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span>
+                        {generatingReviewId === review.id ? 'Regenerating...' : isSubscriber ? 'Regenerate' : 'Regenerate (Upgrade)'}
+                      </span>
+                    </Button>
+                  )}
+
                   {/* Show Post button only when AI reply exists */}
                   {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onQuickAction(review.id, 'post');
+                        if (isSubscriber) {
+                          onQuickAction(review.id, 'post');
+                        } else {
+                          onUpgradeRequired?.();
+                        }
                       }}
                       size="sm"
-                      variant="outlinePrimary"
-                      title="Post reply"
+                      variant={isSubscriber ? "outlinePrimary" : "outline"}
+                      title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
+                      className={isSubscriber ? "" : "text-gray-500"}
                     >
                       <Send className="h-4 w-4" />
-                      <span>Post</span>
+                      <span>{isSubscriber ? "Post" : "Post (Upgrade)"}</span>
                     </Button>
                   )}
 

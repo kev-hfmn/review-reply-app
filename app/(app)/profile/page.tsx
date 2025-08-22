@@ -9,7 +9,7 @@ import { AccountManagement } from '@/components/AccountManagement';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { StripeBuyButton } from '@/components/StripeBuyButton';
+import { ProfilePricingSection } from '@/components/ProfilePricingSection';
 
 function ProfileContent() {
   const { user } = useAuth();
@@ -21,11 +21,65 @@ function ProfileContent() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Show payment success message if redirected from successful payment
+  // Show payment success message and confetti if redirected from successful payment
   useEffect(() => {
     if (paymentStatus === 'success') {
-      // Could add a toast notification here
       console.log('Payment successful!');
+      
+      // Load confetti script and trigger celebration
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@tsparticles/confetti@3.0.3/tsparticles.confetti.bundle.min.js';
+      script.onload = () => {
+        // Confetti configuration
+        const count = 200;
+        const defaults = {
+          origin: { y: 0.7 },
+        };
+
+        interface ConfettiOptions {
+          spread?: number;
+          startVelocity?: number;
+          decay?: number;
+          scalar?: number;
+        }
+
+        function fire(particleRatio: number, opts: ConfettiOptions) {
+          (window as any).confetti(
+            Object.assign({}, defaults, opts, {
+              particleCount: Math.floor(count * particleRatio),
+            })
+          );
+        }
+
+        // Trigger confetti sequence
+        fire(0.25, {
+          spread: 26,
+          startVelocity: 55,
+        });
+
+        fire(0.2, {
+          spread: 60,
+        });
+
+        fire(0.35, {
+          spread: 100,
+          decay: 0.91,
+          scalar: 0.8,
+        });
+
+        fire(0.1, {
+          spread: 120,
+          startVelocity: 25,
+          decay: 0.92,
+          scalar: 1.2,
+        });
+
+        fire(0.1, {
+          spread: 120,
+          startVelocity: 45,
+        });
+      };
+      document.head.appendChild(script);
     }
   }, [paymentStatus]);
 
@@ -48,13 +102,13 @@ function ProfileContent() {
     let refreshAttempts = 0;
     const MAX_REFRESH_ATTEMPTS = 3;
     const REFRESH_INTERVAL = 3000; // 3 seconds
-    
+
     const attemptRefresh = async () => {
       if (refreshAttempts < MAX_REFRESH_ATTEMPTS) {
         refreshAttempts++;
         console.log(`Attempting auto-refresh (${refreshAttempts}/${MAX_REFRESH_ATTEMPTS})`);
         await fetchSubscription();
-        
+
         // If still loading, schedule next attempt
         if (isLoadingSubscription) {
           timeoutId = setTimeout(attemptRefresh, REFRESH_INTERVAL);
@@ -82,19 +136,19 @@ function ProfileContent() {
 
   const handleCancelSubscription = async () => {
     if (!subscription?.stripe_subscription_id) return;
-    
+
     setIsCancelling(true);
     try {
       const response = await fetch('/api/stripe/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          subscriptionId: subscription.stripe_subscription_id 
+        body: JSON.stringify({
+          subscriptionId: subscription.stripe_subscription_id
         }),
       });
-      
+
       if (!response.ok) throw new Error('Failed to cancel subscription');
-      
+
       setIsCancelModalOpen(false);
       router.refresh();
     } catch (error) {
@@ -106,18 +160,18 @@ function ProfileContent() {
 
   const handleReactivateSubscription = async () => {
     if (!subscription?.stripe_subscription_id) return;
-    
+
     try {
       const response = await fetch('/api/stripe/reactivate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          subscriptionId: subscription.stripe_subscription_id 
+        body: JSON.stringify({
+          subscriptionId: subscription.stripe_subscription_id
         }),
       });
-      
+
       if (!response.ok) throw new Error('Failed to reactivate subscription');
-      
+
       router.refresh();
     } catch (error) {
       console.error('Error reactivating subscription:', error);
@@ -140,75 +194,78 @@ function ProfileContent() {
             </p>
           </div>
         )}
-        
+
         <div>
           <h1 className="text-3xl font-bold text-foreground">Profile</h1>
           <p className="text-muted-foreground mt-2">Manage your account and subscription settings</p>
         </div>
-        
+
         <AccountManagement />
 
-        {/* Subscription Section */}
-        <div className="bg-card rounded-lg shadow-subtle p-6">
-          <h2 className="text-xl font-semibold mb-4 text-foreground">Subscription Status</h2>
-          {error ? (
-            <div className="text-red-500 dark:text-red-400">{error}</div>
-          ) : isLoadingSubscription ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span className="text-muted-foreground">Loading subscription details...</span>
-            </div>
-          ) : subscription ? (
-            <div className="space-y-2">
-              <p className="text-foreground">
-                <span className="font-medium">Status:</span>{' '}
-                <span className={`${subscription.status === 'active' ? 'text-green-500' : 'text-yellow-500'}`}>
-                  {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                </span>
-              </p>
-              <p className="text-foreground"><span className="font-medium">Started:</span> {new Date(subscription.created_at).toLocaleDateString()}</p>
-              
-              {subscription.status === 'canceled' ? (
-                <div className="mt-4">
-                  <Link
-                    href="/pay"
-                    className="inline-block px-6 py-3 bg-primary hover:bg-primary-dark text-primary-foreground rounded-lg shadow-subtle hover:shadow-hover transition-all"
-                  >
-                    Resubscribe
-                  </Link>
-                </div>
-              ) : subscription.cancel_at_period_end ? (
-                <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
-                  <p className="text-yellow-600 dark:text-yellow-400 mb-2">
-                    Your subscription will end on {new Date(subscription.current_period_end).toLocaleDateString()}
-                  </p>
+        {/* Current Subscription Status */}
+        {subscription && (
+          <div className="bg-card rounded-lg shadow-subtle p-6">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Current Subscription</h2>
+            {error ? (
+              <div className="text-red-500 dark:text-red-400">{error}</div>
+            ) : isLoadingSubscription ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-muted-foreground">Loading subscription details...</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-foreground">
+                  <span className="font-medium">Status:</span>{' '}
+                  <span className={`${subscription.status === 'active' ? 'text-green-500' : 'text-yellow-500'}`}>
+                    {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                  </span>
+                </p>
+                <p className="text-foreground"><span className="font-medium">Started:</span> {new Date(subscription.created_at).toLocaleDateString()}</p>
+
+                {subscription.status === 'canceled' ? (
+                  <div className="mt-4">
+                    <Link
+                      href="/pay"
+                      className="inline-block px-6 py-3 bg-primary hover:bg-primary-dark text-primary-foreground rounded-lg shadow-subtle hover:shadow-hover transition-all"
+                    >
+                      Resubscribe
+                    </Link>
+                  </div>
+                ) : subscription.cancel_at_period_end ? (
+                  <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
+                    <p className="text-yellow-600 dark:text-yellow-400 mb-2">
+                      Your subscription will end on {new Date(subscription.current_period_end).toLocaleDateString()}
+                    </p>
+                    <button
+                      onClick={handleReactivateSubscription}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Resume Subscription
+                    </button>
+                  </div>
+                ) : (subscription.status === 'active' || subscription.status === 'trialing') ? (
                   <button
-                    onClick={handleReactivateSubscription}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    onClick={() => setIsCancelModalOpen(true)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
                   >
-                    Resume Subscription
+                    Cancel Subscription
                   </button>
-                </div>
-              ) : (subscription.status === 'active' || subscription.status === 'trialing') ? (
-                <button
-                  onClick={() => setIsCancelModalOpen(true)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-4 transition-colors"
-                >
-                  Cancel Subscription
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-4 space-y-4">
-              <p className="text-muted-foreground">Subscribe to unlock the amazing review management experience.</p>
-              
-              <StripeBuyButton
-                buyButtonId={process.env.NEXT_PUBLIC_STRIPE_BUTTON_ID || ''}
-                publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''}
-              />
-            </div>
-          )}
-        </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pricing Section for Upgrades */}
+        <ProfilePricingSection
+          currentPlan={subscription?.stripe_price_id?.includes('starter') ? 'starter' :
+                      subscription?.stripe_price_id?.includes('pro-plus') ? 'pro-plus' :
+                      subscription?.stripe_price_id?.includes('pro') ? 'pro' : 'basic'}
+          onUpgrade={(planId) => {
+            console.log('Upgrade to plan:', planId);
+          }}
+        />
 
         {/* Cancel Confirmation Modal */}
         {isCancelModalOpen && (

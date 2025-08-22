@@ -29,7 +29,9 @@ export default function ReviewDrawer({
   onSave,
   onApprove,
   onPost,
-  onRegenerate
+  onRegenerate,
+  isSubscriber = false,
+  onUpgradeRequired
 }: ReviewDrawerProps) {
   const [editedReply, setEditedReply] = useState('');
   const [selectedTone, setSelectedTone] = useState('friendly');
@@ -72,6 +74,12 @@ export default function ReviewDrawer({
 
   const handleRegenerate = async () => {
     if (!data.review) return;
+
+    // Check subscription before proceeding
+    if (!isSubscriber) {
+      onUpgradeRequired?.();
+      return;
+    }
 
     setIsRegenerating(true);
     try {
@@ -117,6 +125,12 @@ export default function ReviewDrawer({
 
   const handlePost = async () => {
     if (!data.review) return;
+
+    // Check subscription before proceeding
+    if (!isSubscriber) {
+      onUpgradeRequired?.();
+      return;
+    }
 
     try {
       await onPost(data.review.id);
@@ -275,15 +289,16 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  className=""
-                  variant="primary"
+                  variant={isSubscriber ? "primary" : "outline"}
+                  className={isSubscriber ? "" : "text-gray-500"}
+                  title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                 >
                   {isRegenerating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  <span>{isRegenerating ? 'Generating...' : 'Generate Reply'}</span>
+                  <span>{isRegenerating ? 'Generating...' : isSubscriber ? 'Generate Reply' : 'Generate (Upgrade)'}</span>
                 </Button>
               )}
 
@@ -293,15 +308,15 @@ export default function ReviewDrawer({
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
                   variant="outline"
-                  className=""
-
+                  className={isSubscriber ? "" : "text-gray-500"}
+                  title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
                 >
                   {isRegenerating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  <span>{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+                  <span>{isRegenerating ? 'Regenerating...' : isSubscriber ? 'Regenerate' : 'Regenerate (Upgrade)'}</span>
                 </Button>
               )}
 
@@ -321,10 +336,15 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handlePost}
                   disabled={data.isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className={`${
+                    isSubscriber 
+                      ? "bg-green-600 hover:bg-green-700" 
+                      : "bg-gray-600 hover:bg-gray-700"
+                  } text-white`}
+                  title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
                 >
                   <Send className="h-4 w-4" />
-                  <span>Post Reply</span>
+                  <span>{isSubscriber ? "Post Reply" : "Post (Upgrade)"}</span>
                 </Button>
               )}
 

@@ -4,7 +4,7 @@ import { refreshAccessToken } from '@/lib/services/googleOAuthService';
 import { encryptFields, decryptFields } from '@/lib/services/encryptionService';
 
 /**
- * Refresh Google Business Profile access token
+ * Refresh Google Business Profile access token with platform credentials
  * POST /api/auth/google-business/refresh
  */
 export async function POST(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Get business and verify ownership
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
-      .select('id, user_id, google_client_id, google_client_secret, google_refresh_token')
+      .select('id, user_id, google_refresh_token, connection_status')
       .eq('id', businessId)
       .eq('user_id', userId)
       .single();
@@ -33,30 +33,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if tokens exist
-    if (!business.google_client_id || !business.google_client_secret || !business.google_refresh_token) {
+    // Check if refresh token exists
+    if (!business.google_refresh_token) {
       return NextResponse.json(
-        { error: 'Google credentials or refresh token not found. Please re-authenticate.' },
+        { error: 'Refresh token not found. Please re-authenticate.' },
         { status: 400 }
       );
     }
 
-    // Decrypt credentials
-    const decryptedBusiness = decryptFields(business, [
-      'google_client_id',
-      'google_client_secret',
-      'google_refresh_token'
-    ]);
+    // Decrypt refresh token
+    let refreshToken;
+    try {
+      const decryptedBusiness = decryptFields(business, ['google_refresh_token']);
+      refreshToken = decryptedBusiness.google_refresh_token;
+    } catch {
+      // Fallback to plain text for backward compatibility
+      refreshToken = business.google_refresh_token;
+    }
 
     try {
-      // Refresh the access token
-      const newTokens = await refreshAccessToken(
-        decryptedBusiness.google_refresh_token,
-        {
-          clientId: decryptedBusiness.google_client_id,
-          clientSecret: decryptedBusiness.google_client_secret,
-        }
-      );
+      // Refresh the access token using platform credentials
+      const newTokens = await refreshAccessToken(refreshToken);
 
       // Encrypt and store new access token
       const tokenData = {
@@ -65,11 +62,12 @@ export async function POST(request: NextRequest) {
 
       const encryptedTokens = encryptFields(tokenData, ['google_access_token']);
 
-      // Update business with new access token
+      // Update business with new access token and connection status
       const { error: updateError } = await supabaseAdmin
         .from('businesses')
         .update({
           ...encryptedTokens,
+          connection_status: 'connected',
           updated_at: new Date().toISOString(),
         })
         .eq('id', businessId);
@@ -82,20 +80,21 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      console.log('✅ Access token refreshed successfully for business:', businessId);
+
       return NextResponse.json({
         message: 'Access token refreshed successfully',
         expires_in: newTokens.expires_in,
       });
 
     } catch (refreshError) {
-      console.error('Token refresh failed:', refreshError);
+      console.error('❌ Token refresh failed:', refreshError);
       
-      // If refresh token is invalid, clear all Google tokens
+      // If refresh token is invalid, mark as needing reconnection
       await supabaseAdmin
         .from('businesses')
         .update({
-          google_access_token: null,
-          google_refresh_token: null,
+          connection_status: 'needs_reconnection',
           updated_at: new Date().toISOString(),
         })
         .eq('id', businessId);
