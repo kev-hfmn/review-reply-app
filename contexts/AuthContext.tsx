@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Get ALL active subscriptions for this user (including those marked for cancellation)
+      // Get ALL active subscriptions for this user from both payment processors
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
@@ -69,18 +69,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Find the most recent TRULY active subscription (not marked for cancellation)
+      // Find the most recent TRULY active subscription from any payment processor
       const activeSubscription = data.find(sub => 
         sub.status === 'active' && 
         sub.cancel_at_period_end === false && 
         new Date(sub.current_period_end) > new Date()
       );
 
-      // Log subscription status for debugging duplicate issues
+      // Log subscription status for debugging (support both payment processors)
       if (data.length > 1) {
         console.warn(`User ${userId} has ${data.length} active subscriptions:`, 
           data.map(sub => ({
-            id: sub.stripe_subscription_id,
+            id: sub.stripe_subscription_id || sub.lemonsqueezy_subscription_id,
+            payment_processor: sub.payment_processor || 'stripe',
             cancel_at_period_end: sub.cancel_at_period_end,
             created_at: sub.created_at
           }))
@@ -88,6 +89,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsSubscriber(!!activeSubscription);
+      
+      // Log active subscription details for debugging
+      if (activeSubscription) {
+        console.log(`User ${userId} has active subscription:`, {
+          payment_processor: activeSubscription.payment_processor || 'stripe',
+          id: activeSubscription.stripe_subscription_id || activeSubscription.lemonsqueezy_subscription_id,
+          period_end: activeSubscription.current_period_end
+        });
+      }
     } catch (error) {
       console.error('Subscription check error:', error);
       setIsSubscriber(false);

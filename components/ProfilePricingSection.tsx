@@ -18,6 +18,7 @@ const pricingTiers = [
     price: "$19",
     interval: "/month",
     priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter',
+    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_STARTER_VARIANT_ID || '',
     description: "Perfect for small businesses with fewer than 1,000 total reviews",
     icon: <Zap className="h-6 w-6" />,
     features: [
@@ -39,6 +40,7 @@ const pricingTiers = [
     price: "$49",
     interval: "/month",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro',
+    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_VARIANT_ID || '',
     description: "For businesses with higher review volume or over 1,000 total reviews",
     icon: <Crown className="h-6 w-6" />,
     features: [
@@ -59,6 +61,7 @@ const pricingTiers = [
     price: "+$19",
     interval: "/month per location",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || 'price_pro_plus',
+    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_PLUS_VARIANT_ID || '',
     description: "For Pro customers managing multiple locations",
     icon: <Building2 className="h-6 w-6" />,
     features: [
@@ -81,16 +84,35 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
 
     setIsLoading(tier.id);
 
+    // Feature flag for Lemon Squeezy
+    const useLemonSqueezy = process.env.NEXT_PUBLIC_USE_LEMON_SQUEEZY === 'true';
+
     try {
-      const response = await fetch('/api/stripe/checkout', {
+      const endpoint = useLemonSqueezy ? '/api/lemonsqueezy/checkout' : '/api/stripe/checkout';
+      
+      // Prepare payload based on payment processor
+      const payload = useLemonSqueezy 
+        ? { 
+            variantId: tier.lemonSqueezyVariantId, 
+            userId: user.id,
+            customData: { planId: tier.id }
+          }
+        : { 
+            priceId: tier.priceId, 
+            userId: user.id 
+          };
+
+      // Validate required fields
+      if (useLemonSqueezy && !tier.lemonSqueezyVariantId) {
+        throw new Error(`Lemon Squeezy variant ID not configured for ${tier.name}`);
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          priceId: tier.priceId,
-          userId: user.id,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -102,6 +124,14 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      
+      // Show user-friendly error message
+      if (error instanceof Error && error.message.includes('variant ID not configured')) {
+        alert('This plan is temporarily unavailable. Please try again later or contact support.');
+      } else {
+        alert('Unable to create checkout session. Please try again or contact support.');
+      }
+      
       onUpgrade?.(tier.id);
     } finally {
       setIsLoading(null);
