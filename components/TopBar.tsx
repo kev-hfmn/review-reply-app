@@ -105,9 +105,9 @@ export default function TopBar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-accent px-3 py-2 rounded-full transition-colors"
+                  className="flex items-center gap-2 hover:bg-primary hover:text-foreground px-3 py-2 rounded-full transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary hover:text-primary-foreground">
                     {user.email?.[0].toUpperCase()}
                   </div>
                 </button>
@@ -116,7 +116,7 @@ export default function TopBar() {
                   <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg py-1 z-[60] border border-border">
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-primary hover:text-primary-foreground"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       Profile & Subscription
@@ -124,7 +124,7 @@ export default function TopBar() {
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                      className="block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
                     >
                       {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                     </button>

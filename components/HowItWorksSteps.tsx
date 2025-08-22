@@ -6,33 +6,33 @@ import { motion } from 'framer-motion';
 const stepsData = [
   {
     id: 1,
-    title: "We'll guide you through the application process",
-    description: "Google requires a one-time approval before review tools can connect. We walk you through this in a free 10-minute video call. You never share your password — everything runs through the official Google Business Profile API and Google's secure login.",
+    title: "Connect with your Google account",
+    description: "Log in securely with the same Google account you use for your Business Profile. No extra setup needed - just connect and you’re in.",
     screenshot: "google-consent-screen",
     screenshotAlt: "Google consent screen showing the approval process for RepliFast to access Google Business Profile",
-    hasExpandable: true,
-    expandableContent: "The Google Business Profile API is a secure and official way to access Google reviews. It is not open for public use, and Google requires each business to apply for access individually. Applying and accessing the API is free, but it takes a few days for Google to approve access. We have already applied for platform-wide access, but until that’s live, each business approves individually. This ensures you can start using RepliFast right away without waiting."
+    hasExpandable: false,
+    expandableContent: ""
   },
   {
     id: 2,
-    title: "Set your tone and brand voice",
-    description: "Choose how you want to sound: professional, casual, or fully customized instructions so replies always feel authentic and on-brand.",
+    title: "Fetch all your existing reviews",
+    description: "Instantly import past reviews from your Google Business Profile so you can reply and catch up in minutes.",
     screenshot: "tone-settings",
     screenshotAlt: "RepliFast tone and brand voice settings page showing customization options",
     hasExpandable: false
   },
   {
     id: 3,
-    title: "Bring in and reply to your reviews",
-    description: "Import your existing reviews in bulk and start replying instantly. You can also create auto-approval rules for certain star ratings to save even more time.",
+    title: "Set your tone and brand voice",
+    description: "Choose from professional, casual, friendly, or add custom instructions so replies always sound like you.",
     screenshot: "bulk-import",
     screenshotAlt: "RepliFast dashboard showing bulk import of Google reviews with reply options",
     hasExpandable: false
   },
   {
     id: 4,
-    title: "Stay on top of every new review",
-    description: "New reviews appear automatically in your dashboard. RepliFast generates replies in your tone of voice, so you can approve them manually or let rules handle it while keeping your reputation in great shape.",
+    title: "Automate and stay on top of new reviews",
+    description: "Enable daily sync and auto-approval rules for certain star ratings, or approve replies manually. RepliFast keeps you covered so you never miss a review.",
     screenshot: "dashboard-notifications",
     screenshotAlt: "RepliFast dashboard showing new review notifications and auto-generated replies",
     hasExpandable: false
@@ -44,15 +44,15 @@ function ScreenshotPlaceholder({ alt, isActive }: { alt: string; isActive: boole
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ 
-        opacity: isActive ? 1 : 0.3, 
+      animate={{
+        opacity: isActive ? 1 : 0.3,
         scale: isActive ? 1 : 0.95,
         y: isActive ? 0 : 10
       }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className={`absolute inset-0 rounded-xl border-2 shadow-lg overflow-hidden ${
-        isActive 
-          ? 'border-blue-300 dark:border-blue-600 shadow-blue-200/50 dark:shadow-blue-900/50' 
+        isActive
+          ? 'border-blue-300 dark:border-blue-600 shadow-blue-200/50 dark:shadow-blue-900/50'
           : 'border-gray-200 dark:border-gray-700'
       }`}
     >
@@ -86,7 +86,7 @@ export function HowItWorksSteps() {
     <div className="space-y-16 lg:space-y-24">
       {stepsData.map((step, index) => {
         const isEven = step.id % 2 === 0;
-        
+
         return (
           <motion.div
             key={step.id}
@@ -104,12 +104,12 @@ export function HowItWorksSteps() {
             <div className={`${isEven ? 'lg:order-2' : 'lg:order-1'}`}>
               <div className="flex items-start space-x-4 mb-6 lg:mb-0">
                 <StepNumber number={step.id} />
-                
+
                 <div className="flex-1">
                   <h4 className="text-2xl lg:text-3xl font-semibold text-slate-900 dark:text-white mb-4">
                     {step.title}
                   </h4>
-                  
+
                   <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
                     {step.description}
                   </p>
@@ -147,7 +147,7 @@ export function HowItWorksSteps() {
                 transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
                 className="relative aspect-video rounded-xl overflow-hidden shadow-2xl bg-white dark:bg-slate-800"
               >
-                <ScreenshotPlaceholder 
+                <ScreenshotPlaceholder
                   alt={step.screenshotAlt}
                   isActive={true}
                 />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
 
 export function AccountManagement() {
   const { user, signOut } = useAuth();
@@ -14,20 +15,20 @@ export function AccountManagement() {
 
   const handleDeleteAccount = async () => {
     if (!user?.id) return;
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch(`/api/user/delete?userId=${user.id}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to delete account');
       }
-      
+
       await signOut();
       router.push('/login');
     } catch (error) {
@@ -39,16 +40,16 @@ export function AccountManagement() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-      <h2 className="text-xl font-semibold mb-4">Account Management</h2>
-      
+    <div className="">
+
+
       {/* User Information */}
       <div className="mb-6 space-y-2">
         <p><span className="font-medium">Email:</span> {user?.email}</p>
-        <p><span className="font-medium">Last Sign In:</span> {new Date(user?.last_sign_in_at || '').toLocaleString()}</p>
+        <p><span className="font-medium">Last Sign In:</span> {user?.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'd. MMMM yyyy') : 'Never'}</p>
         <p><span className="font-medium">Account Type:</span> {isOAuthUser ? 'Google Account' : 'Email Account'}</p>
       </div>
-      
+
       <div className="">
         {!isOAuthUser && (
           <button
@@ -98,4 +99,4 @@ export function AccountManagement() {
       )}
     </div>
   );
-} 
+}
