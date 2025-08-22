@@ -1,9 +1,9 @@
 /**
  * Google Business Profile service for fetching reviews
- * Handles API calls to Google Business Profile with user credentials
+ * Handles API calls to Google Business Profile with platform credentials
  */
 
-import { refreshAccessToken } from './googleOAuthService';
+import { refreshAccessToken, discoverBusinessLocations, getBusinessInfo, validateBusinessAccess, type BusinessLocation } from './googleOAuthService';
 import { decryptFields, encryptFields } from './encryptionService';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 
@@ -47,6 +47,20 @@ export interface SyncResult {
   backfillComplete?: boolean;
 }
 
+export interface ConnectionStatus {
+  connected: boolean;
+  status: 'connected' | 'disconnected' | 'needs_reconnection' | 'error';
+  message: string;
+  businessInfo?: BusinessLocation;
+  lastConnectionAttempt?: string;
+}
+
+export interface TokenRefreshResult {
+  success: boolean;
+  message: string;
+  newAccessToken?: string;
+}
+
 /**
  * Fetch reviews from Google Business Profile API
  */
@@ -55,10 +69,10 @@ export async function fetchReviews(
   pageToken?: string,
   pageSize: number = 50
 ): Promise<GoogleReviewsResponse> {
-  // Get business credentials
+  // Get business credentials (platform OAuth - no user credentials needed)
   const { data: business, error } = await supabaseAdmin
     .from('businesses')
-    .select('google_client_id, google_client_secret, google_access_token, google_refresh_token, google_account_id, google_location_id')
+    .select('google_access_token, google_refresh_token, google_account_id, google_location_id, connection_status')
     .eq('id', businessId)
     .single();
 
@@ -70,12 +84,14 @@ export async function fetchReviews(
     throw new Error('Google Business Profile not connected. Please connect in Settings.');
   }
 
+  if (business.connection_status === 'needs_reconnection') {
+    throw new Error('Google Business Profile needs reconnection. Please reconnect in Settings.');
+  }
+
   // Try to decrypt credentials, fallback to plain text if not encrypted
   let decrypted;
   try {
     decrypted = decryptFields(business, [
-      'google_client_id',
-      'google_client_secret',
       'google_access_token',
       'google_refresh_token',
       'google_account_id',
@@ -85,8 +101,6 @@ export async function fetchReviews(
     // If decryption fails, assume they're stored as plain text (backward compatibility)
     console.log('Using plain text credentials for review fetch (not encrypted)');
     decrypted = {
-      google_client_id: business.google_client_id,
-      google_client_secret: business.google_client_secret,
       google_access_token: business.google_access_token,
       google_refresh_token: business.google_refresh_token,
       google_account_id: business.google_account_id,
@@ -111,16 +125,10 @@ export async function fetchReviews(
     });
 
     if (response.status === 401) {
-      // Token expired, try to refresh
+      // Token expired, try to refresh using platform credentials
       if (decrypted.google_refresh_token) {
         try {
-          const newTokens = await refreshAccessToken(
-            decrypted.google_refresh_token,
-            {
-              clientId: decrypted.google_client_id,
-              clientSecret: decrypted.google_client_secret,
-            }
-          );
+          const newTokens = await refreshAccessToken(decrypted.google_refresh_token);
 
           // Store new token
           const tokenData = { google_access_token: newTokens.access_token };
@@ -575,10 +583,10 @@ export async function postReplyToGoogle(
   console.log('🔄 Starting Google Business Profile reply posting...');
 
   try {
-    // Get business credentials - EXACT same pattern as fetchReviews
+    // Get business credentials - Platform OAuth pattern (no user credentials needed)
     const { data: business, error } = await supabaseAdmin
       .from('businesses')
-      .select('google_client_id, google_client_secret, google_access_token, google_refresh_token, google_account_id, google_location_id')
+      .select('google_access_token, google_refresh_token, google_account_id, google_location_id, connection_status')
       .eq('id', businessId)
       .single();
 
@@ -590,12 +598,14 @@ export async function postReplyToGoogle(
       throw new Error('Google Business Profile not connected. Please connect in Settings.');
     }
 
-    // Try to decrypt credentials, fallback to plain text if not encrypted - EXACT same pattern as fetchReviews
+    if (business.connection_status === 'needs_reconnection') {
+      throw new Error('Google Business Profile needs reconnection. Please reconnect in Settings.');
+    }
+
+    // Try to decrypt credentials, fallback to plain text if not encrypted - Platform OAuth pattern
     let decrypted;
     try {
       decrypted = decryptFields(business, [
-        'google_client_id',
-        'google_client_secret',
         'google_access_token',
         'google_refresh_token',
         'google_account_id',
@@ -605,8 +615,6 @@ export async function postReplyToGoogle(
       // If decryption fails, assume they're stored as plain text (backward compatibility)
       console.log('Using plain text credentials for reply posting (not encrypted)');
       decrypted = {
-        google_client_id: business.google_client_id,
-        google_client_secret: business.google_client_secret,
         google_access_token: business.google_access_token,
         google_refresh_token: business.google_refresh_token,
         google_account_id: business.google_account_id,
@@ -634,16 +642,10 @@ export async function postReplyToGoogle(
       });
 
       if (response.status === 401) {
-        // Token expired, try to refresh - EXACT same pattern as fetchReviews
+        // Token expired, try to refresh - Platform OAuth pattern
         if (decrypted.google_refresh_token) {
           try {
-            const newTokens = await refreshAccessToken(
-              decrypted.google_refresh_token,
-              {
-                clientId: decrypted.google_client_id,
-                clientSecret: decrypted.google_client_secret,
-              }
-            );
+            const newTokens = await refreshAccessToken(decrypted.google_refresh_token);
 
             // Store new token - EXACT same pattern as fetchReviews
             const tokenData = { google_access_token: newTokens.access_token };
@@ -740,6 +742,184 @@ export async function testConnection(businessId: string): Promise<{ success: boo
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Connection test failed',
+    };
+  }
+}
+
+/**
+ * Discover available business locations for the authenticated user
+ * Used during platform OAuth setup
+ */
+export async function discoverUserBusinesses(accessToken: string): Promise<BusinessLocation[]> {
+  try {
+    console.log('🔍 Discovering user businesses with platform OAuth...');
+    const locations = await discoverBusinessLocations(accessToken);
+    console.log(`✅ Found ${locations.length} business locations`);
+    return locations;
+  } catch (error) {
+    console.error('❌ Failed to discover user businesses:', error);
+    throw new Error(`Failed to discover businesses: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Validate business connection status
+ * Checks if the stored credentials are still valid
+ */
+export async function validateBusinessConnection(businessId: string): Promise<ConnectionStatus> {
+  try {
+    // Get business credentials
+    const { data: business, error } = await supabaseAdmin
+      .from('businesses')
+      .select('google_access_token, google_refresh_token, google_account_id, google_location_id, connection_status, google_business_name, google_location_name')
+      .eq('id', businessId)
+      .single();
+
+    if (error || !business) {
+      return {
+        connected: false,
+        status: 'error',
+        message: 'Business not found',
+      };
+    }
+
+    if (!business.google_access_token || !business.google_account_id || !business.google_location_id) {
+      return {
+        connected: false,
+        status: 'disconnected',
+        message: 'Google Business Profile not connected',
+      };
+    }
+
+    if (business.connection_status === 'needs_reconnection') {
+      return {
+        connected: false,
+        status: 'needs_reconnection',
+        message: 'Connection needs to be renewed',
+      };
+    }
+
+    // Try to decrypt and validate access
+    let decrypted;
+    try {
+      decrypted = decryptFields(business, [
+        'google_access_token',
+        'google_account_id',
+        'google_location_id'
+      ]);
+    } catch {
+      decrypted = {
+        google_access_token: business.google_access_token,
+        google_account_id: business.google_account_id,
+        google_location_id: business.google_location_id,
+      };
+    }
+
+    // Test access to the business location
+    const hasAccess = await validateBusinessAccess(
+      decrypted.google_access_token,
+      decrypted.google_account_id,
+      decrypted.google_location_id
+    );
+
+    if (!hasAccess) {
+      // Update status to needs_reconnection
+      await supabaseAdmin
+        .from('businesses')
+        .update({ connection_status: 'needs_reconnection' })
+        .eq('id', businessId);
+
+      return {
+        connected: false,
+        status: 'needs_reconnection',
+        message: 'Connection invalid, please reconnect',
+      };
+    }
+
+    return {
+      connected: true,
+      status: 'connected',
+      message: 'Successfully connected',
+      businessInfo: {
+        accountId: decrypted.google_account_id,
+        accountName: business.google_account_name || 'Unknown Account',
+        locationId: decrypted.google_location_id,
+        locationName: business.google_location_name || 'Unknown Location',
+        businessName: business.google_business_name || 'Unknown Business',
+        verified: true, // We'll assume verified since they have access
+      },
+    };
+  } catch (error) {
+    console.error('❌ Error validating business connection:', error);
+    return {
+      connected: false,
+      status: 'error',
+      message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
+}
+
+/**
+ * Refresh access token for a business
+ * Used when token expires during API calls
+ */
+export async function refreshBusinessToken(businessId: string): Promise<TokenRefreshResult> {
+  try {
+    // Get refresh token
+    const { data: business, error } = await supabaseAdmin
+      .from('businesses')
+      .select('google_refresh_token')
+      .eq('id', businessId)
+      .single();
+
+    if (error || !business || !business.google_refresh_token) {
+      return {
+        success: false,
+        message: 'No refresh token available. Please reconnect your Google Business Profile.',
+      };
+    }
+
+    // Decrypt refresh token
+    let refreshToken;
+    try {
+      const decrypted = decryptFields(business, ['google_refresh_token']);
+      refreshToken = decrypted.google_refresh_token;
+    } catch {
+      refreshToken = business.google_refresh_token;
+    }
+
+    // Refresh the token using platform credentials
+    const newTokens = await refreshAccessToken(refreshToken);
+
+    // Encrypt and store new access token
+    const tokenData = { google_access_token: newTokens.access_token };
+    const encryptedTokens = encryptFields(tokenData, ['google_access_token']);
+
+    await supabaseAdmin
+      .from('businesses')
+      .update({
+        ...encryptedTokens,
+        connection_status: 'connected',
+      })
+      .eq('id', businessId);
+
+    return {
+      success: true,
+      message: 'Token refreshed successfully',
+      newAccessToken: newTokens.access_token,
+    };
+  } catch (error) {
+    console.error('❌ Token refresh failed:', error);
+    
+    // Mark as needing reconnection
+    await supabaseAdmin
+      .from('businesses')
+      .update({ connection_status: 'needs_reconnection' })
+      .eq('id', businessId);
+
+    return {
+      success: false,
+      message: `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

@@ -9,7 +9,9 @@ export default function BulkActionsBar({
   onPost,
   onSkip,
   onClearSelection,
-  isLoading = false
+  isLoading = false,
+  isSubscriber = false,
+  onUpgradeRequired
 }: BulkActionsBarProps) {
   if (selection.selectedIds.size === 0) {
     return null;
@@ -57,18 +59,22 @@ export default function BulkActionsBar({
             </Button>
 
             <Button
-              onClick={onPost}
+              onClick={isSubscriber ? onPost : onUpgradeRequired}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white"
+              className={`${
+                isSubscriber 
+                  ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400" 
+                  : "bg-gray-600 hover:bg-gray-700"
+              } text-white`}
               size="sm"
-              title="Post selected replies"
+              title={isSubscriber ? "Post selected replies" : "Posting requires subscription - click to learn more"}
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              <span>Post</span>
+              <span>{isSubscriber ? "Post" : "Post (Upgrade Required)"}</span>
             </Button>
 
             <Button

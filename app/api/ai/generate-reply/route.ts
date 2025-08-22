@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -8,13 +14,45 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const { review, brandVoice, businessInfo } = await request.json();
+    const { review, brandVoice, businessInfo, userId } = await request.json();
     
     // Validate required fields
     if (!review || !review.text || !brandVoice || !businessInfo) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+
+    // Check user authentication
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Check subscription status for access control
+    const { data: subscription, error: subError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .maybeSingle();
+
+    const isSubscriber = subscription && 
+      subscription.status === 'active' && 
+      new Date(subscription.current_period_end) > new Date();
+
+    if (!isSubscriber) {
+      return NextResponse.json(
+        { 
+          error: 'Subscription required',
+          message: 'AI reply generation requires an active subscription. Please upgrade your plan.',
+          code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
       );
     }
     

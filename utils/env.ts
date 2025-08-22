@@ -10,6 +10,9 @@ export function validateEnv() {
     'NEXT_PUBLIC_APP_URL',
     'CREDENTIALS_ENCRYPTION_KEY',
     'BREVO_API_KEY',
+    'GOOGLE_OAUTH_CLIENT_ID',
+    'GOOGLE_OAUTH_CLIENT_SECRET',
+    // GOOGLE_OAUTH_REDIRECT_URI is optional (constructed from NEXT_PUBLIC_APP_URL if not set)
   ];
 
   const optionalEnvVars = [
@@ -34,6 +37,15 @@ export function validateEnv() {
       senderEmail,
       senderName,
       hasReplyTo: !!process.env.BREVO_REPLY_TO_EMAIL
+    });
+  }
+
+  // Validate Google OAuth configuration
+  if (process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET && process.env.GOOGLE_OAUTH_REDIRECT_URI) {
+    console.log('✅ Environment validation: Google OAuth platform credentials loaded', {
+      clientId: process.env.GOOGLE_OAUTH_CLIENT_ID.substring(0, 20) + '...',
+      redirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI,
+      hasClientSecret: !!process.env.GOOGLE_OAUTH_CLIENT_SECRET
     });
   }
 } 

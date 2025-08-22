@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase-admin';
-import { exchangeCodeForTokens, decodeStateParameter } from '@/lib/services/googleOAuthService';
-import { encryptFields, decryptFields } from '@/lib/services/encryptionService';
+import { exchangeCodeForTokens, decodeStateParameter, discoverBusinessLocations } from '@/lib/services/googleOAuthService';
+import { encryptFields } from '@/lib/services/encryptionService';
 
 /**
- * Handle Google Business Profile OAuth callback
+ * Handle Google Business Profile OAuth callback with platform credentials
  * GET /api/auth/google-business/callback
  */
 export async function GET(request: NextRequest) {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // Get business and verify ownership
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
-      .select('id, user_id, google_client_id, google_client_secret, google_account_id, google_location_id')
+      .select('id, user_id')
       .eq('id', businessId)
       .eq('user_id', userId)
       .single();
@@ -57,61 +57,54 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if Google credentials are configured
-    if (!business.google_client_id || !business.google_client_secret ||
-        !business.google_account_id || !business.google_location_id) {
-      console.error('Google credentials not configured for business:', businessId);
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=credentials_missing`
-      );
-    }
-
-    // Try to decrypt credentials, fallback to plain text if not encrypted
-    let credentials;
     try {
-      const decryptedBusiness = decryptFields(business, [
-        'google_client_id',
-        'google_client_secret',
-        'google_account_id',
-        'google_location_id'
-      ]);
-
-      credentials = {
-        clientId: decryptedBusiness.google_client_id,
-        clientSecret: decryptedBusiness.google_client_secret,
-        accountId: decryptedBusiness.google_account_id,
-        locationId: decryptedBusiness.google_location_id,
-      };
-    } catch {
-      // If decryption fails, assume they're stored as plain text (backward compatibility)
-      console.log('Using plain text credentials in callback (not encrypted)');
-      credentials = {
-        clientId: business.google_client_id,
-        clientSecret: business.google_client_secret,
-        accountId: business.google_account_id,
-        locationId: business.google_location_id,
-      };
-    }
-
-    try {
-      const tokens = await exchangeCodeForTokens(code, credentials);
+      console.log('🔄 Exchanging code for tokens with platform credentials...');
+      const tokens = await exchangeCodeForTokens(code);
       
-      // Store tokens encrypted in database
+      console.log('✅ Tokens received, discovering business locations...');
+      const businessLocations = await discoverBusinessLocations(tokens.access_token);
+      
+      if (businessLocations.length === 0) {
+        console.error('No business locations found for user');
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=no_business_locations`
+        );
+      }
+
+      // For now, if there's only one location, auto-select it
+      // If multiple locations, we'll redirect to selection page (to be implemented)
+      const selectedLocation = businessLocations[0];
+      if (businessLocations.length > 1) {
+        // Store tokens temporarily and redirect to location selection
+        console.log('🔄 Multiple locations found, need location selection...');
+        // For now, just use the first one - location selection UI will be implemented later
+        console.log('📍 Auto-selecting first location for now:', selectedLocation.businessName);
+      }
+
+      // Store tokens and business info encrypted in database
       const tokenData = {
         google_access_token: tokens.access_token,
         google_refresh_token: tokens.refresh_token,
+        google_account_id: selectedLocation.accountId,
+        google_location_id: selectedLocation.locationId,
       };
 
       const encryptedTokens = encryptFields(tokenData, [
         'google_access_token',
-        'google_refresh_token'
+        'google_refresh_token',
+        'google_account_id',
+        'google_location_id'
       ]);
 
-      // Update business with OAuth tokens
+      // Update business with OAuth tokens and business info
       const { error: updateError } = await supabaseAdmin
         .from('businesses')
         .update({
           ...encryptedTokens,
+          google_account_name: selectedLocation.accountName,
+          google_business_name: selectedLocation.businessName,
+          google_location_name: selectedLocation.locationName,
+          connection_status: 'connected',
           updated_at: new Date().toISOString(),
         })
         .eq('id', businessId);
@@ -123,28 +116,41 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      console.log('✅ Successfully connected:', selectedLocation.businessName);
+
       // Create activity log entry
       await supabaseAdmin
         .from('activities')
         .insert({
           business_id: businessId,
           type: 'settings_updated',
-          description: 'Google Business Profile connected successfully',
+          description: `Google Business Profile connected: ${selectedLocation.businessName}`,
           metadata: {
             event: 'google_oauth_connected',
+            business_name: selectedLocation.businessName,
+            location_name: selectedLocation.locationName,
+            account_id: selectedLocation.accountId,
+            location_id: selectedLocation.locationId,
             timestamp: new Date().toISOString(),
           },
         });
 
       // Redirect to settings with success
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&success=google_connected`
+        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&success=google_connected&business_name=${encodeURIComponent(selectedLocation.businessName)}`
       );
 
     } catch (tokenError) {
-      console.error('Token exchange failed:', tokenError);
+      console.error('❌ OAuth process failed:', tokenError);
+      
+      // Update connection status to failed
+      await supabaseAdmin
+        .from('businesses')
+        .update({ connection_status: 'error' })
+        .eq('id', businessId);
+
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=token_exchange_failed`
+        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=oauth_process_failed`
       );
     }
 

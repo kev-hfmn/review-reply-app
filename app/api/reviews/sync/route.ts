@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncReviews } from '@/lib/services/googleBusinessService';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * Sync reviews from Google Business Profile
@@ -25,6 +31,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Business ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Check subscription status for access control
+    const { data: subscription, error: subError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .maybeSingle();
+
+    const isSubscriber = subscription && 
+      subscription.status === 'active' && 
+      new Date(subscription.current_period_end) > new Date();
+
+    if (!isSubscriber) {
+      return NextResponse.json(
+        { 
+          error: 'Subscription required',
+          message: 'Review syncing requires an active subscription. Please upgrade your plan.',
+          code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
       );
     }
 

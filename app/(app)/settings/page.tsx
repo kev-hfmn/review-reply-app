@@ -28,6 +28,7 @@ import type { ToastNotification } from '@/types/reviews';
 import { Input } from '@/components/ui/input';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import GoogleBusinessProfileIntegration from '@/components/GoogleBusinessProfileIntegration';
 
 interface BusinessProfile {
   name: string;
@@ -83,7 +84,7 @@ interface AutomationSettings {
 }
 
 interface BillingInfo {
-  plan: 'trial' | 'starter' | 'pro' | 'enterprise';
+  plan: 'basic' | 'starter' | 'pro' | 'pro plus';
   status: 'active' | 'past_due' | 'canceled';
   nextBilling?: string;
   trialEnds?: string;
@@ -151,7 +152,7 @@ export default function SettingsPage() {
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   const [billing, setBilling] = useState<BillingInfo>({
-    plan: 'trial',
+    plan: 'basic',
     status: 'active'
   });
 
@@ -187,9 +188,55 @@ export default function SettingsPage() {
     setToasts(prev => prev.filter(t => t.id !== toastId));
   };
 
+  // Load actual subscription data
+  const loadSubscriptionData = async (
+    userId: string,
+    mounted: boolean,
+    setBilling: React.Dispatch<React.SetStateAction<BillingInfo>>
+  ) => {
+    try {
+      const { data: subscription, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading subscription:', error);
+        return;
+      }
+
+      if (mounted) {
+        if (subscription && subscription.status === 'active') {
+          // Map Stripe price IDs to plan names
+          let plan: BillingInfo['plan'] = 'basic';
+          if (subscription.stripe_price_id?.includes('starter')) plan = 'starter';
+          else if (subscription.stripe_price_id?.includes('pro-plus')) plan = 'pro plus';
+          else if (subscription.stripe_price_id?.includes('pro')) plan = 'pro';
+
+          setBilling({
+            plan,
+            status: 'active',
+            nextBilling: subscription.current_period_end
+          });
+        } else {
+          // No active subscription = basic plan
+          setBilling({
+            plan: 'basic',
+            status: 'active'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading subscription data:', error);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-    
+
     const loadSettings = async () => {
       if (!user || !user.id || !mounted) return;
 
@@ -360,11 +407,8 @@ export default function SettingsPage() {
           if (mounted) {
             setIntegrations(integrationState);
 
-            setBilling({
-              plan: 'trial',
-              status: 'active',
-              trialEnds: '2025-08-26T23:59:59Z'
-            });
+            // Load actual subscription data
+            await loadSubscriptionData(user.id, mounted, setBilling);
           }
         }
       } catch (error) {
@@ -379,12 +423,12 @@ export default function SettingsPage() {
     if (user && user.id) {
       loadSettings();
     }
-    
+
     // Cleanup function
     return () => {
       mounted = false;
     };
-  }, [user?.id]); // Only depend on user.id for stability
+  }, [user]); // Depend on entire user object for stability
 
   // Handle OAuth callback feedback
   useEffect(() => {
@@ -1392,151 +1436,13 @@ export default function SettingsPage() {
         {/* Integrations Tab */}
         {activeTab === 'integrations' && (
           <div className="space-y-6">
-            <Card className="text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  Google Business Profile
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Connect your Google Business Profile to automatically fetch reviews
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(integrations.googleBusiness.status, integrations.googleBusiness.connected)}
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {getStatusText(integrations.googleBusiness.status, integrations.googleBusiness.connected)}
-                      </p>
-                      {integrations.googleBusiness.lastSync && (
-                        <p className="text-sm text-muted-foreground">
-                          Last sync: {new Date(integrations.googleBusiness.lastSync).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {integrations.googleBusiness.connected ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleTestGoogleConnection}
-                          disabled={isTesting}
-                        >
-                          <TestTube className="h-4 w-4 mr-2" />
-                          {isTesting ? 'Testing...' : 'Test'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDisconnectGoogle}
-                          disabled={isSaving}
-                        >
-                          Disconnect
-                        </Button>
-                      </>
-                    ) : integrations.googleBusiness.status === 'configured' ? (
-                      <Button
-                        size="sm"
-                        onClick={handleConnectGoogle}
-                        disabled={isConnecting}
-                      >
-                        {isConnecting ? 'Connecting...' : 'Connect Google'}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => setShowGoogleSetup(!showGoogleSetup)}
-                      >
-                        Setup Google
-                      </Button>
-                    )}
-                  </div>
-                </div>
 
-                {/* Google Credentials Setup */}
-                {(showGoogleSetup || integrations.googleBusiness.status === 'not_connected' || (!integrations.googleBusiness.connected && integrations.googleBusiness.status === 'configured')) && (
-                  <div className="border-t pt-6 space-y-4">
-                    <div>
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        Google Cloud Credentials
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        You need to create a Google Cloud Project and enable the Business Profile API.
-                        <a href="#" className="text-blue-600 hover:underline ml-1">View setup guide</a>
-                      </p>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                          Client ID
-                        </label>
-                        <input
-                          type="text"
-                          value={googleCredentials.clientId}
-                          onChange={(e) => setGoogleCredentials(prev => ({ ...prev, clientId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-                          placeholder="Your Google Cloud Client ID"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                          Client Secret
-                        </label>
-                        <input
-                          type="password"
-                          value={googleCredentials.clientSecret}
-                          onChange={(e) => setGoogleCredentials(prev => ({ ...prev, clientSecret: e.target.value }))}
-                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-                          placeholder="Your Google Cloud Client Secret"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                          Account ID
-                        </label>
-                        <input
-                          type="text"
-                          value={googleCredentials.accountId}
-                          onChange={(e) => setGoogleCredentials(prev => ({ ...prev, accountId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-                          placeholder="accounts/1234567890"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-muted-foreground mb-2">
-                          Location ID
-                        </label>
-                        <input
-                          type="text"
-                          value={googleCredentials.locationId}
-                          onChange={(e) => setGoogleCredentials(prev => ({ ...prev, locationId: e.target.value }))}
-                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
-                          placeholder="accounts/1234567890/locations/0987654321"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleSaveGoogleCredentials}
-                        disabled={isSaving || !googleCredentials.clientId || !googleCredentials.clientSecret || !googleCredentials.accountId || !googleCredentials.locationId}
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        {isSaving ? 'Saving...' : 'Save Credentials'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* New Platform OAuth Integration */}
+            <GoogleBusinessProfileIntegration
+              businessId={currentBusinessId || 'temp'}
+              onShowToast={showToast}
+            />
 
             {/* Automated Review Sync Card */}
             <Card className="text-card-foreground">
@@ -1692,7 +1598,7 @@ export default function SettingsPage() {
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Manage Billing
                   </Button>
-                  {billing.plan === 'trial' && (
+                  {billing.plan === 'basic' && (
                     <Button size="sm">
                       Upgrade Plan
                     </Button>

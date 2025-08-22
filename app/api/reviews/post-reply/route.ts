@@ -81,6 +81,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check subscription status for access control
+    const { data: subscription, error: subError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .maybeSingle();
+
+    const isSubscriber = subscription && 
+      subscription.status === 'active' && 
+      new Date(subscription.current_period_end) > new Date();
+
+    if (!isSubscriber) {
+      return NextResponse.json(
+        { 
+          error: 'Subscription required',
+          message: 'Posting replies requires an active subscription. Please upgrade your plan.',
+          code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
+
     console.log(`🚀 Starting reply posting for review ${reviewId}, user ${userId}`);
 
     // Post reply to Google Business Profile - using our proven service function
