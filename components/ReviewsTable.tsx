@@ -209,7 +209,7 @@ export default function ReviewsTable({
 
               {/* Main Content - Full Width */}
               <div className="flex-1 min-w-0 pr-6">
-                {/* Rating Stars - moved above customer name */}
+                {/* Rating Stars */}
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="flex space-x-1">
                     {renderStars(review.rating)}
@@ -217,33 +217,11 @@ export default function ReviewsTable({
                   <span className="text-sm font-light text-muted-foreground">
                     {review.rating}/5
                   </span>
-                  {/* Status Badge - moved next to rating */}
-                  <Badge
-                    variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
-                    className="ml-auto"
-                  >
-                    {review.statusLabel}
-                  </Badge>
-                  {/* Posted timestamp - show when reply was posted to Google */}
-                  {review.status === 'posted' && review.posted_at && (
-                    <div className="flex items-center space-x-1 text-xs text-muted-foreground ml-2">
-
-                      <span>
-                        on {new Date(review.posted_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Customer & Date */}
                 <div className="flex items-center space-x-2 text-sm mb-3">
-                  <Avatar 
+                  <Avatar
                     src={review.customer_avatar_url}
                     alt={`${review.customerDisplayName}'s avatar`}
                     size="md"
@@ -266,20 +244,36 @@ export default function ReviewsTable({
                 </div>
 
                 {/* AI Reply Section - Enhanced */}
-                <div className="bg-gradient-to-r from-secondary/10 to-secondary/10 dark:from-secondary/10 dark:to-secondary/10 border border-secondary/50 dark:border-secondary/50 rounded-lg p-5 mb-5">
+                <div className="bg-accent/10 dark:bg-accent/10 border border-accent/50 dark:border-accent/50 rounded-lg p-5 mb-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className="p-1.5 bg-secondary rounded-lg">
+                      <div className="p-1.5 bg-accent/90 rounded-lg">
                         <MessageSquare className="h-3 w-3 text-white" />
                       </div>
-                      <span className="text-sm text-foreground/80 font-semibold">
-                        Reply
+                      <span className="text-sm text-foreground/80 font-medium">
+                        Your Reply
                       </span>
-{/*                       {review.reply_tone && (
-                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded-full">
-                          {review.reply_tone}
-                        </span>
-                      )} */}
+                      {/* Status Badge - moved here to clarify it refers to the reply */}
+                      <Badge
+                        variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
+                        className="text-xs"
+                      >
+                        {review.statusLabel}
+                      </Badge>
+                      {/* Posted timestamp - show when reply was posted to Google */}
+                      {review.status === 'posted' && review.posted_at && (
+                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                          <span>
+                            on {new Date(review.posted_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <Button
                       onClick={(e) => {
@@ -288,7 +282,7 @@ export default function ReviewsTable({
                       }}
                       variant="ghost"
                       size="sm"
-                      className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-1 h-8 w-8"
+                      className="text-foreground hover:text-foreground/80 dark:text-foreground/80 dark:hover:text-foreground/80 p-1 h-8 w-8"
                       disabled={editingReviewId === review.id}
                       title="Edit reply"
                     >
@@ -331,7 +325,7 @@ export default function ReviewsTable({
                     </div>
                   ) : (
                     <p className="text-foreground/90 text-sm leading-relaxed">
-                      {review.ai_reply || 'No AI reply generated yet'}
+                      {review.ai_reply || 'No reply generated/posted yet'}
                     </p>
                   )}
                 </div>
@@ -366,21 +360,6 @@ export default function ReviewsTable({
                     </Button>
                   )}
 
-                  {/* Show Approve button only when AI reply exists and status is pending */}
-                  {review.ai_reply && review.status === 'pending' && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onQuickAction(review.id, 'approve');
-                      }}
-                      size="sm"
-                      variant="outlinePrimary"
-                      title="Approve reply"
-                    >
-                      <Check className="h-4 w-4" />
-                      <span>Approve</span>
-                    </Button>
-                  )}
 
                   {/* Show Regenerate button when AI reply exists and status is pending */}
                   {review.ai_reply && review.status === 'pending' && (
@@ -407,6 +386,23 @@ export default function ReviewsTable({
                       <span>
                         {generatingReviewId === review.id ? 'Regenerating...' : isSubscriber ? 'Regenerate' : 'Regenerate (Upgrade)'}
                       </span>
+                    </Button>
+                  )}
+
+
+                  {/* Show Approve button only when AI reply exists and status is pending */}
+                  {review.ai_reply && review.status === 'pending' && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickAction(review.id, 'approve');
+                      }}
+                      size="sm"
+                      variant="outlinePrimary"
+                      title="Approve reply"
+                    >
+                      <Check className="h-4 w-4" />
+                      <span>Approve</span>
                     </Button>
                   )}
 

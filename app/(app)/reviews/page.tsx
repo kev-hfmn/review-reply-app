@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ReviewsPage() {
-  const { isSubscriber } = useAuth();
+  const { user, isSubscriber } = useAuth();
   const {
     businesses,
     reviews,
@@ -352,6 +352,7 @@ export default function ReviewsPage() {
           onQuickAction={handleQuickAction}
           onGenerateReply={reviewActions.regenerateReply}
           isSubscriber={isSubscriber}
+          user={user}
           onUpgradeRequired={() => showToast({
             type: 'info',
             message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
