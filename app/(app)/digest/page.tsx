@@ -205,7 +205,7 @@ export default function DigestPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Weekly Digest
+            Insights
           </h1>
         </div>
 
@@ -228,7 +228,7 @@ export default function DigestPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Weekly Digest
+            Weekly Insights
           </h1>
         </div>
 
@@ -255,7 +255,7 @@ export default function DigestPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Weekly Digest
+            Weekly Insights
           </h1>
         </div>
 
@@ -289,7 +289,7 @@ export default function DigestPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Weekly Digest
+              Weekly Insights
             </h1>
             <p className="text-muted-foreground mt-1">
               {selectedPeriod.label}
@@ -419,11 +419,7 @@ export default function DigestPage() {
             <p className="text-muted-foreground">
               {insights ? `${new Date(insights.week_start).toLocaleDateString()} - ${new Date(insights.week_end).toLocaleDateString()}` : selectedPeriod.label}
             </p>
-            {confidenceScore > 0 && (
-              <Badge variant="outline" className="text-xs">
-                AI Confidence: {Math.round(confidenceScore * 100)}%
-              </Badge>
-            )}
+
             {lastGenerated && (
               <span className="text-xs text-muted-foreground">
                 Generated {lastGenerated.toLocaleTimeString()}

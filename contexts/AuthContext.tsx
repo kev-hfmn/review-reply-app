@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             Promise.all([
               checkSubscription(currentUser.id),
               loadBusinessInfo(currentUser.id)
+
               // ensureBusinessRecord removed to prevent race condition - only called in auth state change
             ]).catch(error => {
               console.error('Error loading user data:', error);
