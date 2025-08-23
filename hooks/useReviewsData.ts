@@ -24,7 +24,7 @@ const DEFAULT_FILTERS: ReviewFilters = {
 const PAGE_SIZE = 25;
 
 export function useReviewsData() {
-  const { user } = useAuth();
+  const { user, selectedBusinessId } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<ReviewTableItem[]>([]);
@@ -145,8 +145,8 @@ export function useReviewsData() {
     try {
       setError(null);
 
-      // Handle case where user has no businesses connected
-      if (businesses.length === 0) {
+      // Handle case where user has no businesses connected or no business selected
+      if (businesses.length === 0 || !selectedBusinessId) {
         setReviews([]);
         setFilteredReviews([]);
         setPagination(prev => ({
@@ -160,16 +160,12 @@ export function useReviewsData() {
         return;
       }
 
+      // Use selectedBusinessId instead of filters.businessId for business filtering
       let query = supabase
         .from('reviews')
         .select('*')
-        .eq('business_id', filters.businessId === 'all' ? businesses[0]?.id : filters.businessId)
+        .eq('business_id', selectedBusinessId)
         .order('review_date', { ascending: false });
-
-      // Apply business filter
-      if (filters.businessId !== 'all') {
-        query = query.eq('business_id', filters.businessId);
-      }
 
       // Apply rating filter
       if (filters.rating !== null) {
@@ -240,11 +236,11 @@ export function useReviewsData() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, businesses, filters, pagination.currentPage, transformReviewForTable]);
+  }, [user?.id, businesses, selectedBusinessId, filters, pagination.currentPage, transformReviewForTable]);
 
   // Fetch reviews from Google Business Profile
   const fetchReviewsFromGoogle = useCallback(async (options: { timePeriod: string; reviewCount: number }) => {
-    if (!user?.id || businesses.length === 0) {
+    if (!user?.id || businesses.length === 0 || !selectedBusinessId) {
       showToast({
         type: 'error',
         title: 'Error',
@@ -252,9 +248,6 @@ export function useReviewsData() {
       });
       return;
     }
-
-    const businessId = filters.businessId === 'all' ? businesses[0]?.id : filters.businessId;
-    if (!businessId) return;
 
     setIsUpdating(true);
     try {
@@ -264,7 +257,7 @@ export function useReviewsData() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          businessId,
+          businessId: selectedBusinessId,
           userId: user.id,
           options
         }),
@@ -322,7 +315,7 @@ export function useReviewsData() {
     } finally {
       setIsUpdating(false);
     }
-  }, [user?.id, businesses, filters.businessId, showToast, fetchBusinesses, fetchReviews]);
+  }, [user?.id, businesses, selectedBusinessId, showToast, fetchBusinesses, fetchReviews]);
 
   // Initial data fetch
   useEffect(() => {
@@ -333,7 +326,7 @@ export function useReviewsData() {
     if (businesses.length >= 0) { // Allow empty array (no businesses case)
       fetchReviews();
     }
-  }, [fetchReviews, businesses]);
+  }, [fetchReviews, businesses, selectedBusinessId]);
 
   // Helper function to update a review in local state
   const updateReviewInState = useCallback((reviewId: string, updates: Partial<Review>) => {
@@ -671,6 +664,148 @@ export function useReviewsData() {
 
   // Bulk actions
   const bulkActions: BulkActions = useMemo(() => ({
+    generateReplies: async (reviewIds: string[]) => {
+      try {
+        setIsUpdating(true);
+        
+        // Filter to only reviews without existing replies
+        const reviewsToGenerate = reviews.filter(r => 
+          reviewIds.includes(r.id) && 
+          (!r.ai_reply || r.ai_reply.trim() === '')
+        );
+        
+        if (reviewsToGenerate.length === 0) {
+          showToast({
+            type: 'info',
+            title: 'No reviews to generate',
+            message: 'Selected reviews already have AI replies'
+          });
+          return;
+        }
+
+        // Show progress toast
+        showToast({
+          type: 'info',
+          title: 'Generating AI Replies',
+          message: `Processing ${reviewsToGenerate.length} reviews...`,
+          duration: 15000 // 15 seconds for longer operations
+        });
+
+        // Convert to format expected by API
+        const reviewsForAPI = reviewsToGenerate.map(review => ({
+          id: review.id,
+          rating: review.rating,
+          text: review.review_text,
+          customerName: review.customer_name
+        }));
+
+        // Call the bulk generation API
+        const response = await fetch('/api/ai/generate-bulk-replies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviews: reviewsForAPI,
+            businessId: reviewsToGenerate[0].business_id,
+            userId: user?.id,
+            updateDatabase: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.code === 'SUBSCRIPTION_REQUIRED') {
+            showToast({
+              type: 'error',
+              title: 'Subscription Required',
+              message: errorData.message || 'Batch AI reply generation requires an active subscription.'
+            });
+            return;
+          }
+          throw new Error(errorData.error || 'Failed to generate replies');
+        }
+
+        const result = await response.json();
+        
+        // Update local state with generated replies
+        if (result.results && result.results.length > 0) {
+          const updatedReviews = reviews.map(review => {
+            const generated = result.results.find((r: { reviewId: string; success: boolean; reply?: string }) => r.reviewId === review.id);
+            if (generated && generated.success && generated.reply) {
+              return {
+                ...review,
+                ai_reply: generated.reply,
+                final_reply: generated.reply,
+                automated_reply: true,
+                automation_failed: false,
+                automation_error: null,
+                updated_at: new Date().toISOString()
+              };
+            }
+            return review;
+          });
+          
+          setReviews(updatedReviews);
+          
+          // Also update filtered reviews for immediate UI update
+          setFilteredReviews(prev => prev.map(review => {
+            const updated = updatedReviews.find(r => r.id === review.id);
+            return updated ? transformReviewForTable(updated) : review;
+          }));
+        }
+
+        // Show results
+        const successCount = result.successCount || 0;
+        const failureCount = result.failureCount || 0;
+        
+        if (successCount > 0 && failureCount === 0) {
+          showToast({
+            type: 'success',
+            title: 'AI Replies Generated',
+            message: `Successfully generated ${successCount} AI replies`
+          });
+        } else if (successCount > 0 && failureCount > 0) {
+          showToast({
+            type: 'warning',
+            title: 'Partial Success',
+            message: `Generated ${successCount} replies, ${failureCount} failed`
+          });
+        } else {
+          showToast({
+            type: 'error',
+            title: 'Generation Failed',
+            message: 'Failed to generate AI replies. Please try again.'
+          });
+        }
+        
+        // Add activity log
+        if (reviewsToGenerate[0]) {
+          await supabase
+            .from('activities')
+            .insert({
+              business_id: reviewsToGenerate[0].business_id,
+              type: 'ai_reply_generated',
+              description: `Bulk AI reply generation: ${successCount}/${reviewsToGenerate.length} successful`,
+              metadata: { 
+                review_count: reviewsToGenerate.length,
+                success_count: successCount,
+                failure_count: failureCount,
+                source: 'bulk_ui'
+              }
+            });
+        }
+        
+      } catch (error) {
+        console.error('Bulk generate replies error:', error);
+        showToast({
+          type: 'error',
+          title: 'Generation Error',
+          message: error instanceof Error ? error.message : 'Failed to generate replies. Please try again.'
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+
     approve: async (reviewIds: string[]) => {
       try {
         setIsUpdating(true);
@@ -836,7 +971,7 @@ export function useReviewsData() {
         setIsUpdating(false);
       }
     }
-  }), [showToast, updateMultipleReviewsInState]);
+  }), [reviews, showToast, updateMultipleReviewsInState, transformReviewForTable, updateReviewInState, user?.id]);
 
   // Filter functions
   const updateFilters = useCallback((newFilters: Partial<ReviewFilters>) => {

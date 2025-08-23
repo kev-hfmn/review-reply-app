@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, Send, SkipForward, X, Loader2 } from 'lucide-react';
+import { Check, Send, SkipForward, X, Loader2, Sparkles } from 'lucide-react';
 import type { BulkActionsBarProps } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +8,7 @@ export default function BulkActionsBar({
   onApprove,
   onPost,
   onSkip,
+  onGenerateReplies,
   onClearSelection,
   isLoading = false,
   isSubscriber = false,
@@ -43,6 +44,25 @@ export default function BulkActionsBar({
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
+            <Button
+              onClick={isSubscriber ? onGenerateReplies : onUpgradeRequired}
+              disabled={isLoading}
+              className={`${
+                isSubscriber 
+                  ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400" 
+                  : "bg-gray-600 hover:bg-gray-700"
+              } text-white`}
+              size="sm"
+              title={isSubscriber ? "Generate AI replies for selected reviews" : "AI generation requires subscription"}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              <span>{isSubscriber ? "Generate Replies" : "Generate (Upgrade)"}</span>
+            </Button>
+
             <Button
               onClick={onApprove}
               disabled={isLoading}

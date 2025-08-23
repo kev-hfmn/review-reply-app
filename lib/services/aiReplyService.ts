@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabase';
+import { generateAIReply } from './openaiService';
 
 export interface ReviewData {
   id: string;
@@ -18,6 +19,8 @@ export interface BrandVoiceSettings {
 export interface BusinessInfo {
   name: string;
   industry: string;
+  contactEmail?: string;
+  phone?: string;
 }
 
 export interface GenerateReplyResult {
@@ -142,7 +145,7 @@ export async function getBusinessInfo(businessId: string): Promise<BusinessInfo 
 
   const { data, error } = await supabase
     .from('businesses')
-    .select('name, industry')
+    .select('name, industry, customer_support_email, customer_support_phone')
     .eq('id', businessId)
     .single();
 
@@ -154,6 +157,8 @@ export async function getBusinessInfo(businessId: string): Promise<BusinessInfo 
   return {
     name: data.name,
     industry: data.industry || 'service',
+    contactEmail: data.customer_support_email || undefined,
+    phone: data.customer_support_phone || undefined,
   };
 }
 
@@ -218,7 +223,9 @@ export async function generateAutomatedReply(
 export async function batchGenerateReplies(
   reviews: ReviewData[],
   businessId: string,
-  batchSize: number = 5
+  batchSize: number = 5,
+  brandVoice?: BrandVoiceSettings,
+  businessInfo?: BusinessInfo
 ): Promise<BatchGenerateResult> {
   const result: BatchGenerateResult = {
     successCount: 0,
@@ -232,13 +239,21 @@ export async function batchGenerateReplies(
   }
 
   try {
-    // Get business configuration once for all reviews
-    const [brandVoice, businessInfo] = await Promise.all([
-      getBusinessSettings(businessId),
-      getBusinessInfo(businessId),
-    ]);
+    // Use provided business configuration or fetch it (for backward compatibility)
+    let finalBrandVoice = brandVoice;
+    let finalBusinessInfo = businessInfo;
 
-    if (!brandVoice || !businessInfo) {
+    if (!finalBrandVoice || !finalBusinessInfo) {
+      const [fetchedBrandVoice, fetchedBusinessInfo] = await Promise.all([
+        getBusinessSettings(businessId),
+        getBusinessInfo(businessId),
+      ]);
+      
+      finalBrandVoice = finalBrandVoice || fetchedBrandVoice || undefined;
+      finalBusinessInfo = finalBusinessInfo || fetchedBusinessInfo || undefined;
+    }
+
+    if (!finalBrandVoice || !finalBusinessInfo) {
       const error = {
         step: 'fetch_business_config',
         error: 'Missing business configuration',
@@ -265,26 +280,17 @@ export async function batchGenerateReplies(
       // Process batch in parallel
       const batchPromises = batch.map(async (review) => {
         try {
-          const replyResult = await generateReply(review, brandVoice, businessInfo);
+          // Use server-side OpenAI service directly (no fetch call)
+          const aiResult = await generateAIReply(review, finalBrandVoice, finalBusinessInfo);
 
           result.results.push({
             reviewId: review.id,
-            success: !replyResult.error,
-            reply: replyResult.reply,
-            error: replyResult.error,
+            success: true,
+            reply: aiResult.reply,
+            error: undefined,
           });
 
-          if (replyResult.error) {
-            result.failureCount++;
-            result.errors.push({
-              step: 'generate_reply',
-              error: replyResult.error,
-              timestamp: new Date().toISOString(),
-              reviewId: review.id,
-            });
-          } else {
-            result.successCount++;
-          }
+          result.successCount++;
 
         } catch (error) {
           result.failureCount++;

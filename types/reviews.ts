@@ -32,6 +32,7 @@ export interface BulkActions {
   approve: (reviewIds: string[]) => Promise<void>;
   post: (reviewIds: string[]) => Promise<void>;
   skip: (reviewIds: string[]) => Promise<void>;
+  generateReplies: (reviewIds: string[]) => Promise<void>;
 }
 
 export interface ReviewActions {
@@ -155,6 +156,7 @@ export interface BulkActionsBarProps {
   onApprove: () => void;
   onPost: () => void;
   onSkip: () => void;
+  onGenerateReplies: () => void;
   onClearSelection: () => void;
   isLoading?: boolean;
   isSubscriber?: boolean;

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw, MessageSquare } from 'lucide-react';
+import { RefreshCw, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -190,6 +190,15 @@ export default function ReviewsPage() {
     }
   }, [bulkActions, selection.selectedIds]);
 
+  const handleBulkGenerateReplies = useCallback(async () => {
+    try {
+      await bulkActions.generateReplies(Array.from(selection.selectedIds));
+      setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
+    } catch {
+      // Error handling is done in the hook
+    }
+  }, [bulkActions, selection.selectedIds]);
+
   const handleClearSelection = useCallback(() => {
     setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
   }, []);
@@ -206,14 +215,6 @@ export default function ReviewsPage() {
     }
   }, [fetchReviewsFromGoogle]);
 
-  // Handle export (placeholder)
-  const handleExport = useCallback(() => {
-    showToast({
-      type: 'info',
-      title: 'Export feature coming soon',
-      message: 'Export functionality will be available in a future update.'
-    });
-  }, [showToast]);
 
   const filteredCount = reviews.length;
 
@@ -399,12 +400,13 @@ export default function ReviewsPage() {
         onApprove={handleBulkApprove}
         onPost={handleBulkPost}
         onSkip={handleBulkSkip}
+        onGenerateReplies={handleBulkGenerateReplies}
         onClearSelection={handleClearSelection}
         isLoading={isUpdating}
         isSubscriber={isSubscriber}
         onUpgradeRequired={() => showToast({
           type: 'info',
-          message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
+          message: 'AI features require an active subscription. Please upgrade your plan to access this feature.',
           title: 'Subscription Required'
         })}
       />

@@ -27,6 +27,10 @@ interface AuthContextType {
   updateEmail: (newEmail: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isSubscriber: boolean;
+  businesses: { id: string; name: string; industry?: string }[];
+  selectedBusinessId: string | null;
+  setSelectedBusinessId: (businessId: string | null) => void;
+  // Legacy fields for backward compatibility
   businessName: string | null;
   businessId: string | null;
 }
@@ -38,6 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscriber, setIsSubscriber] = useState(false);
+  const [businesses, setBusinesses] = useState<{ id: string; name: string; industry?: string }[]>([]);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  // Legacy state for backward compatibility
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
@@ -76,12 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadBusinessInfo = useCallback(async (userId: string) => {
     try {
+      // Load ALL user businesses instead of just first one
       const { data, error } = await supabase
         .from('businesses')
-        .select('id, name')
+        .select('id, name, industry')
         .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
+        .order('name');
 
       if (error) {
         // Only log error if it's not a "no rows" error (PGRST116)
@@ -89,19 +96,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Business info load error:', error);
         }
         // For new users without business records, this is expected
+        setBusinesses([]);
+        setSelectedBusinessId(null);
         setBusinessName(null);
         setBusinessId(null);
         return;
       }
 
-      setBusinessName(data?.name || null);
-      setBusinessId(data?.id || null);
+      const businessList = data || [];
+      setBusinesses(businessList);
+
+      // Handle business selection logic
+      if (businessList.length > 0) {
+        // Try to restore previously selected business from localStorage
+        const savedBusinessId = localStorage.getItem('selectedBusinessId');
+        const validSavedBusiness = businessList.find(b => b.id === savedBusinessId);
+        
+        let selected: typeof businessList[0];
+        if (validSavedBusiness) {
+          // Use saved selection if it's still valid
+          selected = validSavedBusiness;
+        } else {
+          // Default to first business if no valid saved selection
+          selected = businessList[0];
+        }
+
+        setSelectedBusinessId(selected.id);
+        // Update legacy fields for backward compatibility
+        setBusinessName(selected.name);
+        setBusinessId(selected.id);
+
+        // Save selection to localStorage
+        localStorage.setItem('selectedBusinessId', selected.id);
+      } else {
+        setSelectedBusinessId(null);
+        setBusinessName(null);
+        setBusinessId(null);
+        localStorage.removeItem('selectedBusinessId');
+      }
     } catch (error) {
       console.error('Business info load error:', error);
+      setBusinesses([]);
+      setSelectedBusinessId(null);
       setBusinessName(null);
       setBusinessId(null);
     }
   }, []);
+
+  // Handle business selection changes
+  const handleBusinessSelection = useCallback((businessId: string | null) => {
+    if (businessId && businesses.length > 0) {
+      const selected = businesses.find(b => b.id === businessId);
+      if (selected) {
+        setSelectedBusinessId(businessId);
+        // Update legacy fields for backward compatibility
+        setBusinessName(selected.name);
+        setBusinessId(selected.id);
+        // Save selection to localStorage
+        localStorage.setItem('selectedBusinessId', businessId);
+      }
+    } else {
+      setSelectedBusinessId(null);
+      setBusinessName(null);
+      setBusinessId(null);
+      localStorage.removeItem('selectedBusinessId');
+    }
+  }, [businesses]);
 
   // Business records are now created only during Google Business Profile connection
   // This eliminates signup race conditions and supports multi-location businesses
@@ -166,6 +226,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 });
               } else {
                 setIsSubscriber(false);
+                setBusinesses([]);
+                setSelectedBusinessId(null);
                 setBusinessName(null);
                 setBusinessId(null);
               }
@@ -318,6 +380,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
     },
     isSubscriber,
+    businesses,
+    selectedBusinessId,
+    setSelectedBusinessId: handleBusinessSelection,
+    // Legacy fields for backward compatibility
     businessName,
     businessId,
   };
