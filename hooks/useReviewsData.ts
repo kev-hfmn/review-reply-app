@@ -140,10 +140,25 @@ export function useReviewsData() {
 
   // Fetch reviews with sync status update
   const fetchReviews = useCallback(async () => {
-    if (!user?.id || businesses.length === 0) return;
+    if (!user?.id) return;
 
     try {
       setError(null);
+
+      // Handle case where user has no businesses connected
+      if (businesses.length === 0) {
+        setReviews([]);
+        setFilteredReviews([]);
+        setPagination(prev => ({
+          ...prev,
+          totalItems: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false
+        }));
+        setIsLoading(false);
+        return;
+      }
 
       let query = supabase
         .from('reviews')
@@ -559,7 +574,8 @@ export function useReviewsData() {
             customerName: review.customer_name
           },
           brandVoice,
-          businessInfo
+          businessInfo,
+          user.id
         );
 
         // Update in Supabase

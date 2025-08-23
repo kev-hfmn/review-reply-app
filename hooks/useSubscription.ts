@@ -8,9 +8,13 @@ export interface Subscription {
   id: string;
   user_id: string;
   status: string;
-  stripe_customer_id: string;
-  stripe_subscription_id: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
   stripe_price_id?: string;
+  lemonsqueezy_subscription_id?: string;
+  lemonsqueezy_customer_id?: string;
+  payment_processor?: string;
+  plan_id?: string;
   cancel_at_period_end: boolean;
   current_period_end: string;
   created_at: string;
@@ -44,21 +48,30 @@ export function useSubscription() {
     }
 
     try {
+      // Get potentially valid subscriptions (active or cancelled but still in period)
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+        .in('status', ['active', 'cancelled'])
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const isValid = data && 
-        data.status === 'active' && 
-        new Date(data.current_period_end) > new Date();
+      // Find the most recent valid subscription
+      const validSubscription = data?.find(sub => {
+        const periodEndDate = new Date(sub.current_period_end);
+        const now = new Date();
+        
+        return (
+          // Active and not cancelling
+          (sub.status === 'active' && sub.cancel_at_period_end === false) ||
+          // Cancelled but still within the valid period
+          (sub.status === 'cancelled' && periodEndDate > now)
+        );
+      });
 
-      const result = isValid ? data : null;
+      const result = validSubscription || null;
       
       // Update cache
       subscriptionCache.set(user.id, {
@@ -81,10 +94,17 @@ export function useSubscription() {
   }, [fetchSubscription]);
 
   const checkValidSubscription = useCallback((data: Subscription[]): boolean => {
-    return data.some(sub => 
-      sub.status === 'active' &&
-      new Date(sub.current_period_end) > new Date()
-    );
+    return data.some(sub => {
+      const periodEndDate = new Date(sub.current_period_end);
+      const now = new Date();
+      
+      return (
+        // Active and not cancelling
+        (sub.status === 'active' && sub.cancel_at_period_end === false) ||
+        // Cancelled but still within the valid period
+        (sub.status === 'cancelled' && periodEndDate > now)
+      );
+    });
   }, []);
 
   const MAX_SYNC_RETRIES = 3;

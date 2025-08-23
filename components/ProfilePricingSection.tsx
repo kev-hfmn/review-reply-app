@@ -1,85 +1,42 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Crown, Zap, Building2, CreditCard } from 'lucide-react';
+import { CheckCircle2, CreditCard, Crown, Zap, Building2 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { pricingTiers as basePricingTiers } from '@/lib/pricing';
 
 interface ProfilePricingSectionProps {
   currentPlan?: string;
   onUpgrade?: (planId: string) => void;
 }
 
-const pricingTiers = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "$19",
-    interval: "/month",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter',
-    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_STARTER_VARIANT_ID || '',
-    description: "Perfect for small businesses with fewer than 1,000 total reviews",
-    icon: <Zap className="h-6 w-6" />,
-    features: [
-      "Fetch and manage up to 200 existing reviews when connecting",
-      "Manually fetch new reviews at any time",
-      "Automatically generate replies for newly fetched reviews",
-      "Standard tone presets only (friendly, professional, casual, etc.)",
-      "Manual approval of all replies",
-      "Email notifications when new reviews and replies are ready",
-      "Basic review dashboard showing review and reply counts"
-    ],
-    cta: "Upgrade to Starter",
-    popular: false,
-    color: "from-blue-500 to-blue-600"
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "$49",
-    interval: "/month",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro',
-    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_VARIANT_ID || '',
-    description: "For businesses with higher review volume or over 1,000 total reviews",
-    icon: <Crown className="h-6 w-6" />,
-    features: [
-      "Fetch all existing reviews when connecting",
-      "Automatic daily sync: new reviews are fetched for you every day at a time you choose",
-      "Automatically generate replies for newly fetched reviews",
-      "Custom brand instructions field to fine-tune tone and style",
-      "Auto-approve rules for certain star ratings (for example 4 or 5 stars)",
-      "Advanced insights including customer sentiment breakdown"
-    ],
-    cta: "Upgrade to Pro",
-    popular: true,
-    color: "from-purple-500 to-purple-600"
-  },
-  {
-    id: "pro-plus",
-    name: "Pro Plus",
-    price: "+$19",
-    interval: "/month per location",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || 'price_pro_plus',
-    lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_PLUS_VARIANT_ID || '',
-    description: "For Pro customers managing multiple locations",
-    icon: <Building2 className="h-6 w-6" />,
-    features: [
-      "Full Pro plan features for each additional location",
-      "Reduced per-location cost",
-      "Separate dashboards and review management for each location"
-    ],
-    cta: "Add Locations",
-    popular: false,
-    color: "from-emerald-500 to-emerald-600"
+const getIcon = (iconName: string | undefined) => {
+  switch (iconName) {
+    case 'zap': return <Zap className="h-6 w-6" />;
+    case 'crown': return <Crown className="h-6 w-6" />;
+    case 'building2': return <Building2 className="h-6 w-6" />;
+    default: return null;
   }
-];
+};
+
+const profilePricingTiers = basePricingTiers.map(tier => ({
+  ...tier,
+  icon: getIcon(tier.iconName),
+  cta: tier.id === 'starter' ? 'Upgrade to Starter' :
+       tier.id === 'pro' ? 'Upgrade to Pro' :
+       tier.id === 'pro-plus' ? 'Upgrade to Pro Plus' : tier.cta,
+  name: tier.id === 'pro-plus' ? 'Pro Plus' : tier.name,
+  interval: tier.id === 'pro-plus' ? '/month per additional location' : tier.interval,
+  description: tier.id === 'starter' ? 'Perfect for small businesses with several hundred reviews' : tier.description
+}));
 
 export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: ProfilePricingSectionProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
-  const handleUpgrade = async (tier: typeof pricingTiers[0]) => {
+  const handleUpgrade = async (tier: typeof profilePricingTiers[0]) => {
     if (!user?.id) return;
 
     setIsLoading(tier.id);
@@ -89,17 +46,17 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
 
     try {
       const endpoint = useLemonSqueezy ? '/api/lemonsqueezy/checkout' : '/api/stripe/checkout';
-      
+
       // Prepare payload based on payment processor
-      const payload = useLemonSqueezy 
-        ? { 
-            variantId: tier.lemonSqueezyVariantId, 
+      const payload = useLemonSqueezy
+        ? {
+            variantId: tier.lemonSqueezyVariantId,
             userId: user.id,
             customData: { planId: tier.id }
           }
-        : { 
-            priceId: tier.priceId, 
-            userId: user.id 
+        : {
+            priceId: tier.priceId,
+            userId: user.id
           };
 
       // Validate required fields
@@ -124,14 +81,14 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      
+
       // Show user-friendly error message
       if (error instanceof Error && error.message.includes('variant ID not configured')) {
         alert('This plan is temporarily unavailable. Please try again later or contact support.');
       } else {
         alert('Unable to create checkout session. Please try again or contact support.');
       }
-      
+
       onUpgrade?.(tier.id);
     } finally {
       setIsLoading(null);
@@ -157,20 +114,20 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
           <CreditCard className="h-5 w-5" />
           Choose Your Plan
         </CardTitle>
-        <p className="text-muted-foreground">
-          Upgrade your subscription to unlock more powerful features
-        </p>
+
       </CardHeader>
       <CardContent>
-
+      <p className="text-muted-foreground mt-0 mb-10">
+          Upgrade to a paid plan to unlock all powerful features. A subscription is required to use the app.
+        </p>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
-        {pricingTiers.map((tier, i) => (
+        {profilePricingTiers.map((tier, i) => (
           <motion.div
             key={tier.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className={`relative rounded-xl p-6 border transition-all duration-300 ${
+            className={`relative rounded-xl p-6 bg-background border transition-all duration-300 ${
               isCurrentPlan(tier.id)
                 ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                 : 'border-border hover:border-primary/50 hover:shadow-md'
@@ -255,7 +212,7 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            All plans include a 30 day money back guarantee. Cancel anytime.
+            All plans include a 14 day money back guarantee. Cancel anytime.
           </p>
         </div>
       </CardContent>

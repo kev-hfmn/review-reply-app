@@ -16,7 +16,8 @@ const PUBLIC_ROUTES = [
   // Public legal & policy pages
   '/privacy',
   '/cookies',
-  '/terms'
+  '/terms',
+  '/contact'
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {

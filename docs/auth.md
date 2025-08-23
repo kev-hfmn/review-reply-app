@@ -101,8 +101,11 @@ For Basic users without complete Google Business Profile integration, a comprehe
 - Stores email, password hashes, etc.
 
 ### subscriptions
-- Tracks user subscription status
-- Only active subscriptions are considered valid
+- **ALL users have subscription entries** - Default 'basic' plan created automatically
+- Database trigger creates basic subscription for new users on signup
+- Basic plan users: `plan_id = 'basic'`, `status = 'active'`, `payment_processor = 'internal'`
+- Paid plan users: `plan_id = 'starter'|'pro'|'pro plus'`, Stripe/LemonSqueezy integration
+- Subscription validation: `isSubscriber = (status === 'active' && plan_id !== 'basic' && within_period)`
 
 ### businesses
 - Stores business information
@@ -124,6 +127,8 @@ For Basic users without complete Google Business Profile integration, a comprehe
 - ✅ View all settings tabs and configure basic functionality
 
 ### Premium Users Additional Access:
+- 🚀 **AI-powered digest insights** - Weekly/monthly business intelligence
+- 🚀 **AI reply generation** - Automated review responses
 - 🚀 Advanced automated review sync scheduling
 - 🚀 Full AI reply automation pipeline
 - 🚀 Advanced webhook integrations (Make.com)
@@ -134,8 +139,11 @@ For Basic users without complete Google Business Profile integration, a comprehe
 
 ## API Endpoints
 - `/api/auth/*`: Authentication endpoints (handled by Supabase)
-- `/api/subscription/*`: Subscription management
+- `/api/subscription/check`: **NEW** - Centralized subscription validation endpoint
+- `/api/subscription/*`: Subscription management (Stripe webhooks, etc.)
 - `/api/business/*`: Business information management
+- `/api/ai/generate-insights`: Protected by subscription check
+- `/api/ai/generate-reply`: Protected by subscription check
 
 ## Implementation Results ✅
 
@@ -150,6 +158,10 @@ For Basic users without complete Google Business Profile integration, a comprehe
 - ✅ **Subscription-aware UX** - Different experiences for Basic vs Premium users
 - ✅ **Existing user backfill** - All existing users now have business records
 - ✅ **Calendly integration** - Direct scheduling for API approval consultations
+- ✅ **Centralized subscription system** - Single source of truth for subscription logic
+- ✅ **Automatic basic subscriptions** - Database trigger creates default entries
+- ✅ **Fixed premium user display** - Basic users no longer show as "Premium User"
+- ✅ **API protection standardized** - All premium endpoints use same validation
 
 ### Database Integrity
 - ✅ All users have business records (1:1 relationship guaranteed)
@@ -176,3 +188,51 @@ Due to Google Business Profile API requirements, new users follow a guided appro
 6. **Full Activation**: Complete access to AI-powered review management
 
 This workflow ensures high success rates for API approval while providing personalized support for users navigating Google's requirements.
+
+## Centralized Subscription Architecture ✅
+
+### Overview
+Implemented centralized subscription checking system to eliminate code duplication and ensure consistent logic across the entire application.
+
+### Core Components
+
+#### 1. Centralized Utility (`lib/utils/subscription.ts`)
+- `checkUserSubscription(userId)`: Single source of truth for subscription validation
+- `getUserDisplayStatus()`: Consistent UI display formatting
+- `hasFeatureAccess()`: Feature-based access control
+- Server-side only - uses `supabaseAdmin` with service role key
+
+#### 2. API Endpoint (`/api/subscription/check`)
+- GET/POST endpoints for client-side subscription checking
+- Used by AuthContext to avoid direct server-side utility calls
+- Returns structured subscription status object
+
+#### 3. Database Trigger System
+- Automatic basic subscription creation for new users
+- Trigger function: `create_default_basic_subscription()`
+- Eliminates "no subscription found" edge cases
+- All existing users backfilled with basic subscriptions
+
+### Subscription Logic
+```typescript
+// Core validation logic
+const isSubscriber = isActiveSubscription && isPaidPlan && isWithinPeriod;
+
+where:
+- isActiveSubscription = status === 'active'
+- isPaidPlan = plan_id !== 'basic'  // Key change!
+- isWithinPeriod = current_period_end > now
+```
+
+### Updated Components
+1. **AuthContext**: Calls `/api/subscription/check` instead of direct database queries
+2. **Dashboard**: Fixed "Premium User" display bug - now checks `plan_id !== 'basic'`
+3. **AI APIs**: All use centralized utility for consistent protection
+4. **Digest Page**: Proper subscription gating with upgrade prompts
+
+### Benefits Achieved
+- ✅ **Single source of truth** - All subscription checking uses same logic
+- ✅ **No code duplication** - Eliminated 100+ lines of duplicate code
+- ✅ **Consistent behavior** - Frontend and backend use identical validation
+- ✅ **Automatic defaults** - Every user has a subscription entry
+- ✅ **Proper basic user handling** - Basic users show correct status

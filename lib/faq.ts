@@ -78,6 +78,11 @@ export const faqItems: FaqItem[] = [
       "RepliFast is designed for small and mid-sized businesses that are busy and cannot dedicate extra time to replying to reviews. Whether replies have been neglected in the past or you simply don’t want to spend hours every month on this task, RepliFast keeps you consistent without the added workload.",
   },
   {
+    question: "What are the requirements to use RepliFast?",
+    answer:
+      "You need to have a valid Google Business Profile (your business listed on Google Maps). You must be the owner or an authorized manager of the listing in order to connect it with RepliFast.",
+  },
+  {
     question: "Why should I reply to reviews at all?",
     answer:
       "Because it matters. Customers are far more likely to choose a business that responds to feedback. A quick, professional reply shows you care and builds trust, while silence can make your business look disengaged. Besides that, Google rewards active profiles and consistent replies can improve your local SEO and help you show up higher in search results.",

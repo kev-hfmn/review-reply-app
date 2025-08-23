@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/utils/supabase';
-import { 
-  Session, 
-  User, 
+import {
+  Session,
+  User,
   SupabaseClient
 } from '@supabase/supabase-js';
 
@@ -19,8 +19,8 @@ interface AuthContextType {
     session: Session | null;
   }>;
   signOut: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string, businessName: string) => Promise<{ 
-    data: { user: User | null } | null; 
+  signUpWithEmail: (email: string, password: string) => Promise<{
+    data: { user: User | null } | null;
     error: Error | null;
   }>;
   updatePassword: (newPassword: string) => Promise<void>;
@@ -43,61 +43,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = useCallback(async (userId: string) => {
     try {
-      // Add safety check for valid user ID
-      if (!userId || userId.length < 10) {
-        console.warn('Invalid user ID for subscription check:', userId);
+      // Call our subscription check API instead of using server-side utility directly
+      const response = await fetch('/api/subscription/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        console.error('Subscription API error:', response.status);
         setIsSubscriber(false);
         return;
       }
 
-      // Get ALL active subscriptions for this user from both payment processors
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('Subscription check error:', error);
-        setIsSubscriber(false);
-        return;
-      }
+      const subscriptionStatus = await response.json();
 
-      if (!data || data.length === 0) {
-        setIsSubscriber(false);
-        return;
-      }
+      setIsSubscriber(subscriptionStatus.isSubscriber);
 
-      // Find the most recent TRULY active subscription from any payment processor
-      const activeSubscription = data.find(sub => 
-        sub.status === 'active' && 
-        sub.cancel_at_period_end === false && 
-        new Date(sub.current_period_end) > new Date()
-      );
-
-      // Log subscription status for debugging (support both payment processors)
-      if (data.length > 1) {
-        console.warn(`User ${userId} has ${data.length} active subscriptions:`, 
-          data.map(sub => ({
-            id: sub.stripe_subscription_id || sub.lemonsqueezy_subscription_id,
-            payment_processor: sub.payment_processor || 'stripe',
-            cancel_at_period_end: sub.cancel_at_period_end,
-            created_at: sub.created_at
-          }))
-        );
-      }
-
-      setIsSubscriber(!!activeSubscription);
-      
-      // Log active subscription details for debugging
-      if (activeSubscription) {
-        console.log(`User ${userId} has active subscription:`, {
-          payment_processor: activeSubscription.payment_processor || 'stripe',
-          id: activeSubscription.stripe_subscription_id || activeSubscription.lemonsqueezy_subscription_id,
-          period_end: activeSubscription.current_period_end
-        });
-      }
+      // Log subscription details for debugging
+      console.log(`User ${userId} subscription status:`, {
+        plan: subscriptionStatus.planId,
+        status: subscriptionStatus.status,
+        isSubscriber: subscriptionStatus.isSubscriber
+      });
     } catch (error) {
       console.error('Subscription check error:', error);
       setIsSubscriber(false);
@@ -112,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', userId)
         .limit(1)
         .maybeSingle();
-      
+
       if (error) {
         // Only log error if it's not a "no rows" error (PGRST116)
         if (error.code !== 'PGRST116') {
@@ -133,57 +103,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const ensureBusinessRecord = useCallback(async (userId: string) => {
-    try {
-      // Check if business record already exists
-      const { data: existingBusiness } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      // If no business record exists, create one
-      if (!existingBusiness) {
-        const { data, error } = await supabase
-          .from('businesses')
-          .insert({
-            user_id: userId,
-            name: 'My Business'
-          })
-          .select('id, name')
-          .single();
-        
-        if (error) {
-          console.error('Failed to create business record:', error);
-          return;
-        }
-        
-        // Update state with new business info
-        setBusinessName(data.name);
-        setBusinessId(data.id);
-        
-        console.log('Created business record for user:', userId);
-      }
-    } catch (error) {
-      console.error('Error ensuring business record:', error);
-    }
-  }, []);
+  // Business records are now created only during Google Business Profile connection
+  // This eliminates signup race conditions and supports multi-location businesses
 
   useEffect(() => {
     let mounted = true;
     let authSubscription: any = null;
     console.log("AuthContext - mounted useEffect:", mounted);
-    
+
     const initializeAuth = async () => {
       try {
         if (!mounted) return;
-        
+
         setIsLoading(true);
         console.log("AuthContext - Starting Try in InitializeAuth!");
 
         // First, get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error || !mounted) {
           if (mounted) setIsLoading(false);
           return;
@@ -199,30 +136,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Run user data loading in background - don't block initial render
             Promise.all([
               checkSubscription(currentUser.id),
-              loadBusinessInfo(currentUser.id),
-              ensureBusinessRecord(currentUser.id)
+              loadBusinessInfo(currentUser.id)
+              // ensureBusinessRecord removed to prevent race condition - only called in auth state change
             ]).catch(error => {
               console.error('Error loading user data:', error);
               // Don't throw - allow app to continue with basic auth
             });
           }
         }
-        
+
         // Then set up listener for future changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (_event, newSession) => {
             if (!mounted) return;
-            
+
             const newUser = newSession?.user ?? null;
             if (mounted) {
               setUser(newUser);
-              
+
               if (newUser) {
                 // Run these in background - don't block auth state update
                 Promise.all([
                   checkSubscription(newUser.id),
-                  loadBusinessInfo(newUser.id),
-                  ensureBusinessRecord(newUser.id)
+                  loadBusinessInfo(newUser.id)
+                  // Business records now created only during Google Business Profile connection
                 ]).catch(error => {
                   console.error('Error loading user data in background:', error);
                 });
@@ -239,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Only set loading to false after everything is initialized
         if (mounted) setIsLoading(false);
-        
+
       } catch (error) {
         console.error("Auth initialization error:", error);
         if (mounted) setIsLoading(false);
@@ -247,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeAuth();
-    
+
     // Cleanup function
     return () => {
       mounted = false;
@@ -275,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password
       });
-      
+
       if (authError) throw authError;
 
       // Check if user was previously soft-deleted
@@ -289,10 +226,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Reactivate the account
         await supabase
           .from('users')
-          .update({ 
-            is_deleted: false, 
+          .update({
+            is_deleted: false,
             deleted_at: null,
-            reactivated_at: new Date().toISOString() 
+            reactivated_at: new Date().toISOString()
           })
           .eq('id', authData.user?.id);
 
@@ -305,49 +242,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // First cleanup all active connections/states
         window.dispatchEvent(new Event('cleanup-before-logout'));
-        
+
         // Wait a small amount of time for cleanup
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Then perform the actual signout
         await supabase.auth.signOut();
-        
+
         // Force redirect to login
         window.location.assign('/login');
       } catch (error) {
         console.error('Error signing out:', error);
       }
     },
-    signUpWithEmail: async (email: string, password: string, businessName: string) => {
+    signUpWithEmail: async (email: string, password: string) => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`
+          // No business_name metadata - businesses created during Google connection
         }
       });
       if (error) throw error;
-      
-      // Create business record immediately after successful signup
-      if (data.user) {
-        try {
-          const { error: businessError } = await supabase
-            .from('businesses')
-            .insert({
-              user_id: data.user.id,
-              name: businessName
-            });
-          
-          if (businessError) {
-            console.error('Failed to create business record:', businessError);
-            // Don't throw here - auth was successful, business can be created later
-          }
-        } catch (businessError) {
-          console.error('Error creating business record:', businessError);
-          // Don't throw here - auth was successful, business can be created later
-        }
-      }
-      
+
+      // Business records will be created when users connect their Google Business Profile
+      // This supports multi-location businesses with real Google location data
+
       return { data, error };
     },
     updatePassword: async (newPassword: string) => {
@@ -374,7 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('users')
         .delete()
         .eq('id', user?.id);
-      
+
       if (dataError) throw dataError;
 
       // Then delete the user's subscription if it exists
@@ -408,4 +329,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext); 
+export const useAuth = () => useContext(AuthContext);

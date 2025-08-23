@@ -423,14 +423,14 @@ export default function LandingPage() {
                   Start now
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </a>
-                <p className="text-sm opacity-80 mb-4">No credit card required</p>
+
               </div>
             </div>
 
             <div className="mt-5 flex items-center justify-center space-x-6 text-sm opacity-80">
               <div className="flex items-center">
                 <CheckCircle className="h-5 w-5 mr-2" />
-                Only pay after you start using RepliFast
+                14-day money-back guarantee
               </div>
 
               <div className="flex items-center">

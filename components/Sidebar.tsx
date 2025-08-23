@@ -23,9 +23,10 @@ import { useAuth } from '@/contexts/AuthContext';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Reviews', href: '/reviews', icon: MessageSquare },
-  { name: 'Digest', href: '/digest', icon: BarChart3 },
+  { name: 'Insights', href: '/digest', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Help', href: '/help', icon: HelpCircle },
+  { name: 'Profile', href: '/profile', icon: User },
 ];
 
 export function Sidebar() {

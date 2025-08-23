@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -15,6 +15,7 @@ import type { Review } from '@/types/dashboard';
 import type { SelectionState, ReviewDrawerData } from '@/types/reviews';
 import { REPLY_TONES } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function ReviewsPage() {
   const { isSubscriber } = useAuth();
@@ -300,23 +301,64 @@ export default function ReviewsPage() {
         resultCount={filteredCount}
       />
 
+      {/* Empty State for Basic Users */}
+      {!isSubscriber && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              Subscription Required
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              To view and manage your reviews, you need to connect your Google Business Profile and upgrade to a premium plan.
+            </p>
+            <div className="space-y-3 mb-6">
+              <p className="text-sm text-muted-foreground">
+                Premium features include:
+              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>• Import and sync all your reviews</p>
+                <p>• Generate AI-powered replies</p>
+                <p>• Post replies directly to Google</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => window.location.href = '/settings?tab=integrations'}
+                variant="outline"
+              >
+                Connect Google Business Profile
+              </Button>
+              <Button
+                onClick={() => window.location.href = '/profile'}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Upgrade Plan
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Reviews Table */}
-      <ReviewsTable
-        reviews={reviews}
-        isLoading={isLoading}
-        selection={selection}
-        onSelectionChange={setSelection}
-        onReviewClick={handleReviewClick}
-        onInlineEdit={handleInlineEdit}
-        onQuickAction={handleQuickAction}
-        onGenerateReply={reviewActions.regenerateReply}
-        isSubscriber={isSubscriber}
-        onUpgradeRequired={() => showToast({
-          type: 'info',
-          message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
-          title: 'Subscription Required'
-        })}
-      />
+      {isSubscriber && (
+        <ReviewsTable
+          reviews={reviews}
+          isLoading={isLoading}
+          selection={selection}
+          onSelectionChange={setSelection}
+          onReviewClick={handleReviewClick}
+          onInlineEdit={handleInlineEdit}
+          onQuickAction={handleQuickAction}
+          onGenerateReply={reviewActions.regenerateReply}
+          isSubscriber={isSubscriber}
+          onUpgradeRequired={() => showToast({
+            type: 'info',
+            message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',
+            title: 'Subscription Required'
+          })}
+        />
+      )}
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
