@@ -1,69 +1,10 @@
 'use client'
 
-// File: /components/PricingSection.tsx
-
-// import Link from 'next/link';
-// import { StripeBuyButton } from './StripeBuyButton';
 import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-// interface PricingSectionProps {
-//   showFullDetails?: boolean;
-// }
-
-const pricingTiers = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "$19",
-    interval: "/month",
-    description: "Perfect for small businesses with fewer than 1,000 total reviews",
-    features: [
-      "Fetch and manage up to 200 existing reviews when connecting",
-      "Manually fetch new reviews at any time",
-      "Automatically generate replies for newly fetched reviews",
-      "Standard tone presets only (friendly, professional, casual, etc.)",
-      "Manual approval of all replies",
-      "Email notifications when new reviews and replies are ready",
-      "Basic review dashboard showing review and reply counts"
-    ],
-    cta: "Get Started",
-    popular: false
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "$49",
-    interval: "/month",
-    description: "For businesses with higher review volume or over 1,000 total reviews",
-    features: [
-      "Fetch all existing reviews when connecting",
-      "Automatic daily sync: new reviews are fetched for you every day at a time you choose",
-      "Automatically generate replies for newly fetched reviews",
-      "Custom brand instructions field to fine-tune tone and style",
-      "Auto-approve rules for certain star ratings (for example 4 or 5 stars)",
-      "Advanced insights including customer sentiment breakdown"
-    ],
-    cta: "Get Started",
-    popular: true
-  },
-  {
-    id: "pro-plus",
-    name: "Pro Plus - Additional Locations Add-On",
-    price: "+$19",
-    interval: "/month per location",
-    description: "For Pro customers managing multiple locations",
-    features: [
-      "Full Pro plan features for each additional location",
-      "Reduced per-location cost",
-      "Separate dashboards and review management for each location"
-    ],
-    cta: "Get Started",
-    popular: false
-  }
-];
+import { pricingTiers } from '@/lib/pricing';
 
 export function PricingSection() {
   const router = useRouter();

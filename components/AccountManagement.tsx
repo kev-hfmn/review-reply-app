@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 export function AccountManagement() {
   const { user, signOut } = useAuth();
@@ -52,12 +53,13 @@ export function AccountManagement() {
 
       <div className="">
         {!isOAuthUser && (
-          <button
+          <Button
             onClick={() => router.push(`/reset-password?email=${encodeURIComponent(user?.email || '')}`)}
-            className="block w-full text-left px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+
+            variant="outline"
           >
             Reset Password
-          </button>
+          </Button>
         )}
 
         {/* <button

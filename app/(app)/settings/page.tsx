@@ -49,20 +49,11 @@ interface ApprovalSettings {
   mode: 'manual' | 'auto_4_plus' | 'auto_except_low';
 }
 
-interface GoogleCredentials {
-  clientId: string;
-  clientSecret: string;
-  accountId: string;
-  locationId: string;
-}
-
 interface IntegrationStatus {
   googleBusiness: {
     connected: boolean;
     status: 'pending' | 'approved' | 'rejected' | 'not_connected' | 'configured';
     lastSync?: string;
-    credentials?: GoogleCredentials;
-    hasTokens?: boolean;
   };
   makeWebhook: {
     connected: boolean;
@@ -108,7 +99,6 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(getInitialTab());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
   const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
 
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>({
@@ -132,23 +122,13 @@ export default function SettingsPage() {
   const [integrations, setIntegrations] = useState<IntegrationStatus>({
     googleBusiness: {
       connected: false,
-      status: 'not_connected',
-      hasTokens: false
+      status: 'not_connected'
     },
     makeWebhook: {
       connected: false
     }
   });
 
-  const [googleCredentials, setGoogleCredentials] = useState<GoogleCredentials>({
-    clientId: '',
-    clientSecret: '',
-    accountId: '',
-    locationId: ''
-  });
-
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [showGoogleSetup, setShowGoogleSetup] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   const [billing, setBilling] = useState<BillingInfo>({
@@ -331,71 +311,12 @@ export default function SettingsPage() {
             });
           }
 
-          // Load Google credentials and connection status via API (handles decryption and admin access)
-          let hasGoogleCredentials = false;
-          let hasGoogleTokens = false;
-          let loadedCredentials = {
-            clientId: '',
-            clientSecret: '',
-            accountId: '',
-            locationId: ''
-          };
-
-          if (user?.id) {
-            try {
-              console.log('Fetching Google credentials via API...', { businessId: business.id, userId: user.id });
-              const credentialsResponse = await fetch(`/api/auth/google-business/credentials/get?businessId=${business.id}&userId=${user.id}`);
-
-              if (!credentialsResponse.ok) {
-                console.error('Credentials API error:', credentialsResponse.status, credentialsResponse.statusText);
-              }
-
-              const credentialsData = await credentialsResponse.json();
-
-              console.log('Credentials API response:', credentialsData);
-
-              hasGoogleCredentials = credentialsData.hasCredentials || false;
-              hasGoogleTokens = credentialsData.hasTokens || false;
-
-              if (credentialsData.hasCredentials && credentialsData.credentials && mounted) {
-                loadedCredentials = {
-                  clientId: credentialsData.credentials.clientId || '',
-                  clientSecret: credentialsData.credentials.clientSecret || '',
-                  accountId: credentialsData.credentials.accountId || '',
-                  locationId: credentialsData.credentials.locationId || ''
-                };
-                setGoogleCredentials(loadedCredentials);
-              }
-            } catch (credentialsError) {
-              console.error('Failed to load Google credentials:', credentialsError);
-            }
-          }
-
-          console.log('Google Integration Debug:', {
-            hasGoogleCredentials,
-            hasGoogleTokens,
-            credentialsFromAPI: !!loadedCredentials.clientId
-          });
-
-          let googleStatus: 'not_connected' | 'configured' | 'pending' | 'approved' = 'not_connected';
-          if (hasGoogleCredentials && hasGoogleTokens) {
-            googleStatus = 'approved'; // Connected with both credentials and tokens
-            console.log('Setting Google status to: approved (has credentials and tokens)');
-          } else if (hasGoogleCredentials) {
-            googleStatus = 'configured';
-            console.log('Setting Google status to: configured (has credentials, no tokens)');
-          } else {
-            console.log('Setting Google status to: not_connected');
-          }
-
-          // Set integration state after loading credentials
+          // Set integration state with simplified Google integration (now handled by GoogleBusinessProfileIntegration component)
           const integrationState = {
             googleBusiness: {
-              connected: hasGoogleTokens,
-              status: googleStatus,
-              hasTokens: hasGoogleTokens,
-              lastSync: business.last_review_sync,
-              credentials: loadedCredentials
+              connected: false, // Will be managed by GoogleBusinessProfileIntegration component
+              status: 'not_connected' as const,
+              lastSync: business.last_review_sync
             },
             makeWebhook: {
               connected: !!settings?.make_webhook_url,
@@ -448,6 +369,7 @@ export default function SettingsPage() {
           invalid_callback: 'Invalid OAuth callback. Please try again.',
           invalid_state: 'Invalid OAuth state. Please try again.',
           business_not_found: 'Business not found. Please check your setup.',
+          no_business_locations: 'No business locations found in your Google account. Please ensure you have a verified Google Business Profile set up.',
           credentials_missing: 'Google credentials not configured. Please set up credentials first.',
           token_storage_failed: 'Failed to store OAuth tokens. Please try again.',
           token_exchange_failed: 'Failed to exchange OAuth tokens. Please check your credentials.',
@@ -455,7 +377,12 @@ export default function SettingsPage() {
         };
 
         const errorMessage = errorMessages[error as keyof typeof errorMessages] || 'An unknown error occurred.';
-        console.error('Google OAuth error:', errorMessage);
+        
+        showToast({
+          type: 'error',
+          title: 'Google Connection Failed',
+          message: errorMessage
+        });
 
         // Clear the error from URL
         window.history.replaceState({}, '', '/settings?tab=integrations');
@@ -464,31 +391,14 @@ export default function SettingsPage() {
   }, []);
 
   const handleSaveProfile = async () => {
-    // Create business record if it doesn't exist
+    // Business records are created only during Google Business Profile connection
     if (!currentBusinessId) {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('businesses')
-          .insert({
-            user_id: user.id,
-            name: businessProfile.name || 'My Business'
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        setCurrentBusinessId(data.id);
-      } catch (error) {
-        console.error('Failed to create business record:', error);
-        showToast({
-          type: 'error',
-          title: 'Failed to save profile',
-          message: 'Could not create business record. Please try again.'
-        });
-        return;
-      }
+      showToast({
+        type: 'error',
+        title: 'No business connected',
+        message: 'Please connect your Google Business Profile first to save profile settings.'
+      });
+      return;
     }
 
     setIsSaving(true);
@@ -524,31 +434,14 @@ export default function SettingsPage() {
   };
 
   const handleSaveBrandVoice = async () => {
-    // Create business record if it doesn't exist
+    // Business records are created only during Google Business Profile connection
     if (!currentBusinessId) {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('businesses')
-          .insert({
-            user_id: user.id,
-            name: businessProfile.name || 'My Business'
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        setCurrentBusinessId(data.id);
-      } catch (error) {
-        console.error('Failed to create business record:', error);
-        showToast({
-          type: 'error',
-          title: 'Failed to save voice settings',
-          message: 'Could not create business record. Please try again.'
-        });
-        return;
-      }
+      showToast({
+        type: 'error',
+        title: 'No business connected',
+        message: 'Please connect your Google Business Profile first to configure brand voice settings.'
+      });
+      return;
     }
 
     setIsSaving(true);
@@ -586,31 +479,14 @@ export default function SettingsPage() {
   };
 
   const handleSaveApproval = async () => {
-    // Create business record if it doesn't exist
+    // Business records are created only during Google Business Profile connection
     if (!currentBusinessId) {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('businesses')
-          .insert({
-            user_id: user.id,
-            name: businessProfile.name || 'My Business'
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        setCurrentBusinessId(data.id);
-      } catch (error) {
-        console.error('Failed to create business record:', error);
-        showToast({
-          type: 'error',
-          title: 'Failed to save approval settings',
-          message: 'Could not create business record. Please try again.'
-        });
-        return;
-      }
+      showToast({
+        type: 'error',
+        title: 'No business connected',
+        message: 'Please connect your Google Business Profile first to configure approval settings.'
+      });
+      return;
     }
 
     setIsSaving(true);
@@ -722,201 +598,15 @@ export default function SettingsPage() {
 
 
   // Google Business Profile handlers
-  const handleSaveGoogleCredentials = async () => {
-    if (!currentBusinessId || !user) return;
-
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/auth/google-business/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: currentBusinessId,
-          userId: user.id,
-          credentials: {
-            clientId: googleCredentials.clientId,
-            clientSecret: googleCredentials.clientSecret,
-            accountId: googleCredentials.accountId,
-            locationId: googleCredentials.locationId,
-          }
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save credentials');
-      }
-
-      setIntegrations(prev => ({
-        ...prev,
-        googleBusiness: {
-          ...prev.googleBusiness,
-          status: 'configured'
-        }
-      }));
-
-      showToast({
-        type: 'success',
-        title: 'Google credentials saved successfully',
-        message: 'You can now connect to Google Business Profile.'
-      });
-    } catch (error) {
-      console.error('Failed to save Google credentials:', error);
-      showToast({
-        type: 'error',
-        title: 'Failed to save Google credentials',
-        message: error instanceof Error ? error.message : 'An unexpected error occurred.'
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleConnectGoogle = async () => {
-    if (!currentBusinessId || !user) return;
-
-    setIsConnecting(true);
-    try {
-      const response = await fetch('/api/auth/google-business/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: currentBusinessId,
-          userId: user.id
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.authUrl) {
-        // Redirect to Google OAuth
-        window.location.href = data.authUrl;
-      } else {
-        throw new Error(data.error || 'Failed to initiate OAuth');
-      }
-    } catch (error) {
-      console.error('Failed to connect Google:', error);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const handleTestGoogleConnection = async () => {
-    if (!currentBusinessId || !user) return;
-
-    setIsTesting(true);
-    try {
-      const response = await fetch('/api/reviews/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: currentBusinessId,
-          userId: user.id,
-          action: 'test'
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setIntegrations(prev => ({
-          ...prev,
-          googleBusiness: {
-            ...prev.googleBusiness,
-            status: 'approved',
-            connected: true
-          }
-        }));
-        showToast({
-          type: 'success',
-          title: 'Google connection test successful',
-          message: 'Your Google Business Profile integration is working correctly.'
-        });
-      } else {
-        throw new Error(result.message || 'Connection test failed');
-      }
-    } catch (error) {
-      console.error('Google connection test failed:', error);
-      showToast({
-        type: 'error',
-        title: 'Google connection test failed',
-        message: error instanceof Error ? error.message : 'Please check your credentials and try again.'
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleDisconnectGoogle = async () => {
-    if (!currentBusinessId) return;
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('businesses')
-        .update({
-          google_access_token: null,
-          google_refresh_token: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentBusinessId);
-
-      if (error) throw error;
-
-      setIntegrations(prev => ({
-        ...prev,
-        googleBusiness: {
-          ...prev.googleBusiness,
-          connected: false,
-          hasTokens: false,
-          status: googleCredentials.clientId ? 'configured' : 'not_connected'
-        }
-      }));
-
-      showToast({
-        type: 'info',
-        title: 'Google Business Profile disconnected',
-        message: 'Your Google integration has been disconnected.'
-      });
-    } catch (error) {
-      console.error('Failed to disconnect Google:', error);
-      showToast({
-        type: 'error',
-        title: 'Failed to disconnect Google',
-        message: error instanceof Error ? error.message : 'An unexpected error occurred.'
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const tabs = [
     { id: 'profile', label: 'Business Profile', icon: Building2 },
     { id: 'voice', label: 'Brand Voice', icon: MessageSquare },
     { id: 'approval', label: 'Approval Mode', icon: SettingsIcon },
-    { id: 'integrations', label: 'Integrations', icon: Zap },
-    { id: 'billing', label: 'Billing', icon: CreditCard }
+    { id: 'integrations', label: 'Google Connection', icon: Zap },
+   // { id: 'billing', label: 'Billing', icon: CreditCard }
   ];
 
-  const getStatusIcon = (status: string, connected: boolean) => {
-    if (!connected || status === 'not_connected' || status === 'rejected') {
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
-    }
-    if (status === 'pending') {
-      return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-    }
-    return <CheckCircle className="h-4 w-4 text-green-500" />;
-  };
-
-  const getStatusText = (status: string, connected: boolean) => {
-    if (!connected || status === 'not_connected') return 'Not Connected';
-    if (status === 'configured') return 'Credentials Configured';
-    if (status === 'pending') return 'Pending Approval';
-    if (status === 'approved') return 'Connected';
-    if (status === 'rejected') return 'Rejected';
-    return 'Unknown';
-  };
 
   if (isLoading) {
     return (
@@ -1037,18 +727,6 @@ export default function SettingsPage() {
                   </Select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Google Business ID
-                  </label>
-                  <Input
-                    type="text"
-                    value={businessProfile.googleBusinessId || ''}
-                    className=""
-                    placeholder="Auto-filled when connected"
-                    disabled
-                  />
-                </div>
               </div>
 
               <div className="flex justify-end">
@@ -1440,7 +1118,7 @@ export default function SettingsPage() {
 
             {/* New Platform OAuth Integration */}
             <GoogleBusinessProfileIntegration
-              businessId={currentBusinessId || 'temp'}
+              businessId={currentBusinessId || null}
               onShowToast={showToast}
             />
 
@@ -1563,7 +1241,7 @@ export default function SettingsPage() {
         )}
 
         {/* Billing Tab */}
-        {activeTab === 'billing' && (
+        {/* {activeTab === 'billing' && (
           <Card className="text-card-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -1607,7 +1285,7 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
       </motion.div>
 
       {/* Toast Notifications */}

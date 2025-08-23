@@ -40,20 +40,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { businessId, userId } = stateData;
+    const { userId } = stateData;
+    // businessId from state is now unused - we create businesses from discovered Google locations
 
-    // Get business and verify ownership
-    const { data: business, error: businessError } = await supabaseAdmin
-      .from('businesses')
-      .select('id, user_id')
-      .eq('id', businessId)
-      .eq('user_id', userId)
-      .single();
-
-    if (businessError || !business) {
-      console.error('Business not found in callback:', businessError);
+    // Verify user exists in auth system
+    const { data: user, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (userError || !user) {
+      console.error('User not found in callback:', userError);
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=business_not_found`
+        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=user_not_found`
       );
     }
 
@@ -71,84 +67,95 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // For now, if there's only one location, auto-select it
-      // If multiple locations, we'll redirect to selection page (to be implemented)
-      const selectedLocation = businessLocations[0];
-      if (businessLocations.length > 1) {
-        // Store tokens temporarily and redirect to location selection
-        console.log('🔄 Multiple locations found, need location selection...');
-        // For now, just use the first one - location selection UI will be implemented later
-        console.log('📍 Auto-selecting first location for now:', selectedLocation.businessName);
-      }
+      console.log(`🏢 Creating ${businessLocations.length} business record(s) for user ${userId}`);
+      
+      const createdBusinesses = [];
+      const activitiesData = [];
+      
+      // Create a separate business record for each Google location
+      for (const location of businessLocations) {
+        console.log(`📍 Creating business for location: ${location.locationName}`);
+        
+        // Prepare encrypted token data for this location
+        const tokenData = {
+          google_access_token: tokens.access_token,
+          google_refresh_token: tokens.refresh_token,
+          google_account_id: location.accountId,
+          google_location_id: location.locationId,
+        };
 
-      // Store tokens and business info encrypted in database
-      const tokenData = {
-        google_access_token: tokens.access_token,
-        google_refresh_token: tokens.refresh_token,
-        google_account_id: selectedLocation.accountId,
-        google_location_id: selectedLocation.locationId,
-      };
+        const encryptedTokens = encryptFields(tokenData, [
+          'google_access_token',
+          'google_refresh_token',
+          'google_account_id',
+          'google_location_id'
+        ]);
 
-      const encryptedTokens = encryptFields(tokenData, [
-        'google_access_token',
-        'google_refresh_token',
-        'google_account_id',
-        'google_location_id'
-      ]);
+        // Create business record with real Google location data
+        const { data: newBusiness, error: businessError } = await supabaseAdmin
+          .from('businesses')
+          .insert({
+            user_id: userId,
+            name: location.locationName, // Use Google location name as business name
+            location: location.address || null,
+            ...encryptedTokens,
+            google_account_name: location.accountName,
+            google_business_name: location.businessName,
+            google_location_name: location.locationName,
+            connection_status: 'connected',
+          })
+          .select('id, name')
+          .single();
 
-      // Update business with OAuth tokens and business info
-      const { error: updateError } = await supabaseAdmin
-        .from('businesses')
-        .update({
-          ...encryptedTokens,
-          google_account_name: selectedLocation.accountName,
-          google_business_name: selectedLocation.businessName,
-          google_location_name: selectedLocation.locationName,
-          connection_status: 'connected',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', businessId);
+        if (businessError) {
+          console.error(`Failed to create business for location ${location.locationName}:`, businessError);
+          continue; // Skip this location but continue with others
+        }
 
-      if (updateError) {
-        console.error('Failed to store OAuth tokens:', updateError);
-        return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=token_storage_failed`
-        );
-      }
-
-      console.log('✅ Successfully connected:', selectedLocation.businessName);
-
-      // Create activity log entry
-      await supabaseAdmin
-        .from('activities')
-        .insert({
-          business_id: businessId,
+        createdBusinesses.push(newBusiness);
+        
+        // Prepare activity log entry
+        activitiesData.push({
+          business_id: newBusiness.id,
           type: 'settings_updated',
-          description: `Google Business Profile connected: ${selectedLocation.businessName}`,
+          description: `Google Business Profile connected: ${location.locationName}`,
           metadata: {
             event: 'google_oauth_connected',
-            business_name: selectedLocation.businessName,
-            location_name: selectedLocation.locationName,
-            account_id: selectedLocation.accountId,
-            location_id: selectedLocation.locationId,
+            business_name: location.businessName,
+            location_name: location.locationName,
+            account_id: location.accountId,
+            location_id: location.locationId,
             timestamp: new Date().toISOString(),
           },
         });
+      }
+
+      if (createdBusinesses.length === 0) {
+        console.error('Failed to create any business records');
+        return NextResponse.redirect(
+          `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=business_creation_failed`
+        );
+      }
+
+      // Insert all activity log entries
+      if (activitiesData.length > 0) {
+        await supabaseAdmin
+          .from('activities')
+          .insert(activitiesData);
+      }
+
+      const businessNames = createdBusinesses.map(b => b.name).join(', ');
+      console.log(`✅ Successfully created ${createdBusinesses.length} business(es):`, businessNames);
 
       // Redirect to settings with success
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&success=google_connected&business_name=${encodeURIComponent(selectedLocation.businessName)}`
+        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&success=google_connected&business_count=${createdBusinesses.length}&business_names=${encodeURIComponent(businessNames)}`
       );
 
     } catch (tokenError) {
       console.error('❌ OAuth process failed:', tokenError);
       
-      // Update connection status to failed
-      await supabaseAdmin
-        .from('businesses')
-        .update({ connection_status: 'error' })
-        .eq('id', businessId);
-
+      // No business records to update since they're created during success flow
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=integrations&error=oauth_process_failed`
       );

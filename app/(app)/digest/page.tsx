@@ -17,7 +17,8 @@ import {
   ChevronDown,
   AlertCircle,
   Target,
-  Award
+  Award,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,7 @@ import { supabase } from '@/utils/supabase';
 import type { Business } from '@/types/dashboard';
 
 export default function DigestPage() {
-  const { user } = useAuth();
+  const { user, isSubscriber } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
@@ -167,6 +168,37 @@ export default function DigestPage() {
     if (change < 0) return <TrendingDown className="h-4 w-4 text-red-600" />;
     return null;
   };
+
+  // Show upgrade prompt for basic users
+  if (!isSubscriber) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">
+            Insights
+          </h1>
+        </div>
+
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              Subscription Required
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              AI-powered insights are available to subscribers. Upgrade your plan to access this feature and to analyze your reviews at a glance.
+            </p>
+            <Button
+              onClick={() => window.location.href = '/profile'}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Upgrade Plan
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoadingBusinesses || (isLoading && !insights)) {
     return (

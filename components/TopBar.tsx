@@ -6,16 +6,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSubscription } from '@/hooks/useSubscription';
-// import { supabase } from '@/utils/supabase';
+import { Button } from '@/components/ui/button';
 
 // TopBar component handles user profile display and navigation
 export default function TopBar() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { subscription, isLoading: isLoadingSubscription } = useSubscription();
-  // Removed trial system - users are either basic or premium subscribers
 
   // State for tracking logout process
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -32,18 +31,51 @@ export default function TopBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle user logout with error handling and loading state
+  // Handle user logout with proper server-side session invalidation
   const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent double-clicks
+
     try {
       setIsLoggingOut(true);
-      await signOut();
       setIsDropdownOpen(false);
-      setIsLoggingOut(false);
+
+      console.log('Starting logout process...');
+
+      // Call our logout API route for proper server-side session invalidation
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+      });
+
+      if (!response.ok) {
+        console.error('Logout API failed:', response.status);
+      } else {
+        console.log('Server-side logout successful');
+      }
+
+      // Clear all client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear any remaining cookies manually
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
+      console.log('Cleared all client-side data, redirecting...');
+
+      // Force hard redirect to login page (this breaks any React state)
+      window.location.replace('/login');
+
     } catch (error) {
       console.error('Logout failed:', error);
-      alert('Failed to sign out. Please try again.');
+
+      // Fallback: force redirect even if API call fails
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace('/login');
     } finally {
-      setIsLoggingOut(false);
+      // Don't reset loading state since we're redirecting anyway
     }
   };
 
@@ -59,60 +91,44 @@ export default function TopBar() {
             className="rounded-md"
           />
           <span className="text-xl font-bold text-foreground tracking-tight">RepliFast</span>
-
         </Link>
 
         <div className="flex items-center gap-4">
           {!user ? (
-            <>
-
-              {/* Show login button for unauthenticated users */}
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors shadow-subtle hover:shadow-hover"
-              >
-                Sign in
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors shadow-subtle hover:shadow-hover"
+            >
+              Sign in
+            </Link>
           ) : (
-            // Show subscription and profile for authenticated users
             <>
               {!isLoadingSubscription && (
                 !subscription ||
                 subscription.status === 'canceled' ||
                 (subscription.cancel_at_period_end && new Date(subscription.current_period_end) > new Date())
               ) && (
-                <button
+                <Button
                   onClick={() => router.push('/profile')}
-                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
+                  className="hidden sm:block rounded-full"
+                  variant="default"
                 >
                   View Subscription
-                </button>
+                </Button>
               )}
 
-
-{/*               {!isLoadingSubscription && (
-                subscription || isInTrial
-              ) && pathname !== '/dashboard' && (
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white dark:text-white  dark:bg-primary-dark rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
-                >
-                  {isInTrial ? "Start Free Trial" : "Start Automating"}
-                </button>
-              )}
- */}
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center gap-2 hover:bg-primary hover:text-foreground px-3 py-2 rounded-full transition-colors"
+                  disabled={isLoggingOut}
                 >
                   <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary hover:text-primary-foreground">
                     {user.email?.[0].toUpperCase()}
                   </div>
                 </button>
 
-                {isDropdownOpen && (
+                {isDropdownOpen && !isLoggingOut && (
                   <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg py-1 z-[60] border border-border">
                     <Link
                       href="/profile"

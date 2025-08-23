@@ -57,7 +57,8 @@ const toneTemplates = {
 export async function generateReply(
   review: ReviewData,
   brandVoice: BrandVoiceSettings,
-  businessInfo: BusinessInfo
+  businessInfo: BusinessInfo,
+  userId?: string
 ): Promise<GenerateReplyResult> {
   try {
     // Call our API route
@@ -70,6 +71,7 @@ export async function generateReply(
         review,
         brandVoice,
         businessInfo,
+        userId,
       }),
     });
 
@@ -85,10 +87,10 @@ export async function generateReply(
     };
   } catch (error: unknown) {
     console.error('Error generating AI reply:', error);
-    
+
     // Fall back to template system
     const fallbackReply = getFallbackReply(review, brandVoice.preset);
-    
+
     return {
       reply: fallbackReply,
       tone: brandVoice.preset,
@@ -104,7 +106,7 @@ function getFallbackReply(review: ReviewData, tone: string = 'friendly'): string
   const templates = toneTemplates[tone as keyof typeof toneTemplates] || toneTemplates.friendly;
   const ratingKey = review.rating as keyof typeof templates;
   const template = templates[ratingKey] || templates[3];
-  
+
   return template(review.customerName);
 }
 
@@ -112,18 +114,18 @@ function getFallbackReply(review: ReviewData, tone: string = 'friendly'): string
  * Fetch business settings from Supabase
  */
 export async function getBusinessSettings(businessId: string): Promise<BrandVoiceSettings | null> {
-  
+
   const { data, error } = await supabase
     .from('business_settings')
     .select('brand_voice_preset, formality_level, warmth_level, brevity_level, custom_instruction')
     .eq('business_id', businessId)
     .single();
-  
+
   if (error || !data) {
     console.error('Error fetching business settings:', error);
     return null;
   }
-  
+
   return {
     preset: data.brand_voice_preset as 'friendly' | 'professional' | 'playful' | 'custom',
     formality: data.formality_level,
@@ -137,18 +139,18 @@ export async function getBusinessSettings(businessId: string): Promise<BrandVoic
  * Fetch business info from Supabase
  */
 export async function getBusinessInfo(businessId: string): Promise<BusinessInfo | null> {
-  
+
   const { data, error } = await supabase
     .from('businesses')
     .select('name, industry')
     .eq('id', businessId)
     .single();
-  
+
   if (error || !data) {
     console.error('Error fetching business info:', error);
     return null;
   }
-  
+
   return {
     name: data.name,
     industry: data.industry || 'service',
@@ -198,10 +200,10 @@ export async function generateAutomatedReply(
 
   } catch (error: unknown) {
     console.error('Error generating automated reply:', error);
-    
+
     // Fall back to template system
     const fallbackReply = getFallbackReply(review);
-    
+
     return {
       reply: fallbackReply,
       tone: 'friendly',
@@ -243,7 +245,7 @@ export async function batchGenerateReplies(
         timestamp: new Date().toISOString(),
       };
       result.errors.push(error);
-      
+
       // Mark all reviews as failed
       for (const review of reviews) {
         result.results.push({
@@ -259,12 +261,12 @@ export async function batchGenerateReplies(
     // Process reviews in batches to avoid overwhelming the API
     for (let i = 0; i < reviews.length; i += batchSize) {
       const batch = reviews.slice(i, i + batchSize);
-      
+
       // Process batch in parallel
       const batchPromises = batch.map(async (review) => {
         try {
           const replyResult = await generateReply(review, brandVoice, businessInfo);
-          
+
           result.results.push({
             reviewId: review.id,
             success: !replyResult.error,
@@ -287,7 +289,7 @@ export async function batchGenerateReplies(
         } catch (error) {
           result.failureCount++;
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          
+
           result.results.push({
             reviewId: review.id,
             success: false,
@@ -367,7 +369,7 @@ export async function generateBulkReplies(
 
   } catch (error: unknown) {
     console.error('Error generating bulk replies:', error);
-    
+
     // Fallback to batch processing
     return await batchGenerateReplies(reviews, businessId);
   }

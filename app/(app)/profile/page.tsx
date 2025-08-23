@@ -15,8 +15,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, CreditCard, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
 import type { ToastNotification } from '@/types/reviews';
+import { Button } from '@/components/ui/button';
 
-function getPlanFromStripePrice(priceId: string | undefined): string {
+function getPlanFromSubscription(subscription: any): string {
+  // If subscription has a plan_id field, use it directly
+  if (subscription?.plan_id) {
+    return subscription.plan_id;
+  }
+
+  // Otherwise, try to map from price IDs (for legacy Stripe subscriptions)
+  const priceId = subscription?.stripe_price_id;
   if (!priceId) return 'basic';
 
   // Map Stripe price IDs to plan names
@@ -35,10 +43,10 @@ function formatSubscriptionDate(dateString: string): string {
   const suffix = day === 1 || day === 21 || day === 31 ? 'st' :
                 day === 2 || day === 22 ? 'nd' :
                 day === 3 || day === 23 ? 'rd' : 'th';
-  
+
   return date.toLocaleDateString('en-US', {
     day: 'numeric',
-    month: 'long', 
+    month: 'long',
     year: 'numeric'
   }).replace(/\d+/, `${day}${suffix}`);
 }
@@ -58,7 +66,7 @@ function ProfileContent() {
     const id = Date.now().toString();
     const newToast = { ...toast, id };
     setToasts(prev => [...prev, newToast]);
-    
+
     // Auto-remove after duration (default 5 seconds)
     const duration = toast.duration || 5000;
     if (duration > 0) {
@@ -186,15 +194,21 @@ function ProfileContent() {
   }, [user?.id, fetchSubscription]);
 
   const handleCancelSubscription = async () => {
-    if (!subscription?.stripe_subscription_id) return;
+    if (!subscription?.stripe_subscription_id && !subscription?.lemonsqueezy_subscription_id) return;
 
     setIsCancelling(true);
     try {
-      const response = await fetch('/api/stripe/cancel', {
+      const isLemonSqueezy = subscription.payment_processor === 'lemonsqueezy';
+      const endpoint = isLemonSqueezy ? '/api/lemonsqueezy/cancel' : '/api/stripe/cancel';
+      const subscriptionId = isLemonSqueezy
+        ? subscription.lemonsqueezy_subscription_id
+        : subscription.stripe_subscription_id;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subscriptionId: subscription.stripe_subscription_id
+          subscriptionId
         }),
       });
 
@@ -215,14 +229,20 @@ function ProfileContent() {
   };
 
   const handleReactivateSubscription = async () => {
-    if (!subscription?.stripe_subscription_id) return;
+    if (!subscription?.stripe_subscription_id && !subscription?.lemonsqueezy_subscription_id) return;
 
     try {
-      const response = await fetch('/api/stripe/reactivate', {
+      const isLemonSqueezy = subscription.payment_processor === 'lemonsqueezy';
+      const endpoint = isLemonSqueezy ? '/api/lemonsqueezy/reactivate' : '/api/stripe/reactivate';
+      const subscriptionId = isLemonSqueezy
+        ? subscription.lemonsqueezy_subscription_id
+        : subscription.stripe_subscription_id;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subscriptionId: subscription.stripe_subscription_id
+          subscriptionId
         }),
       });
 
@@ -247,7 +267,7 @@ function ProfileContent() {
         </div>
       }
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
         {paymentStatus === 'success' && (
           <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
             <p className="text-green-600 dark:text-green-400">
@@ -264,7 +284,7 @@ function ProfileContent() {
       {/* Account Management Card */}
       <Card className="border-slate-200 dark:border-slate-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Account Management
           </CardTitle>
@@ -278,7 +298,7 @@ function ProfileContent() {
       {subscription && (
         <Card className="border-slate-200 dark:border-slate-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Current Subscription
             </CardTitle>
@@ -298,7 +318,7 @@ function ProfileContent() {
               <div className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Status:</span>
+                    <span className=" font-medium ">Status:</span>
                     <Badge
                       variant={subscription.status === 'active' ? 'default' : 'secondary'}
                       className={`${subscription.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}
@@ -307,7 +327,7 @@ function ProfileContent() {
                       {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     Started: {formatSubscriptionDate(subscription.created_at)}
                   </div>
@@ -334,32 +354,56 @@ function ProfileContent() {
                           Your subscription will be canceled at the end of the current billing period.
                         </p>
                         <div className="flex gap-3">
-                          <button
+                          <Button
                             onClick={handleReactivateSubscription}
                             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
                           >
                             Reactivate Subscription
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={async () => {
                               try {
-                                const response = await fetch('/api/stripe/portal', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ customerId: subscription.stripe_customer_id, userId: user?.id })
-                                });
-                                const data = await response.json();
-                                if (data.url) {
-                                  window.open(data.url, '_blank');
+                                const isLemonSqueezy = subscription.payment_processor === 'lemonsqueezy';
+
+                                if (isLemonSqueezy) {
+                                  // For Lemon Squeezy, get the subscription details first to get the customer portal URL
+                                  const response = await fetch(`/api/lemonsqueezy/subscription?id=${subscription.lemonsqueezy_subscription_id}`);
+                                  const data = await response.json();
+                                  if (data.subscription?.attributes?.urls?.customer_portal) {
+                                    window.open(data.subscription.attributes.urls.customer_portal, '_blank');
+                                  } else {
+                                    showToast({
+                                      type: 'error',
+                                      title: 'Portal Unavailable',
+                                      message: 'Customer portal is not available at this time.'
+                                    });
+                                  }
+                                } else {
+                                  // Stripe portal
+                                  const response = await fetch('/api/stripe/portal', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ customerId: subscription.stripe_customer_id, userId: user?.id })
+                                  });
+                                  const data = await response.json();
+                                  if (data.url) {
+                                    window.open(data.url, '_blank');
+                                  }
                                 }
                               } catch (error) {
                                 console.error('Error opening portal:', error);
+                                showToast({
+                                  type: 'error',
+                                  title: 'Portal Error',
+                                  message: 'Failed to open subscription management portal.'
+                                });
                               }
                             }}
-                            className="px-4 py-2 bg-primary hover:bg-primary-dark text-primary-foreground rounded-lg transition-colors"
+                            className=""
+                            variant="outlinePrimary"
                           >
                             Manage Subscription
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -367,32 +411,55 @@ function ProfileContent() {
                 ) : (
                   <div className="pt-2 space-y-3">
                     <div className="flex gap-3">
-                      <button
+                      <Button
                         onClick={async () => {
                           try {
-                            const response = await fetch('/api/stripe/portal', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ customerId: subscription.stripe_customer_id })
-                            });
-                            const data = await response.json();
-                            if (data.url) {
-                              window.open(data.url, '_blank');
+                            const isLemonSqueezy = subscription.payment_processor === 'lemonsqueezy';
+
+                            if (isLemonSqueezy) {
+                              // For Lemon Squeezy, get the subscription details first to get the customer portal URL
+                              const response = await fetch(`/api/lemonsqueezy/subscription?id=${subscription.lemonsqueezy_subscription_id}`);
+                              const data = await response.json();
+                              if (data.subscription?.attributes?.urls?.customer_portal) {
+                                window.open(data.subscription.attributes.urls.customer_portal, '_blank');
+                              } else {
+                                showToast({
+                                  type: 'error',
+                                  title: 'Portal Unavailable',
+                                  message: 'Customer portal is not available at this time.'
+                                });
+                              }
+                            } else {
+                              // Stripe portal
+                              const response = await fetch('/api/stripe/portal', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ customerId: subscription.stripe_customer_id })
+                              });
+                              const data = await response.json();
+                              if (data.url) {
+                                window.open(data.url, '_blank');
+                              }
                             }
                           } catch (error) {
                             console.error('Error opening portal:', error);
+                            showToast({
+                              type: 'error',
+                              title: 'Portal Error',
+                              message: 'Failed to open subscription management portal.'
+                            });
                           }
                         }}
-                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-primary-foreground rounded-lg transition-colors"
+                        variant="outlinePrimary"
                       >
                         Manage Subscription
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => setIsCancelModalOpen(true)}
-                        className="px-4 py-2 border border-red-600 hover:bg-red-600 text-red-600 hover:text-white rounded-lg transition-colors"
+                        variant="destructiveOutline"
                       >
                         Cancel Subscription
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -404,7 +471,7 @@ function ProfileContent() {
 
         {/* Pricing Section for Upgrades */}
         <ProfilePricingSection
-          currentPlan={getPlanFromStripePrice(subscription?.stripe_price_id)}
+          currentPlan={getPlanFromSubscription(subscription)}
           onUpgrade={(planId) => {
             console.log('Upgrade to plan:', planId);
           }}

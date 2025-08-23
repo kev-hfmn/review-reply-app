@@ -173,27 +173,23 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#dc2626' }}></div>
-            <span>1-2★</span>
+            <span>1★</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#ef4444' }}></div>
-            <span>2-3★</span>
+            <span>2★</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#f97316' }}></div>
-            <span>3-3.5★</span>
+            <span>3★</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#eab308' }}></div>
-            <span>3.5-4★</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#84cc16' }}></div>
-            <span>4-4.5★</span>
+            <span>4★</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#10b981' }}></div>
-            <span>4.5-5★</span>
+            <span>5★</span>
           </div>
         </div>
       </div>

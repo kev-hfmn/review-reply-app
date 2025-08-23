@@ -8,8 +8,10 @@ import type {
   Review,
   Activity,
   ChartDataPoint,
-  OnboardingStep
+  OnboardingStep,
+  BusinessSettings
 } from '@/types/dashboard';
+import type { Subscription } from '@/hooks/useSubscription';
 
 export function useDashboardData() {
   const { user } = useAuth();
@@ -121,42 +123,43 @@ export function useDashboardData() {
     });
   }, []);
 
-  const generateOnboardingSteps = useCallback((businesses: Business[], businessSettings?: any): OnboardingStep[] => {
-    const hasBusiness = businesses.length > 0;
-    const hasGoogleCredentials = businesses.some(b => b.google_access_token || b.google_refresh_token);
-    const hasGoogleTokens = businesses.some(b => b.google_access_token && b.google_refresh_token);
-    const hasBrandVoiceSettings = businessSettings && businessSettings.brand_voice_preset;
-    const hasAutoReplyEnabled = businessSettings && businessSettings.approval_mode !== 'manual';
+  const generateOnboardingSteps = useCallback((businesses: Business[], businessSettings?: BusinessSettings | null, subscription?: Subscription | null): OnboardingStep[] => {
+    const hasGoogleConnection = businesses.some(b =>
+      b.google_access_token && b.google_refresh_token && b.connection_status === 'connected'
+    );
+    const hasBrandVoiceSettings = Boolean(businessSettings?.brand_voice_preset);
+    const hasAutoReplyEnabled = Boolean(businessSettings?.approval_mode && businessSettings.approval_mode !== 'manual');
+    const hasPremiumPlan = Boolean(subscription && subscription.plan_id !== 'basic' && subscription.status === 'active');
 
     return [
       {
-        id: 'api-approval',
-        title: 'Apply for Google Business API access (free)',
-        description: 'Schedule a video call with us to help you guide you through the Google Business Profile API application process. It takes around 10 minutes to apply and maximum 2 weeks to get approved. This API access and our support are free of charge!',
-        completed: hasGoogleTokens,
-        actionText: 'Schedule Call',
-        action: () => {
-          // Open Calendly link in new tab
-          window.open('https://calendly.com/replifast/30min', '_blank');
-        }
-      },
-      {
-        id: 'google-credentials',
-        title: 'Enter Google details',
-        description: 'Once your Google Business API access gets approved, you can add your Google Business Profile credentials in the settings and connect your account. Then you can start using RepliFast right away!',
-        completed: hasGoogleCredentials,
-        actionText: 'Add Credentials',
+        id: 'connect-google',
+        title: 'Connect your Google Business Profile',
+        description: 'One-click connection to start syncing your reviews and managing replies automatically.',
+        completed: hasGoogleConnection,
+        actionText: 'Connect Now',
         action: () => {
           // Navigate to settings integrations tab
           window.location.href = '/settings?tab=integrations';
         }
       },
       {
+        id: 'premium-plan',
+        title: 'Choose a plan to use RepliFast',
+        description: 'Upgrade to a premium plan to unlock features and save time with AI-powered automation.',
+        completed: hasPremiumPlan,
+        actionText: 'Choose Plan',
+        action: () => {
+          // Navigate to profile page with pricing
+          window.location.href = '/profile';
+        }
+      },
+      {
         id: 'brand-voice',
-        title: 'Pick your brand voice',
-        description: 'Customize how AI generates replies to match your business tone and personality.',
+        title: 'Customize your brand voice',
+        description: 'Set the tone and personality for AI-generated replies to match your business style.',
         completed: hasBrandVoiceSettings,
-        actionText: 'Customize Voice',
+        actionText: 'Set Voice',
         action: () => {
           // Navigate to settings voice tab
           window.location.href = '/settings?tab=voice';
@@ -164,10 +167,10 @@ export function useDashboardData() {
       },
       {
         id: 'auto-replies',
-        title: 'Start auto-replies',
-        description: 'Enable automatic reply generation and posting for your reviews.',
+        title: 'Enable smart automation',
+        description: 'Let AI automatically generate and post replies to save you time while maintaining quality.',
         completed: hasAutoReplyEnabled,
-        actionText: 'Enable Auto-replies',
+        actionText: 'Turn On',
         action: () => {
           // Navigate to settings approval tab
           window.location.href = '/settings?tab=approval';
@@ -214,19 +217,18 @@ export function useDashboardData() {
           totalReviews: 0,
           recentActivities: []
         });
-        // Set mock chart data for demo purposes when no businesses exist
-        const mockChartData = Array.from({ length: 14 }, (_, i) => {
+        // Set empty chart data when no businesses exist
+        const emptyChartData = Array.from({ length: 14 }, (_, i) => {
           const date = new Date();
           date.setDate(date.getDate() - (13 - i));
-          const reviews = i % 4 === 0 ? 1 : 0; // Some days have 1 review, others 0
           return {
             date: date.toISOString().split('T')[0],
-            reviews,
-            avgRating: reviews > 0 ? 4.5 : 0
+            reviews: 0,
+            avgRating: 0
           };
         });
-        setChartData(mockChartData);
-        setOnboardingSteps(generateOnboardingSteps([], null));
+        setChartData(emptyChartData);
+        setOnboardingSteps(generateOnboardingSteps([], null, null));
         setIsLoading(false);
         return;
       }
@@ -324,8 +326,26 @@ export function useDashboardData() {
       const chartData = generateChartData(allReviewsData || []);
       setChartData(chartData);
 
-      // Generate onboarding steps with business settings
-      const steps = generateOnboardingSteps(businessesData || [], businessSettingsData);
+      // Fetch subscription data for onboarding steps
+      let subscriptionData = null;
+      try {
+        const { data: subData, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .maybeSingle();
+        
+        if (!subError) {
+          subscriptionData = subData;
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscription for onboarding:', error);
+      }
+
+      // Generate onboarding steps with business settings and subscription data
+      const steps = generateOnboardingSteps(businessesData || [], businessSettingsData, subscriptionData);
       setOnboardingSteps(steps);
 
     } catch (err) {

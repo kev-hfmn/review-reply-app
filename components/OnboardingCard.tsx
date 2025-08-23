@@ -31,7 +31,7 @@ export default function OnboardingCard({ steps, onStepAction }: OnboardingCardPr
             {completedSteps}/{totalSteps}
           </span>
           <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               className="h-full bg-primary"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercentage}%` }}
@@ -41,16 +41,16 @@ export default function OnboardingCard({ steps, onStepAction }: OnboardingCardPr
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {steps.map((step, index) => (
           <motion.div
             key={step.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`p-4 rounded-lg border-2 transition-all ${
-              step.completed 
-                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' 
+            className={`p-4 rounded-lg border-2 transition-all  duration-200 ${
+              step.completed
+                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
                 : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 hover:border-primary/30'
             } ${step.action || onStepAction ? 'cursor-pointer' : ''}`}
             onClick={() => handleStepClick(step)}
@@ -66,8 +66,8 @@ export default function OnboardingCard({ steps, onStepAction }: OnboardingCardPr
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <h4 className={`text-sm font-medium ${
-                    step.completed 
-                      ? 'text-green-900 dark:text-green-100' 
+                    step.completed
+                      ? 'text-green-900 dark:text-green-100'
                       : 'text-slate-900 dark:text-white'
                   }`}>
                     {step.title}
@@ -80,8 +80,8 @@ export default function OnboardingCard({ steps, onStepAction }: OnboardingCardPr
                   )}
                 </div>
                 <p className={`text-xs mt-1 ${
-                  step.completed 
-                    ? 'text-green-700 dark:text-green-300' 
+                  step.completed
+                    ? 'text-green-700 dark:text-green-300'
                     : 'text-slate-600 dark:text-slate-400'
                 }`}>
                   {step.description}

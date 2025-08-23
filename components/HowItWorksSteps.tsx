@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // How It Works Steps Data
 const stepsData = [
@@ -8,7 +9,7 @@ const stepsData = [
     id: 1,
     title: "Connect with your Google account",
     description: "Log in securely with the same Google account you use for your Business Profile. No extra setup needed - just connect and you’re in.",
-    screenshot: "google-consent-screen",
+    screenshot: "step1.png",
     screenshotAlt: "Google consent screen showing the approval process for RepliFast to access Google Business Profile",
     hasExpandable: false,
     expandableContent: ""
@@ -17,7 +18,7 @@ const stepsData = [
     id: 2,
     title: "Fetch all your existing reviews",
     description: "Instantly import past reviews from your Google Business Profile so you can reply and catch up in minutes.",
-    screenshot: "tone-settings",
+    screenshot: "step2.png",
     screenshotAlt: "RepliFast tone and brand voice settings page showing customization options",
     hasExpandable: false
   },
@@ -25,7 +26,7 @@ const stepsData = [
     id: 3,
     title: "Set your tone and brand voice",
     description: "Choose from professional, casual, friendly, or add custom instructions so replies always sound like you.",
-    screenshot: "bulk-import",
+    screenshot: "step3.png",
     screenshotAlt: "RepliFast dashboard showing bulk import of Google reviews with reply options",
     hasExpandable: false
   },
@@ -33,7 +34,7 @@ const stepsData = [
     id: 4,
     title: "Automate and stay on top of new reviews",
     description: "Enable daily sync and auto-approval rules for certain star ratings, or approve replies manually. RepliFast keeps you covered so you never miss a review.",
-    screenshot: "dashboard-notifications",
+    screenshot: "step4.png",
     screenshotAlt: "RepliFast dashboard showing new review notifications and auto-generated replies",
     hasExpandable: false
   }
@@ -106,7 +107,7 @@ export function HowItWorksSteps() {
                 <StepNumber number={step.id} />
 
                 <div className="flex-1">
-                  <h4 className="text-2xl lg:text-3xl font-semibold text-slate-900 dark:text-white mb-4">
+                  <h4 className="text-xl lg:text-2xl font-semibold text-slate-900 dark:text-white mb-4">
                     {step.title}
                   </h4>
 
@@ -145,11 +146,15 @@ export function HowItWorksSteps() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
-                className="relative aspect-video rounded-xl overflow-hidden shadow-2xl bg-white dark:bg-slate-800"
+                className="relative aspect-[3/2] rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-800"
               >
-                <ScreenshotPlaceholder
+
+                <Image
+                  src={`/screenshots/${step.screenshot}`}
                   alt={step.screenshotAlt}
-                  isActive={true}
+                  width={1000}
+                  height={1000}
+                  className="w-full h-full object-cover"
                 />
               </motion.div>
             </div>

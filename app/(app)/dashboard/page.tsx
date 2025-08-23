@@ -6,6 +6,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   createMetrics,
@@ -138,7 +139,10 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-muted-foreground">
-            {subscription?.status === 'active' ? 'Premium User' : 'Basic User'}
+            {subscription?.status === 'active' && subscription?.plan_id !== 'basic' ?
+              `${subscription.plan_id.charAt(0).toUpperCase() + subscription.plan_id.slice(1).replace('-', ' ')} User` :
+              'Basic User'
+            }
           </span>
           {isDashboardLoading && (
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
@@ -148,9 +152,9 @@ export default function Dashboard() {
 
       {/* Show onboarding for basic users who haven't completed Google integration setup */}
       {(() => {
-        // Show onboarding only for basic users (no active subscription) who don't have Google integration complete
+        // Show onboarding for basic plan users who don't have Google integration complete
         const hasGoogleIntegration = businesses.some(b => b.google_access_token && b.google_refresh_token);
-        const isBasicUser = !subscription || subscription.status !== 'active';
+        const isBasicUser = !subscription || subscription.plan_id === 'basic' || subscription.status !== 'active';
         const shouldShowOnboarding = isBasicUser && !hasGoogleIntegration;
 
         return shouldShowOnboarding && (
@@ -166,15 +170,28 @@ export default function Dashboard() {
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 Welcome to RepliFast! 👋
               </h3>
-              <p className="text-muted-foreground mb-4">
-                {businesses.length === 0
-                  ? "Start by setting up your Google Business API access to automatically manage your reviews with AI-powered replies."
-                  : "Complete your Google Business Profile setup to start managing reviews with AI-powered replies."
-                }
-              </p>
-              <div className="text-sm text-muted-foreground">
-                <strong>Next:</strong> {businesses.length === 0 ? "Schedule API approval call" : "Complete remaining setup steps"}
-              </div>
+
+              {subscription?.plan_id === 'basic' && (
+                <div className="text-muted-foreground space-y-3">
+                  <p>
+                    Start by connecting your Google Business Profile with one click and manage reviews with AI-powered replies instantly. We use the official secure Google login to connect your Google Business Profile.
+                  </p>
+                  <div>
+                    <p className="font-medium mb-2">Upgrade to a premium plan to unlock all features:</p>
+                    <div className="space-y-1 text-sm">
+                      <p>✅ Import and reply to all your past reviews</p>
+                      <p>✅ Automate replies for every new review</p>
+                      <p>✅ Customize your brand voice for consistent messaging</p>
+                    </div>
+                  </div>
+                  <p>
+                    Get set up in minutes and start turning reviews into customer trust today.
+                  </p>
+                  <p>Any questions, feedback or suggestions? <Link href="/contact" className="underline">Click here</Link> to send us a message. We're here to help!</p>
+                  <p className="italic">Enjoy using RepliFast!</p>
+                </div>
+              )}
+
             </div>
           </div>
         );

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { generateWeeklyInsights } from '@/lib/services/digestInsightsService';
 import { supabaseAdmin } from '@/utils/supabase-admin';
+import { checkUserSubscription } from '@/lib/utils/subscription';
 
 export async function POST(request: Request) {
   try {
     const { businessId, weekStart, weekEnd, forceRegenerate = false, userId } = await request.json();
-    
+
     // Basic validation - the user should be passed from the client
     if (!userId) {
       return NextResponse.json(
@@ -13,7 +14,21 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-    
+
+    // Check subscription status using centralized utility
+    const subscriptionStatus = await checkUserSubscription(userId);
+
+    if (!subscriptionStatus.isSubscriber) {
+      return NextResponse.json(
+        {
+          error: 'Subscription required',
+          message: 'AI-powered digest insights require an active subscription. Please upgrade your plan.',
+          code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
+
     // Validate required parameters
     if (!businessId) {
       return NextResponse.json(
@@ -29,7 +44,7 @@ export async function POST(request: Request) {
     if (weekStart && weekEnd) {
       startDate = new Date(weekStart);
       endDate = new Date(weekEnd);
-      
+
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         return NextResponse.json(
           { error: 'Invalid date format' },
@@ -43,7 +58,7 @@ export async function POST(request: Request) {
       startDate = new Date(now);
       startDate.setDate(now.getDate() - dayOfWeek);
       startDate.setHours(0, 0, 0, 0);
-      
+
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 7);
     }
@@ -84,14 +99,14 @@ export async function POST(request: Request) {
       generatedAt: insights.generated_at,
       confidence: insights.overallConfidence
     });
-    
+
   } catch (error: unknown) {
     console.error('Insights generation error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate insights';
-    
+
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: errorMessage,
         message: 'Unable to generate insights at this time. Please try again later.'
@@ -107,7 +122,7 @@ export async function POST(request: Request) {
 async function clearCachedInsights(businessId: string, weekStart: Date): Promise<void> {
   try {
     const weekStartStr = weekStart.toISOString().split('T')[0];
-    
+
     const { error } = await supabaseAdmin
       .from('weekly_digests')
       .delete()

@@ -21,17 +21,13 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = async (email: string, password: string, isSignUp: boolean, businessName?: string) => {
+  const handleSubmit = async (email: string, password: string, isSignUp: boolean) => {
     setError('');
     setIsLoading(true);
 
     try {
       if (isSignUp) {
-        if (!businessName?.trim()) {
-          throw new Error('Business name is required for signup');
-        }
-
-        const { data, error } = await signUpWithEmail(email, password, businessName.trim());
+        const { data, error } = await signUpWithEmail(email, password);
         if (error) throw error;
 
         // Check if the user needs to verify their email

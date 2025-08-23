@@ -8,6 +8,11 @@ export interface Business {
   google_business_id: string | null;
   google_access_token: string | null;
   google_refresh_token: string | null;
+  google_account_name: string | null;
+  google_business_name: string | null;
+  google_location_name: string | null;
+  connection_status: string | null;
+  last_connection_attempt: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,7 +40,7 @@ export interface Activity {
   business_id: string;
   type: 'review_received' | 'reply_posted' | 'reply_approved' | 'settings_updated';
   description: string;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
