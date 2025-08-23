@@ -15,7 +15,9 @@ import {
   TestTube,
   Globe,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +37,8 @@ interface BusinessProfile {
   location: string;
   industry: string;
   googleBusinessId?: string;
+  customerSupportEmail?: string;
+  customerSupportPhone?: string;
 }
 
 interface BrandVoice {
@@ -101,17 +105,34 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
 
+  // Check if values are already on 1-5 scale or need conversion from 1-10 scale
+  const convertToNewScale = (oldValue: number): number => {
+    // If value is already in 1-5 range, return as-is
+    if (oldValue >= 1 && oldValue <= 5) {
+      return oldValue;
+    }
+    
+    // Otherwise, convert from old 1-10 scale to new 1-5 scale
+    if (oldValue <= 2) return 1;  // 1-2 → 1
+    if (oldValue <= 4) return 2;  // 3-4 → 2
+    if (oldValue <= 6) return 3;  // 5-6 → 3
+    if (oldValue <= 8) return 4;  // 7-8 → 4
+    return 5;                     // 9-10 → 5
+  };
+
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>({
     name: '',
     location: '',
-    industry: ''
+    industry: '',
+    customerSupportEmail: '',
+    customerSupportPhone: ''
   });
 
   const [brandVoice, setBrandVoice] = useState<BrandVoice>({
     preset: 'friendly',
-    formality: 5,
-    warmth: 7,
-    brevity: 5,
+    formality: 3,
+    warmth: 3,
+    brevity: 3,
     customInstruction: ''
   });
 
@@ -227,7 +248,7 @@ export default function SettingsPage() {
         // First, get the user's business (without Google fields due to RLS)
         const { data: businesses, error: businessError } = await supabase
           .from('businesses')
-          .select('id, name, location, industry, google_business_id, user_id, created_at, updated_at, last_review_sync')
+          .select('id, name, location, industry, google_business_id, customer_support_email, customer_support_phone, user_id, created_at, updated_at, last_review_sync')
           .eq('user_id', user.id)
           .limit(1);
 
@@ -243,7 +264,9 @@ export default function SettingsPage() {
             name: business.name,
             location: business.location || '',
             industry: business.industry || '',
-            googleBusinessId: business.google_business_id || ''
+            googleBusinessId: business.google_business_id || '',
+            customerSupportEmail: business.customer_support_email || '',
+            customerSupportPhone: business.customer_support_phone || ''
           });
 
           // Get business settings (including auto sync and automation settings)
@@ -260,9 +283,9 @@ export default function SettingsPage() {
               .insert({
                 business_id: business.id,
                 brand_voice_preset: 'friendly',
-                formality_level: 5,
-                warmth_level: 7,
-                brevity_level: 5,
+                formality_level: 3,
+                warmth_level: 3,
+                brevity_level: 3,
                 approval_mode: 'manual'
               })
               .select()
@@ -273,9 +296,9 @@ export default function SettingsPage() {
             if (mounted) {
               setBrandVoice({
                 preset: 'friendly',
-                formality: 5,
-                warmth: 7,
-                brevity: 5,
+                formality: 3,
+                warmth: 3,
+                brevity: 3,
                 customInstruction: ''
               });
 
@@ -286,9 +309,9 @@ export default function SettingsPage() {
           } else if (settings && mounted) {
             setBrandVoice({
               preset: settings.brand_voice_preset as 'friendly' | 'professional' | 'playful' | 'custom',
-              formality: settings.formality_level,
-              warmth: settings.warmth_level,
-              brevity: settings.brevity_level,
+              formality: convertToNewScale(settings.formality_level),
+              warmth: convertToNewScale(settings.warmth_level),
+              brevity: convertToNewScale(settings.brevity_level),
               customInstruction: settings.custom_instruction || ''
             });
 
@@ -410,6 +433,8 @@ export default function SettingsPage() {
           name: businessProfile.name,
           location: businessProfile.location || null,
           industry: businessProfile.industry || null,
+          customer_support_email: businessProfile.customerSupportEmail || null,
+          customer_support_phone: businessProfile.customerSupportPhone || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', businessIdToUse);
@@ -726,7 +751,41 @@ export default function SettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              {/* Contact Information Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-foreground mb-4">Customer Support Contact</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  These contact details will be included in AI-generated replies to low-rated reviews (1-3 stars) to help customers reach you directly.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Customer Support Email
+                    </label>
+                    <Input
+                      type="email"
+                      value={businessProfile.customerSupportEmail || ''}
+                      onChange={(e) => setBusinessProfile(prev => ({ ...prev, customerSupportEmail: e.target.value }))}
+                      className=""
+                      placeholder="support@yourbusiness.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Customer Support Phone
+                    </label>
+                    <Input
+                      type="tel"
+                      value={businessProfile.customerSupportPhone || ''}
+                      onChange={(e) => setBusinessProfile(prev => ({ ...prev, customerSupportPhone: e.target.value }))}
+                      className=""
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end">
@@ -778,14 +837,17 @@ export default function SettingsPage() {
                   <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="5"
                     value={brandVoice.formality}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
                     className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Very Casual</span>
                     <span>Casual</span>
+                    <span>Balanced</span>
                     <span>Formal</span>
+                    <span>Very Formal</span>
                   </div>
                 </div>
 
@@ -796,14 +858,17 @@ export default function SettingsPage() {
                   <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="5"
                     value={brandVoice.warmth}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
                     className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Reserved</span>
+                    <span>Minimal</span>
+                    <span>Low</span>
+                    <span>Moderate</span>
                     <span>Warm</span>
+                    <span>Very Warm</span>
                   </div>
                 </div>
 
@@ -814,14 +879,17 @@ export default function SettingsPage() {
                   <input
                     type="range"
                     min="1"
-                    max="10"
+                    max="5"
                     value={brandVoice.brevity}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
                     className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Very Detailed</span>
                     <span>Detailed</span>
+                    <span>Moderate</span>
                     <span>Concise</span>
+                    <span>Very Concise</span>
                   </div>
                 </div>
               </div>

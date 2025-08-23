@@ -367,7 +367,7 @@ export default function ReviewsTable({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isSubscriber) {
-                          onGenerateReply(review.id);
+                          handleGenerateReply(review.id);
                         } else {
                           onUpgradeRequired?.();
                         }

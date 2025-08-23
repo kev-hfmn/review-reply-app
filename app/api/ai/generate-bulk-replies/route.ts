@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 import { batchGenerateReplies, type ReviewData, type BatchGenerateResult } from '@/lib/services/aiReplyService';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
+import { checkUserSubscription } from '@/lib/utils/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,42 +35,78 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If userId is provided, verify user has access to this business
-    if (userId) {
-      const { data: business, error: businessError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('id', businessId)
-        .eq('user_id', userId)
-        .single();
+    // Declare businessInfo variable
+    let businessInfo: { id: string; name: string; industry: string | null };
 
-      if (businessError || !business) {
+    // If userId is provided, verify user has access to businesses and subscription
+    if (userId) {
+      // Check subscription for batch AI generation first
+      const subscriptionStatus = await checkUserSubscription(userId);
+      if (!subscriptionStatus.isSubscriber) {
+        return NextResponse.json(
+          {
+            error: 'Subscription required',
+            message: 'Batch AI reply generation requires an active subscription.',
+            code: 'SUBSCRIPTION_REQUIRED'
+          },
+          { status: 403 }
+        );
+      }
+
+      // Get user's businesses using the same pattern as single generation (regenerateReply)
+      const { data: userBusinesses, error: businessError } = await supabaseAdmin
+        .from('businesses')
+        .select('id, name, industry')
+        .eq('user_id', userId);
+
+      if (businessError) {
+        return NextResponse.json(
+          { error: 'Failed to fetch user businesses' },
+          { status: 500 }
+        );
+      }
+
+      if (!userBusinesses || userBusinesses.length === 0) {
+        return NextResponse.json(
+          { error: 'No businesses found for user' },
+          { status: 404 }
+        );
+      }
+
+      // Verify the requested businessId belongs to the user
+      const userBusiness = userBusinesses.find(b => b.id === businessId);
+      if (!userBusiness) {
         return NextResponse.json(
           { error: 'Business not found or access denied' },
           { status: 404 }
         );
       }
-    }
 
-    // Verify business exists and get basic info
-    const { data: businessInfo, error: businessInfoError } = await supabase
-      .from('businesses')
-      .select('id, name, industry')
-      .eq('id', businessId)
-      .single();
+      // Use the validated business info
+      businessInfo = userBusiness;
+    } else {
+      // If no userId provided, verify business exists (for backward compatibility)
+      const { data: business, error: businessInfoError } = await supabaseAdmin
+        .from('businesses')
+        .select('id, name, industry')
+        .eq('id', businessId)
+        .single();
 
-    if (businessInfoError || !businessInfo) {
-      return NextResponse.json(
-        { error: 'Business not found' },
-        { status: 404 }
-      );
+      if (businessInfoError || !business) {
+        return NextResponse.json(
+          { error: 'Business not found' },
+          { status: 404 }
+        );
+      }
+
+      businessInfo = business;
     }
 
     // Check business settings to ensure AI reply generation is enabled
-    const { data: settings, error: settingsError } = await supabase
+    const { data: settings, error: settingsError } = await supabaseAdmin
       .from('business_settings')
       .select('auto_reply_enabled, brand_voice_preset, formality_level, warmth_level, brevity_level, custom_instruction')
-      .eq('business_id', businessId)
+      .eq('business_id', businessInfo.id)
       .single();
 
     if (settingsError || !settings) {
@@ -80,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log bulk generation start
-    await supabase.from('activities').insert({
+    await supabaseAdmin.from('activities').insert({
       business_id: businessId,
       type: 'ai_reply_generated',
       description: `Starting bulk AI reply generation for ${reviews.length} reviews`,
@@ -102,11 +139,28 @@ export async function POST(request: NextRequest) {
       customerName: review.customerName,
     }));
 
+    // Create brand voice settings from database settings
+    const brandVoice = {
+      preset: settings.brand_voice_preset as 'friendly' | 'professional' | 'playful' | 'custom',
+      formality: settings.formality_level,
+      warmth: settings.warmth_level,
+      brevity: settings.brevity_level,
+      customInstruction: settings.custom_instruction,
+    };
+
+    // Create business info from validated business data
+    const businessInfoForGeneration = {
+      name: businessInfo.name,
+      industry: businessInfo.industry || 'service',
+    };
+
     // Generate AI replies in batches
     const result: BatchGenerateResult = await batchGenerateReplies(
       reviewData,
       businessId,
-      batchSize
+      batchSize,
+      brandVoice,
+      businessInfoForGeneration
     );
 
     // Update database with results if requested
@@ -114,7 +168,7 @@ export async function POST(request: NextRequest) {
       const updatePromises = result.results.map(async (reviewResult) => {
         if (reviewResult.success && reviewResult.reply) {
           // Update review with AI reply
-          return supabase
+          return supabaseAdmin
             .from('reviews')
             .update({
               ai_reply: reviewResult.reply,
@@ -127,7 +181,7 @@ export async function POST(request: NextRequest) {
             .eq('id', reviewResult.reviewId);
         } else {
           // Mark as failed
-          return supabase
+          return supabaseAdmin
             .from('reviews')
             .update({
               automation_failed: true,
@@ -148,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log completion
-    await supabase.from('activities').insert({
+    await supabaseAdmin.from('activities').insert({
       business_id: businessId,
       type: 'ai_reply_generated',
       description: `Bulk AI reply generation completed: ${result.successCount}/${reviews.length} successful`,
@@ -223,14 +277,29 @@ export async function GET(request: NextRequest) {
 
     // If userId is provided, verify user has access to this business
     if (userId) {
-      const { data: business, error: businessError } = await supabase
+      // Get user's businesses using the same pattern as POST handler
+      const { data: userBusinesses, error: businessError } = await supabaseAdmin
         .from('businesses')
         .select('id')
-        .eq('id', businessId)
-        .eq('user_id', userId)
-        .single();
+        .eq('user_id', userId);
 
-      if (businessError || !business) {
+      if (businessError) {
+        return NextResponse.json(
+          { error: 'Failed to fetch user businesses' },
+          { status: 500 }
+        );
+      }
+
+      if (!userBusinesses || userBusinesses.length === 0) {
+        return NextResponse.json(
+          { error: 'No businesses found for user' },
+          { status: 404 }
+        );
+      }
+
+      // Verify the requested businessId belongs to the user
+      const userBusiness = userBusinesses.find(b => b.id === businessId);
+      if (!userBusiness) {
         return NextResponse.json(
           { error: 'Business not found or access denied' },
           { status: 404 }
@@ -239,7 +308,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent bulk generation activities
-    const { data: activities, error: activitiesError } = await supabase
+    const { data: activities, error: activitiesError } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('business_id', businessId)
@@ -256,7 +325,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get current automation status
-    const { data: pendingReviews, error: pendingError } = await supabase
+    const { data: pendingReviews, error: pendingError } = await supabaseAdmin
       .from('reviews')
       .select('id, rating, automated_reply')
       .eq('business_id', businessId)
@@ -268,7 +337,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent automation errors
-    const { data: recentErrors, error: errorsError } = await supabase
+    const { data: recentErrors, error: errorsError } = await supabaseAdmin
       .from('reviews')
       .select('id, rating, automation_error, updated_at')
       .eq('business_id', businessId)

@@ -17,6 +17,7 @@ import {
   User
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,7 +34,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { businessName } = useAuth();
+  const { businesses, selectedBusinessId, setSelectedBusinessId } = useAuth();
 
   return (
     <>
@@ -68,11 +69,34 @@ export function Sidebar() {
         <div className="flex h-full flex-col">
           {/* Logo area - hidden on mobile since it's in TopBar */}
           <div className="hidden lg:flex h-16 items-center px-6 border-b border-border">
-            <div className="flex items-center gap-1">
-            <User className="h-4 w-4" />
-              <span className="font-normal leading-tighter text-foreground/90">
-                {businessName || 'Your Business'}
-              </span>
+            <div className="flex items-center gap-2 w-full">
+              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              {businesses.length > 1 ? (
+                <Select 
+                  value={selectedBusinessId || ''} 
+                  onValueChange={setSelectedBusinessId}
+                >
+                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none p-0 focus:ring-0 hover:bg-accent/50">
+                    <SelectValue placeholder="Select Business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{business.name}</span>
+                          {business.industry && (
+                            <span className="text-xs text-muted-foreground">{business.industry}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="font-normal leading-tighter text-foreground/90 truncate">
+                  {businesses[0]?.name || 'Your Business'}
+                </span>
+              )}
             </div>
           </div>
 
