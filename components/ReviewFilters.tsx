@@ -86,7 +86,7 @@ export default function ReviewFilters({
   }, [onReset]);
 
   return (
-    <div className="bg-background rounded-xl p-4 shadow-sm border border-border">
+    <div className="bg-foreground/5 rounded-xl p-4 border-2 border-border">
       {/* Search and Filter Toggle Row */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Search */}
@@ -134,14 +134,14 @@ export default function ReviewFilters({
 
           <Button
             onClick={() => setIsExpanded(!isExpanded)}
-            variant={hasActiveFilters ? "default" : "outline"}
+            variant={hasActiveFilters ? "pillActive" : "pill"}
             className="flex items-center gap-2"
             disabled={isLoading}
           >
             <Filter className="h-4 w-4" />
             Filters
             {hasActiveFilters && (
-              <span className="bg-white/20 text-white px-1.5 py-0.5 rounded text-xs font-semibold">
+              <span className="bg-foreground/10 text-foreground px-1.5 py-0.5 rounded text-xs font-semibold">
                 {[
                   filters.rating !== null,
                   filters.status !== 'all',
@@ -162,7 +162,7 @@ export default function ReviewFilters({
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="mt-4 pt-4 border-t border-border overflow-hidden"
+          className="mt-4 pt-4 border-t border-border overflow-visible"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-2">
             {/* Rating Filter */}
@@ -249,7 +249,7 @@ export default function ReviewFilters({
                 <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="outlineDefault"
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !filters.dateRange.from && "text-muted-foreground"
@@ -275,11 +275,11 @@ export default function ReviewFilters({
                     />
                   </PopoverContent>
                 </Popover>
-                
+
                 <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="outlineDefault"
                       className={cn(
                         "w-full justify-start text-left font-normal",
                         !filters.dateRange.to && "text-muted-foreground"

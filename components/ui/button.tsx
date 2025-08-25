@@ -22,6 +22,11 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
         outlinePrimary: "border text-primary border-primary bg-background hover:bg-primary hover:text-primary-foreground",
+        outlineSecondary: "border text-secondary border-secondary bg-background hover:bg-secondary hover:text-secondary-foreground",
+        pill: "rounded-full border border-input bg-background hover:bg-muted",
+        pillActive: "rounded-full border border-input border-primary/60 shadow-inner bg-muted",
+        outlineDefault: "border border-input bg-background hover:bg-muted hover:text-default-foreground",
+        outlineGreen: "border text-green-600 border-green-600 bg-background hover:bg-green-600 hover:text-green-600 hover:text-background",
 
       },
       size: {

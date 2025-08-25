@@ -96,30 +96,63 @@ export interface BillingEmailData extends BaseEmailData {
   actionMessage?: string;
 }
 
-// Automation summary email data
+
+
+
+// System alert email data
+export interface SystemAlertData extends BaseEmailData {
+  alertType: 'google_integration_failure' | 'sync_failure' | 'api_quota_exceeded' | 'credential_expired' | 'general_error';
+  title: string;
+  message: string;
+  errorDetails?: string;
+  actionRequired: boolean;
+  actionUrl?: string;
+  actionButtonText?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// Automation summary email data (triggered by daily sync when replies are posted)
 export interface AutomationSummaryData extends BaseEmailData {
+  businessId: string;
+  businessName: string;
   slotId: string;
-  syncResult: {
-    newReviews: number;
-    totalReviews: number;
-    syncTime: string;
-  };
-  automationResult: {
+  automationMetrics: {
     processedReviews: number;
     generatedReplies: number;
     autoApproved: number;
     autoPosted: number;
-    emailsSent: number;
-    errors: number;
   };
-  timeSlot: string; // "12:00 PM UTC (Europe/Africa)" or "12:00 AM UTC (Americas/Asia)"
+  newReviewsCount: number;
+  postedRepliesCount: number;
+  triggerType: 'scheduled';
+  syncTimestamp: string;
+  approvalMode: 'manual' | 'auto_4_plus' | 'auto_except_low';
+  postedReviews: Array<{
+    customerName: string;
+    rating: number;
+    reviewText: string;
+    replyText: string;
+    reviewDate: string;
+    reviewId: string;
+  }>;
+  pendingReviewsCount: number;
+  pendingReviews: Array<{
+    customerName: string;
+    rating: number;
+    reviewText: string;
+    aiReply: string;
+    reviewDate: string;
+    reviewId: string;
+    pendingReason: 'low_rating' | 'manual_approval' | 'custom_rule';
+  }>;
 }
 
-// Automation error email data
+// Automation error email data (for automation failures)
 export interface AutomationErrorData extends BaseEmailData {
-  errorType: string;
+  errorType: 'ai_generation_failed' | 'posting_failed' | 'sync_failed';
   errorMessage: string;
   errorTimestamp: string;
+  slotId: string;
   affectedReviews?: number;
   retryAttempts?: number;
   requiresAttention: boolean;
@@ -130,7 +163,7 @@ export interface AutomationErrorData extends BaseEmailData {
   }>;
 }
 
-// New review alert email data
+// New review alert email data (alternative to Google notifications)
 export interface NewReviewAlertData extends BaseEmailData {
   reviews: Array<{
     id: string;
@@ -145,18 +178,6 @@ export interface NewReviewAlertData extends BaseEmailData {
   averageRating: number;
   automationEnabled: boolean;
   dashboardUrl: string;
-}
-
-// System alert email data
-export interface SystemAlertData extends BaseEmailData {
-  alertType: 'google_integration_failure' | 'sync_failure' | 'api_quota_exceeded' | 'credential_expired' | 'general_error';
-  title: string;
-  message: string;
-  errorDetails?: string;
-  actionRequired: boolean;
-  actionUrl?: string;
-  actionButtonText?: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
 // Email template data union type

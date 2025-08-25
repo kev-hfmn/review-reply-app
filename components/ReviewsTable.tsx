@@ -173,7 +173,7 @@ export default function ReviewsTable({
               onCheckedChange={handleSelectAll}
               className="h-4 w-4"
             />
-            <span className="ml-3 text-sm font-medium text-foreground">
+            <span className="ml-3 text-sm font-normal text-muted-foreground">
               {selection.selectedIds.size > 0
                 ? `${selection.selectedIds.size} selected`
                 : 'Select all'
@@ -191,7 +191,7 @@ export default function ReviewsTable({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`p-6 hover:bg-accent/5 transition-colors cursor-pointer ${
+            className={`p-6 hover:bg-muted/20 transition-colors cursor-pointer ${
               selection.selectedIds.has(review.id) ? 'bg-primary/5' : ''
             }`}
             onClick={() => onReviewClick(review)}
@@ -344,7 +344,7 @@ export default function ReviewsTable({
                         }
                       }}
                       size="sm"
-                      variant={isSubscriber ? "primary" : "outline"}
+                      variant={isSubscriber ? "secondary" : "outline"}
                       title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
                       className={isSubscriber ? "" : "text-gray-500"}
@@ -373,7 +373,7 @@ export default function ReviewsTable({
                         }
                       }}
                       size="sm"
-                      variant="outline"
+                      variant="outlineSecondary"
                       title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
                       className={isSubscriber ? "" : "text-gray-500"}
@@ -420,7 +420,7 @@ export default function ReviewsTable({
                       size="sm"
                       variant={isSubscriber ? "outlinePrimary" : "outline"}
                       title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
-                      className={isSubscriber ? "" : "text-gray-500"}
+                      className={isSubscriber ? "border-green-500 text-green-500 hover:border-green-500 hover:bg-green-500 hover:text-background" : "text-gray-500"}
                     >
                       <Send className="h-4 w-4" />
                       <span>{isSubscriber ? "Post" : "Post (Upgrade)"}</span>
@@ -434,9 +434,9 @@ export default function ReviewsTable({
                         e.stopPropagation();
                         onQuickAction(review.id, 'skip');
                       }}
-                      variant="outline"
+                      variant="outlineDefault"
                       size="sm"
-                      className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+
                       title="Skip"
                     >
                       <SkipForward className="h-4 w-4" />

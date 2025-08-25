@@ -404,11 +404,48 @@ export class AutomationService {
     let sentCount = 0;
 
     try {
-      // Prepare notification data
-      const newReviews = reviews.filter(r => r.status === 'pending' || r.status === 'approved');
+      // Identify different types of reviews
       const postedReplies = reviews.filter(r => r.status === 'posted');
+      
+      // Pending reviews are those with AI replies but not yet posted
+      // This includes reviews that need manual approval due to rating or approval mode
+      const pendingReviews = reviews.filter(r => 
+        r.automated_reply && 
+        r.ai_reply && 
+        r.status !== 'posted' &&
+        r.status !== 'skipped'
+      );
 
-      if (newReviews.length > 0 || postedReplies.length > 0) {
+      // Determine pending reasons based on approval mode and rating
+      const pendingReviewsWithReason = pendingReviews.map(review => {
+        let pendingReason: 'low_rating' | 'manual_approval' | 'custom_rule' = 'manual_approval';
+        
+        // If approval mode is auto_4_plus and rating is below 4, it's pending due to low rating
+        if (context.settings.approval_mode === 'auto_4_plus' && review.rating < 4) {
+          pendingReason = 'low_rating';
+        }
+        // If approval mode is auto_except_low and rating is 1-2, it's pending due to low rating  
+        else if (context.settings.approval_mode === 'auto_except_low' && review.rating <= 2) {
+          pendingReason = 'low_rating';
+        }
+        // If approval mode is manual, all reviews need manual approval
+        else if (context.settings.approval_mode === 'manual') {
+          pendingReason = 'manual_approval';
+        }
+
+        return {
+          customerName: review.customer_name,
+          rating: review.rating,
+          reviewText: review.review_text,
+          aiReply: review.ai_reply || '',
+          reviewDate: review.review_date,
+          reviewId: review.id,
+          pendingReason
+        };
+      });
+
+      // Only send email if there are posted replies OR pending reviews
+      if (postedReplies.length > 0 || pendingReviews.length > 0) {
         // Call email notification API
         const response = await fetch('/api/email/automation-summary', {
           method: 'POST',
@@ -416,9 +453,19 @@ export class AutomationService {
           body: JSON.stringify({
             businessId: context.businessId,
             userId: context.userId,
-            newReviews: newReviews.length,
+            newReviews: reviews.filter(r => r.status === 'pending' || r.status === 'approved').length,
             postedReplies: postedReplies.length,
             slotId: context.slotId,
+            approvalMode: context.settings.approval_mode,
+            postedReviews: postedReplies.map(review => ({
+              customerName: review.customer_name,
+              rating: review.rating,
+              reviewText: review.review_text,
+              replyText: review.final_reply || review.ai_reply || '',
+              reviewDate: review.review_date,
+              reviewId: review.id
+            })),
+            pendingReviews: pendingReviewsWithReason,
             automationResult: {
               processedReviews: reviews.length,
               generatedReplies: reviews.filter(r => r.automated_reply).length,

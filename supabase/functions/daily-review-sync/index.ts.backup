@@ -1,6 +1,5 @@
-// Supabase Edge Function for Daily Review Sync - Platform API Compatible
+// Supabase Edge Function for Daily Review Sync
 // Automatically checks for new reviews for all users at scheduled times
-// Updated to work with Platform API Google Business Profile integration
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -18,14 +17,7 @@ interface Database {
           id: string
           user_id: string
           name: string
-          google_account_id: string | null
-          google_location_id: string | null
-          google_access_token: string | null
-          google_refresh_token: string | null
-          connection_status: string
-          google_business_name: string | null
-          google_location_name: string | null
-          last_review_sync: string | null
+          google_business_profile_id: string | null
           created_at: string
           updated_at: string
         }
@@ -34,13 +26,11 @@ interface Database {
         Row: {
           id: string
           business_id: string
+          google_credentials: any | null
+          last_review_sync: string | null
+          sync_enabled: boolean
           auto_sync_enabled: boolean
           auto_sync_slot: string
-          auto_reply_enabled: boolean
-          auto_post_enabled: boolean
-          email_notifications_enabled: boolean
-          approval_mode: string
-          last_automation_run: string | null
           created_at: string
           updated_at: string
         }
@@ -54,12 +44,8 @@ interface Database {
           rating: number
           review_text: string
           review_date: string
-          status: 'pending' | 'approved' | 'posted' | 'needs_edit' | 'skipped'
-          ai_reply: string | null
-          final_reply: string | null
-          automated_reply: boolean
-          automation_failed: boolean
-          auto_approved: boolean
+          reply_text: string | null
+          reply_status: 'pending' | 'approved' | 'posted'
           created_at: string
           updated_at: string
         }
@@ -96,16 +82,8 @@ async function processAutomationPipeline(business: any, slotId: string, settings
 
     console.log(`🚀 Processing automation pipeline for ${business.name}`)
 
-    // Get the app URL - prioritize environment variable, fallback to construction
-    const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 
-                   `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '').replace('.supabase.co', '')}.vercel.app`;
-
-    if (!appUrl) {
-      throw new Error('NEXT_PUBLIC_APP_URL environment variable not set');
-    }
-
     // Call the automation API endpoint
-    const automationResponse = await fetch(`${appUrl}/api/automation/process`, {
+    const automationResponse = await fetch(`${Deno.env.get('NEXT_PUBLIC_APP_URL')}/api/automation/process`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -193,41 +171,38 @@ serve(async (req) => {
 
     console.log(`🚀 Starting daily review sync for ${slotId} at`, new Date().toISOString())
 
-    // Get all businesses with Platform API Google Business Profile integration enabled for this slot
+    // Get all businesses with Google Business Profile integration enabled for this slot
     const { data: businesses, error: businessesError } = await supabase
       .from('businesses')
       .select(`
         *,
         business_settings (
+          google_credentials,
+          last_review_sync,
           auto_sync_enabled,
           auto_sync_slot,
           auto_reply_enabled,
           auto_post_enabled,
           email_notifications_enabled,
-          approval_mode,
-          last_automation_run
+          approval_mode
         )
       `)
       .eq('business_settings.auto_sync_enabled', true)
       .eq('business_settings.auto_sync_slot', slotId)
-      .not('google_account_id', 'is', null)
-      .not('google_location_id', 'is', null)
-      .not('google_access_token', 'is', null)
-      .eq('connection_status', 'connected')
+      .not('google_business_profile_id', 'is', null)
 
     if (businessesError) {
       throw new Error(`Failed to fetch businesses: ${businessesError.message}`)
     }
 
     if (!businesses || businesses.length === 0) {
-      console.log(`📭 No businesses with Platform API sync enabled found for ${slotId}`)
+      console.log(`📭 No businesses with sync enabled found for ${slotId}`)
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `No businesses with Platform API sync enabled found for ${slotId}`,
+          message: `No businesses with sync enabled found for ${slotId}`,
           slot_id: slotId,
-          processed: 0,
-          platform_api_note: 'Businesses must be connected via Platform API with valid google_account_id and google_location_id'
+          processed: 0
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -236,7 +211,7 @@ serve(async (req) => {
       )
     }
 
-    console.log(`📋 Found ${businesses.length} Platform API businesses to sync for ${slotId}`)
+    console.log(`📋 Found ${businesses.length} businesses to sync for ${slotId}`)
 
     let totalSynced = 0
     let totalErrors = 0
@@ -245,30 +220,17 @@ serve(async (req) => {
     // Process each business
     for (const business of businesses) {
       try {
-        console.log(`🔄 Syncing reviews for Platform API business: ${business.name}`)
+        console.log(`🔄 Syncing reviews for business: ${business.name}`)
 
-        // Validate Platform API connection
+        // Check if business has valid Google credentials
         const settings = business.business_settings?.[0]
-        if (!business.google_account_id || !business.google_location_id || !business.google_access_token) {
-          console.log(`⚠️ Skipping ${business.name} - incomplete Platform API connection`)
+        if (!settings?.google_credentials) {
+          console.log(`⚠️ Skipping ${business.name} - no Google credentials`)
           continue
-        }
-
-        if (business.connection_status !== 'connected') {
-          console.log(`⚠️ Skipping ${business.name} - connection status: ${business.connection_status}`)
-          continue
-        }
-
-        // Get the app URL for API calls
-        const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 
-                       `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '').replace('.supabase.co', '')}.vercel.app`;
-
-        if (!appUrl) {
-          throw new Error('NEXT_PUBLIC_APP_URL environment variable not set');
         }
 
         // Call the existing review sync API endpoint
-        const syncResponse = await fetch(`${appUrl}/api/reviews/sync`, {
+        const syncResponse = await fetch(`${Deno.env.get('NEXT_PUBLIC_APP_URL')}/api/reviews/sync`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -276,14 +238,12 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             businessId: business.id,
-            userId: business.user_id,
             force: false // Only sync new reviews
           })
         })
 
         if (!syncResponse.ok) {
-          const errorText = await syncResponse.text()
-          throw new Error(`Sync API returned ${syncResponse.status}: ${errorText}`)
+          throw new Error(`Sync API returned ${syncResponse.status}`)
         }
 
         const syncResult = await syncResponse.json()
@@ -291,32 +251,27 @@ serve(async (req) => {
 
         // Update last sync timestamp
         await supabase
-          .from('businesses')
+          .from('business_settings')
           .update({ last_review_sync: new Date().toISOString() })
-          .eq('id', business.id)
+          .eq('business_id', business.id)
 
         // Check if automation is enabled for this business
         const automationResult = await processAutomationPipeline(business, slotId, settings)
 
-        // Log sync activity with Platform API metadata
+        // Log sync activity
         await supabase
           .from('activities')
           .insert({
             business_id: business.id,
             type: 'review_sync_automated',
-            description: `Platform API automated daily review sync completed for ${slotId} - ${syncResult.newReviews || 0} new reviews`,
+            description: `Automated daily review sync completed for ${slotId} - ${syncResult.newReviews || 0} new reviews`,
             metadata: {
               source: 'edge_function',
               slot_id: slotId,
               newReviews: syncResult.newReviews || 0,
               totalReviews: syncResult.totalReviews || 0,
               syncTime: new Date().toISOString(),
-              platform_api: true,
-              connection_status: business.connection_status,
-              google_business_name: business.google_business_name,
-              google_location_name: business.google_location_name,
-              automation_result: automationResult,
-              activity_subtype: 'review_sync_automated'
+              automation_result: automationResult
             }
           })
 
@@ -325,8 +280,6 @@ serve(async (req) => {
           businessName: business.name,
           newReviews: syncResult.newReviews || 0,
           automation: automationResult,
-          platformApi: true,
-          connectionStatus: business.connection_status,
           success: true
         })
 
@@ -336,22 +289,18 @@ serve(async (req) => {
         console.error(`❌ Error syncing ${business.name}:`, error)
         totalErrors++
 
-        // Log error activity with Platform API context
+        // Log error activity
         await supabase
           .from('activities')
           .insert({
             business_id: business.id,
-            type: 'automation_failed',
-            description: `Platform API automated review sync failed for ${slotId}: ${error.message}`,
+            type: 'review_sync_error',
+            description: `Automated review sync failed for ${slotId}: ${error.message}`,
             metadata: {
               source: 'edge_function',
               slot_id: slotId,
               error: error.message,
-              syncTime: new Date().toISOString(),
-              platform_api: true,
-              connection_status: business.connection_status,
-              business_name: business.name,
-              activity_subtype: 'review_sync_error'
+              syncTime: new Date().toISOString()
             }
           })
 
@@ -359,8 +308,6 @@ serve(async (req) => {
           businessId: business.id,
           businessName: business.name,
           error: error.message,
-          platformApi: true,
-          connectionStatus: business.connection_status,
           success: false
         })
       }
@@ -393,7 +340,7 @@ serve(async (req) => {
       totalEmails: 0
     })
 
-    console.log(`📊 Platform API daily sync complete for ${slotId}:`)
+    console.log(`📊 Daily sync complete for ${slotId}:`)
     console.log(`   📈 Sync: ${totalSynced} successful, ${totalErrors} errors`)
     console.log(`   🤖 Automation: ${automationMetrics.automationSuccessful}/${automationMetrics.automationEnabled} successful`)
     console.log(`   ✍️ Generated: ${automationMetrics.totalGenerated} replies`)
@@ -413,9 +360,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Platform API daily review sync and automation completed for ${slotId}`,
+        message: `Daily review sync and automation completed for ${slotId}`,
         slot_id: slotId,
-        platform_api_version: true,
         sync: {
           processed: businesses.length,
           successful: totalSynced,
@@ -423,8 +369,7 @@ serve(async (req) => {
         },
         automation: automationMetrics,
         results: syncResults,
-        timestamp: new Date().toISOString(),
-        platform_api_note: 'Using Platform API Google Business Profile integration'
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -433,20 +378,14 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error(`❌ Platform API daily review sync failed for ${slotId || 'unknown'}:`, error)
+    console.error(`❌ Daily review sync failed for ${slotId || 'unknown'}:`, error)
 
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
         slot_id: slotId || 'unknown',
-        platform_api_version: true,
-        timestamp: new Date().toISOString(),
-        troubleshooting: {
-          check_environment: 'Ensure NEXT_PUBLIC_APP_URL is set',
-          check_database: 'Verify businesses have google_account_id and google_location_id',
-          check_connection: 'Ensure businesses have connection_status = connected'
-        }
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
