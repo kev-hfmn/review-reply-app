@@ -39,8 +39,8 @@ export function PublicNavigation({
             <Image
               src="/icons/icon.png"
               alt="RepliFast"
-              width={30}
-              height={30}
+              width={40}
+              height={40}
               className="rounded-md"
             />
             <span className="text-xl font-bold leading-tight text-slate-900 dark:text-white">RepliFast</span>

@@ -105,7 +105,7 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
   };
 
   const subject = `Your Weekly Review Digest - ${data.dateRange}`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -121,11 +121,11 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
           <h1 class="logo">📊 RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">Weekly Review Digest</p>
         </div>
-
+        
         <div class="content">
           <h2>Hello ${data.userName}! 👋</h2>
           <p>Here's your weekly review digest for <strong>${data.businessName || 'your business'}</strong> covering ${data.dateRange}.</p>
-
+          
           <div class="card">
             <h3 style="margin-top: 0;">📈 Key Metrics</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
@@ -166,16 +166,16 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
           <div style="text-align: center; margin: 30px 0;">
             <a href="https://app.replifast.com/digest" class="button">View Full Digest 📊</a>
           </div>
-
+          
           <p style="color: #6B7280; font-size: 14px;">
             ${data.pdfAttachment ? 'A detailed PDF report is attached to this email. 📎' : ''}
           </p>
         </div>
-
+        
         <div class="footer">
           <p>Keep up the great work managing your reviews! 🚀</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage email preferences</a> |
+            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage email preferences</a> | 
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -192,7 +192,7 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
  */
 function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate {
   const subject = `${data.totalNewReviews} New Review${data.totalNewReviews > 1 ? 's' : ''} Need${data.totalNewReviews === 1 ? 's' : ''} Your Attention`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -208,11 +208,11 @@ function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate
           <h1 class="logo">🔔 RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">New Review Alert</p>
         </div>
-
+        
         <div class="content">
           <h2>Hello ${data.userName}! 👋</h2>
           <p>You have <strong>${data.totalNewReviews} new review${data.totalNewReviews > 1 ? 's' : ''}</strong> for <strong>${data.businessName || 'your business'}</strong> that need${data.totalNewReviews === 1 ? 's' : ''} your attention.</p>
-
+          
           <div class="card">
             <h3 style="margin-top: 0;">📊 Summary</h3>
             <div style="display: flex; gap: 20px; margin: 16px 0;">
@@ -242,7 +242,7 @@ function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate
                 </div>
               </div>
             `).join('')}
-
+            
             ${data.reviews.length > 3 ? `
               <p style="text-align: center; color: #6B7280; margin: 16px 0;">
                 ... and ${data.reviews.length - 3} more review${data.reviews.length - 3 > 1 ? 's' : ''}
@@ -254,11 +254,11 @@ function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate
             <a href="https://app.replifast.com/reviews" class="button">Manage Reviews 💬</a>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Respond quickly to maintain great customer relationships! ⚡</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage notifications</a> |
+            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage notifications</a> | 
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -275,7 +275,7 @@ function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate
  */
 function replyConfirmationTemplate(data: ReplyConfirmationData): EmailTemplate {
   const subject = `Reply Posted Successfully to Google Business Profile`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -291,11 +291,11 @@ function replyConfirmationTemplate(data: ReplyConfirmationData): EmailTemplate {
           <h1 class="logo">✅ RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">Reply Confirmation</p>
         </div>
-
+        
         <div class="content">
           <h2>Reply Posted Successfully! 🎉</h2>
           <p>Hello ${data.userName}, your reply has been successfully posted to Google Business Profile.</p>
-
+          
           <div class="card">
             <h3 style="margin-top: 0;">📝 Review Details</h3>
             <div style="margin: 16px 0;">
@@ -324,16 +324,16 @@ function replyConfirmationTemplate(data: ReplyConfirmationData): EmailTemplate {
             <a href="${data.businessProfileUrl}" class="button">View on Google Business Profile 🔗</a>
           </div>
           ` : ''}
-
+          
           <div style="text-align: center; margin: 30px 0;">
             <a href="https://app.replifast.com/reviews" class="button">Manage More Reviews 📱</a>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Great job staying engaged with your customers! 👏</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Notification settings</a> |
+            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Notification settings</a> | 
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -350,7 +350,7 @@ function replyConfirmationTemplate(data: ReplyConfirmationData): EmailTemplate {
  */
 function onboardingTemplate(data: OnboardingEmailData): EmailTemplate {
   const subject = `Welcome to RepliFast! 🚀 Let's Get Started`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -366,11 +366,11 @@ function onboardingTemplate(data: OnboardingEmailData): EmailTemplate {
           <h1 class="logo">🚀 RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">Welcome Aboard!</p>
         </div>
-
+        
         <div class="content">
           <h2>Welcome to RepliFast, ${data.userName}! 🎉</h2>
           <p>Thank you for joining RepliFast! We're excited to help you manage your Google Business Profile reviews with AI-powered efficiency.</p>
-
+          
           ${data.welcomeMessage ? `
           <div class="card">
             <p style="margin: 0; font-style: italic; color: #374151;">${data.welcomeMessage}</p>
@@ -404,11 +404,11 @@ function onboardingTemplate(data: OnboardingEmailData): EmailTemplate {
             <p style="margin: 0; color: #0369A1;">Start by connecting your Google Business Profile to automatically sync your reviews. Our AI will then help you craft perfect responses!</p>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Need help getting started? We're here for you! 🤝</p>
           <p>
-            <a href="mailto:${data.supportContactEmail}" style="color: #3B82F6;">Contact Support</a> |
+            <a href="mailto:${data.supportContactEmail}" style="color: #3B82F6;">Contact Support</a> | 
             <a href="https://docs.replifast.com" style="color: #3B82F6;">Documentation</a> |
             <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a>
           </p>
@@ -436,7 +436,7 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
 
   const typeConfig = typeMessages[data.type];
   const subject = `${typeConfig.emoji} ${typeConfig.title} - RepliFast`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -452,11 +452,11 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
           <h1 class="logo">${typeConfig.emoji} RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">Billing Update</p>
         </div>
-
+        
         <div class="content">
           <h2 style="color: ${typeConfig.color};">${typeConfig.title}</h2>
           <p>Hello ${data.userName}, we have an update regarding your RepliFast subscription.</p>
-
+          
           <div class="card" style="border-left: 4px solid ${typeConfig.color};">
             <h3 style="margin-top: 0;">💳 Transaction Details</h3>
             ${data.amount ? `
@@ -474,31 +474,31 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
                 <strong>Next Billing Date:</strong> ${new Date(data.nextBillingDate).toLocaleDateString()}
               </div>
             ` : ''}
-
+            
             ${data.type === 'payment_success' ? `
               <p style="color: #059669; margin: 16px 0;">
                 ✅ Your payment has been processed successfully. Thank you for your continued trust in RepliFast!
               </p>
             ` : ''}
-
+            
             ${data.type === 'payment_failed' ? `
               <p style="color: #DC2626; margin: 16px 0;">
                 ❌ We couldn't process your payment. Please update your payment method to continue using RepliFast.
               </p>
             ` : ''}
-
+            
             ${data.type === 'subscription_cancelled' ? `
               <p style="color: #F59E0B; margin: 16px 0;">
                 We're sorry to see you go! Your subscription has been cancelled but you can still access RepliFast until your current billing period ends.
               </p>
             ` : ''}
-
+            
             ${data.type === 'subscription_reactivated' ? `
               <p style="color: #059669; margin: 16px 0;">
                 🎉 Welcome back! Your subscription has been reactivated and you now have full access to all RepliFast features.
               </p>
             ` : ''}
-
+            
             ${data.type === 'plan_upgraded' ? `
               <p style="color: #3B82F6; margin: 16px 0;">
                 🚀 Congratulations on upgrading! You now have access to enhanced features and capabilities.
@@ -520,11 +520,11 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
             <a href="https://app.replifast.com/settings?tab=billing" class="button">Manage Billing ⚙️</a>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Questions about your billing? We're here to help! 💬</p>
           <p>
-            <a href="mailto:billing@replifast.com" style="color: #3B82F6;">Contact Billing Support</a> |
+            <a href="mailto:billing@replifast.com" style="color: #3B82F6;">Contact Billing Support</a> | 
             <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Account Settings</a>
           </p>
         </div>
@@ -549,7 +549,7 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
 
   const severity = severityConfig[data.severity];
   const subject = `${severity.emoji} ${data.title} - RepliFast Alert`;
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -565,11 +565,11 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
           <h1 class="logo">${severity.emoji} RepliFast</h1>
           <p style="color: #E0E7FF; margin: 8px 0 0 0;">System Alert</p>
         </div>
-
+        
         <div class="content">
           <h2 style="color: ${severity.color};">${data.title}</h2>
           <p>Hello ${data.userName}, we need to inform you about an issue with your RepliFast account.</p>
-
+          
           <div class="card" style="background-color: ${severity.bgColor}; border-left: 4px solid ${severity.color};">
             <div style="display: flex; align-items: center; margin-bottom: 12px;">
               <span style="font-size: 24px; margin-right: 12px;">${severity.emoji}</span>
@@ -580,9 +580,9 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
                 </span>
               </div>
             </div>
-
+            
             <p style="margin: 16px 0; color: #374151; font-weight: 500;">${data.message}</p>
-
+            
             ${data.errorDetails ? `
               <details style="margin: 16px 0;">
                 <summary style="cursor: pointer; color: #6B7280; font-size: 14px;">Technical Details</summary>
@@ -613,11 +613,11 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
             <p style="margin: 0; color: #0369A1;">Our support team is ready to help you resolve this issue quickly. Don't hesitate to reach out!</p>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>We're monitoring the situation and will keep you updated. 🔍</p>
           <p>
-            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> |
+            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> | 
             <a href="https://status.replifast.com" style="color: #3B82F6;">System Status</a> |
             <a href="https://docs.replifast.com" style="color: #3B82F6;">Documentation</a>
           </p>
@@ -652,10 +652,10 @@ function automationErrorTemplate(data: AutomationErrorData): EmailTemplate {
           <h1 class="logo">RepliFast 🚨</h1>
           <p style="color: #FEE2E2; margin: 0;">Automation Error Alert</p>
         </div>
-
+        
         <div class="content">
           <h2 style="color: #1F2937; margin: 0 0 20px 0;">Hello ${data.userName},</h2>
-
+          
           <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #991B1B;">🚨 Automation Error Detected</h3>
             <p style="margin: 0 0 8px 0; color: #991B1B;"><strong>Error Type:</strong> ${data.errorType}</p>
@@ -701,11 +701,11 @@ function automationErrorTemplate(data: AutomationErrorData): EmailTemplate {
             <p style="margin: 0; color: #0369A1;">Our support team is ready to help you resolve this issue quickly. Include this error reference when contacting support.</p>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Error detected at ${new Date().toLocaleString()} 🕐</p>
           <p>
-            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> |
+            <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> | 
             <a href="https://app.replifast.com/dashboard" style="color: #3B82F6;">Dashboard</a> |
             <a href="https://docs.replifast.com/troubleshooting" style="color: #3B82F6;">Troubleshooting</a>
           </p>
@@ -739,10 +739,10 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
           <h1 class="logo">RepliFast ⭐</h1>
           <p style="color: #E0E7FF; margin: 0;">New Reviews Alert</p>
         </div>
-
+        
         <div class="content">
           <h2 style="color: #1F2937; margin: 0 0 20px 0;">Hello ${data.userName}! 👋</h2>
-
+          
           <p>Great news! Your business <strong>${data.businessName}</strong> has received ${data.totalNewReviews} new review${data.totalNewReviews === 1 ? '' : 's'}.</p>
 
           <div class="card">
@@ -799,11 +799,11 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
           </div>
           `}
         </div>
-
+        
         <div class="footer">
           <p>Keep engaging with your customers! 🚀</p>
           <p>
-            <a href="${data.dashboardUrl}" style="color: #3B82F6;">Dashboard</a> |
+            <a href="${data.dashboardUrl}" style="color: #3B82F6;">Dashboard</a> | 
             <a href="https://app.replifast.com/reviews" style="color: #3B82F6;">All Reviews</a> |
             <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a>
           </p>
@@ -821,20 +821,8 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
  * Sent when automation successfully posts replies during daily sync
  */
 export function automationSummaryTemplate(data: AutomationSummaryData): EmailTemplate {
-  // Smart subject line based on what happened
-  let subject: string;
+  const subject = `${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply' : 'replies'} posted to your Google Business Profile`;
   
-  if (data.postedRepliesCount > 0 && data.pendingReviewsCount > 0) {
-    // Both posted and pending
-    subject = `${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply' : 'replies'} posted • ${data.pendingReviewsCount} need your review`;
-  } else if (data.postedRepliesCount > 0) {
-    // Only posted replies
-    subject = `${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply' : 'replies'} posted to your Google Business Profile`;
-  } else {
-    // Only pending reviews
-    subject = `${data.pendingReviewsCount} ${data.pendingReviewsCount === 1 ? 'review needs' : 'reviews need'} your manual approval`;
-  }
-
   // Helper function to generate star rating display
   const generateStarRating = (rating: number): string => {
     const fullStars = '★'.repeat(rating);
@@ -849,12 +837,12 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
 
   // Helper function to format date
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'short', 
       day: 'numeric'
     });
   };
-
+  
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -1059,115 +1047,32 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
     <body>
       <div class="email-container">
         <div class="header">
-          <h1 class="logo">RepliFast</h1>
+          <h1 class="logo">RepliFast 🤖</h1>
           <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9);">${data.businessName}</p>
         </div>
-
+        
         <div class="content">
-          <h2>Automation Summary</h2>
-          ${data.postedRepliesCount > 0 && data.pendingReviewsCount > 0 ? `
-            <p>Your automated review management has completed. <strong>${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply has' : 'replies have'} been posted</strong> to your Google Business Profile, and <strong>${data.pendingReviewsCount} ${data.pendingReviewsCount === 1 ? 'review needs' : 'reviews need'} your manual approval</strong>.</p>
-          ` : data.postedRepliesCount > 0 ? `
-            <p>Your automated review management completed successfully. <strong>${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply has' : 'replies have'} been posted</strong> to your Google Business Profile.</p>
-          ` : `
-            <p>Your automated review sync found reviews that need your attention. <strong>${data.pendingReviewsCount} ${data.pendingReviewsCount === 1 ? 'review needs' : 'reviews need'} manual approval</strong> before posting.</p>
-          `}
+          <div class="success-message">
+            <h2>🎉 Your AI Assistant Was Busy Today!</h2>
+            <p><strong>${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply has' : 'replies have'} been automatically posted</strong> to your Google Business Profile</p>
+          </div>
 
           <div class="metrics-grid">
-            ${data.postedRepliesCount > 0 ? `
             <div class="metric-card">
               <span class="metric-number">${data.postedRepliesCount}</span>
               <div class="metric-label">Replies Posted</div>
             </div>
-            ` : ''}
-
-            ${data.pendingReviewsCount > 0 ? `
-            <div class="metric-card" style="border-left: 3px solid #F59E0B;">
-              <span class="metric-number" style="color: #F59E0B;">${data.pendingReviewsCount}</span>
-              <div class="metric-label">Need Approval</div>
-            </div>
-            ` : ''}
-
+            
             <div class="metric-card">
               <span class="metric-number">${data.automationMetrics.generatedReplies}</span>
               <div class="metric-label">AI Generated</div>
             </div>
-
+            
             <div class="metric-card">
               <span class="metric-number">${data.automationMetrics.processedReviews}</span>
               <div class="metric-label">Reviews Processed</div>
             </div>
           </div>
-
-
-
-          ${data.postedReviews && data.postedReviews.length > 0 ? `
-          <h3 class="table-title">Reviews That Received Replies</h3>
-          <table class="reviews-table">
-            <thead>
-              <tr>
-                <th style="width: 140px;">Customer</th>
-                <th style="width: 45%;">Review</th>
-                <th style="width: 45%;">Our Reply</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.postedReviews.map(review => `
-                <tr>
-                  <td class="customer-cell" data-label="Customer">
-                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${review.customerName}</div>
-                    <div style="color: #f59e0b; font-size: 16px; margin-bottom: 4px;">${generateStarRating(review.rating)}</div>
-                    <div style="color: #6b7280; font-size: 13px;">${formatDate(review.reviewDate)}</div>
-                  </td>
-                  <td class="review-cell" data-label="Review">"${truncateText(review.reviewText, 200)}"</td>
-                  <td class="reply-cell" data-label="Our Reply">"${truncateText(review.replyText, 200)}"</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          ` : ''}
-
-          ${data.pendingReviewsCount > 0 ? `
-          <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 20px; margin: 30px 0;">
-            <h3 style="margin: 0 0 16px 0; color: #92400E; font-size: 18px;">⚠️ Manual Review Required</h3>
-            <p style="margin: 0 0 20px 0; color: #92400E;">${data.pendingReviewsCount} ${data.pendingReviewsCount === 1 ? 'review needs' : 'reviews need'} your approval before posting${data.approvalMode === 'auto_4_plus' ? ' (due to ratings below 4 stars)' : data.approvalMode === 'auto_except_low' ? ' (due to low ratings)' : ''}:</p>
-            
-            <div style="background-color: #FFFBEB; border-radius: 8px; padding: 16px; margin: 16px 0;">
-              ${data.pendingReviews.map((review, index) => `
-                <div style="border-bottom: ${index < data.pendingReviews.length - 1 ? '1px solid #FDE68A' : 'none'}; padding: ${index > 0 ? '16px 0' : '0 0 16px 0'}; margin: ${index < data.pendingReviews.length - 1 ? '0 0 16px 0' : '0'};">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <strong style="color: #92400E;">${review.customerName}</strong>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <span style="color: #F59E0B; font-size: 14px;">${generateStarRating(review.rating)}</span>
-                      <span style="background-color: ${review.rating >= 4 ? '#DCFCE7' : review.rating >= 3 ? '#FEF3C7' : '#FEE2E2'}; color: ${review.rating >= 4 ? '#166534' : review.rating >= 3 ? '#92400E' : '#991B1B'}; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">${review.rating}⭐</span>
-                    </div>
-                  </div>
-                  <div style="background-color: #F9F9F9; border-left: 3px solid #D1D5DB; padding: 10px 12px; margin: 8px 0; border-radius: 0 4px 4px 0;">
-                    <p style="margin: 0; color: #4B5563; font-size: 14px; line-height: 1.4; font-style: italic;">"${truncateText(review.reviewText, 150)}"</p>
-                  </div>
-                  <div style="background-color: #F0F9FF; border-left: 3px solid #0EA5E9; padding: 10px 12px; margin: 8px 0; border-radius: 0 4px 4px 0;">
-                    <p style="margin: 0 0 4px 0; color: #0369A1; font-size: 12px; font-weight: 500;">🤖 Suggested Reply:</p>
-                    <p style="margin: 0; color: #0369A1; font-size: 14px; line-height: 1.4;">"${truncateText(review.aiReply, 150)}"</p>
-                  </div>
-                  <div style="text-align: right; margin-top: 8px;">
-                    <span style="color: #6B7280; font-size: 12px;">${formatDate(review.reviewDate)}</span>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-            
-            <div style="text-align: center; margin: 20px 0 0 0;">
-              <a href="https://app.replifast.com/reviews?filter=pending" style="display: inline-block; background-color: #F59E0B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Review Pending Replies →</a>
-            </div>
-          </div>
-          ` : ''}
-
-          ${data.newReviewsCount > 0 ? `
-          <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 16px; margin: 20px 0;">
-            <h4 style="margin: 0 0 8px 0; color: #0369A1;">📋 Also Found Today</h4>
-            <p style="margin: 0; color: #0369A1;">${data.newReviewsCount} new ${data.newReviewsCount === 1 ? 'review was' : 'reviews were'} discovered during sync</p>
-          </div>
-          ` : ''}
 
           <div class="automation-info">
             <h3>🚀 Automation Results</h3>
@@ -1175,8 +1080,41 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
             <p style="margin-top: 12px;"><strong>Sync completed:</strong> ${new Date(data.syncTimestamp).toLocaleString()} (${data.slotId})</p>
           </div>
 
+          ${data.postedReviews && data.postedReviews.length > 0 ? `
+          <h3 class="table-title">📋 Reviews That Received Replies</h3>
+          <table class="reviews-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Rating</th>
+                <th>Review</th>
+                <th>Our Reply</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.postedReviews.map(review => `
+                <tr>
+                  <td class="customer-cell" data-label="Customer">${review.customerName}</td>
+                  <td class="rating-cell" data-label="Rating">${generateStarRating(review.rating)}</td>
+                  <td class="review-cell" data-label="Review">"${truncateText(review.reviewText, 120)}"</td>
+                  <td class="reply-cell" data-label="Our Reply">"${truncateText(review.replyText, 150)}"</td>
+                  <td class="date-cell" data-label="Date">${formatDate(review.reviewDate)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          ` : ''}
+
+          ${data.newReviewsCount > 0 ? `
+          <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #92400E;">📋 Also Found Today</h4>
+            <p style="margin: 0; color: #92400E;">${data.newReviewsCount} new ${data.newReviewsCount === 1 ? 'review was' : 'reviews were'} discovered during sync</p>
+          </div>
+          ` : ''}
+
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://replifast.com/dashboard" class="button">📊 View All Reviews & Replies</a>
+            <a href="https://app.replifast.com/reviews" class="button">📊 View All Reviews & Replies</a>
           </div>
 
           <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -1185,13 +1123,13 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
             <p style="margin: 0; color: #6B7280; font-size: 14px;">You can adjust your automation settings anytime in your <a href="https://app.replifast.com/settings?tab=integrations" style="color: #3B82F6;">dashboard settings</a>.</p>
           </div>
         </div>
-
+        
         <div class="footer">
           <p>Keep growing your business with AI-powered automation! 🚀</p>
           <p>
-            <a href="https://replifast.com/reviews" style="color: #3B82F6;">Reviews</a> |
-            <a href="https://replifast.com/settings" style="color: #3B82F6;">Settings</a> |
-            <a href="https://replifast.com/help" style="color: #3B82F6;">Help</a>
+            <a href="https://app.replifast.com/reviews" style="color: #3B82F6;">Reviews</a> | 
+            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a> |
+            <a href="https://app.replifast.com/help" style="color: #3B82F6;">Help</a>
           </p>
         </div>
       </div>

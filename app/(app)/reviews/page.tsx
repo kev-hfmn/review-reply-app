@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, MessageSquare } from 'lucide-react';
+import { RefreshCw, MessageSquare, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -236,7 +236,7 @@ export default function ReviewsPage() {
             <Button
               onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
               disabled={isFetchingReviews || isUpdating}
-              variant="primary"
+              variant="outlinePrimary"
               className="flex items-center space-x-2 px-3 py-2 "
             >
               <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
@@ -364,7 +364,7 @@ export default function ReviewsPage() {
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white dark:bg-neutral-dark rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between bg-muted-foreground/5 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
           <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400">
             <span>
               Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to{' '}
@@ -378,7 +378,7 @@ export default function ReviewsPage() {
               disabled={!pagination.hasPrevPage}
               className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Previous
+              <ArrowLeft className="h-4 w-4" />
             </button>
             <span className="px-3 py-1 text-sm font-medium">
               Page {pagination.currentPage} of {pagination.totalPages}
@@ -388,7 +388,7 @@ export default function ReviewsPage() {
               disabled={!pagination.hasNextPage}
               className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </div>

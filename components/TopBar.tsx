@@ -86,8 +86,8 @@ export default function TopBar() {
           <Image
             src="/icons/icon.png"
             alt="RepliFast"
-            width={30}
-            height={30}
+            width={40}
+            height={40}
             className="rounded-md"
           />
           <span className="text-xl font-bold text-foreground tracking-tight">RepliFast</span>

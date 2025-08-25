@@ -7,7 +7,8 @@ import {
   Check,
   Send,
   Save,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import {
@@ -189,7 +190,7 @@ export default function ReviewDrawer({
 
             {/* Status */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-muted-foreground">
                 Status:
               </span>
               <Badge
@@ -211,7 +212,7 @@ export default function ReviewDrawer({
 
             {/* Review Text */}
             <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-3">
+              <div className="flex items-center space-x-2 mb-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium text-muted-foreground">
                   Customer Review
@@ -224,11 +225,11 @@ export default function ReviewDrawer({
           </div>
 
           {/* AI Reply Section */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-foreground">
-                Reply
-              </h3>
+              <span className="text-md font-medium text-foreground/80">
+                Your Reply
+              </span>
               <div className="flex items-center space-x-2">
 {/*                 <Select value={selectedTone} onValueChange={setSelectedTone}>
                   <SelectTrigger className="w-32">
@@ -289,7 +290,7 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  variant={isSubscriber ? "primary" : "outline"}
+                  variant={isSubscriber ? "outlineSecondary" : "outline"}
                   className={isSubscriber ? "" : "text-gray-500"}
                   title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                 >
@@ -307,7 +308,7 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  variant="outline"
+                  variant={isSubscriber ? "outlineSecondary" : "outline"}
                   className={isSubscriber ? "" : "text-gray-500"}
                   title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
                 >
@@ -325,7 +326,7 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleApprove}
                   disabled={data.isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  variant="outlinePrimary"
                 >
                   <Check className="h-4 w-4" />
                   <span>Approve</span>
@@ -336,11 +337,12 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handlePost}
                   disabled={data.isLoading}
+                  variant={isSubscriber ? "outlineGreen" : "outline"}
                   className={`${
-                    isSubscriber 
-                      ? "bg-green-600 hover:bg-green-700" 
+                    isSubscriber
+                      ? ""
                       : "bg-gray-600 hover:bg-gray-700"
-                  } text-white`}
+                  }`}
                   title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
                 >
                   <Send className="h-4 w-4" />
@@ -348,12 +350,7 @@ export default function ReviewDrawer({
                 </Button>
               )}
 
-              <Button
-                onClick={onClose}
-                variant="outline"
-              >
-                Close
-              </Button>
+
             </div>
           </div>
         </DialogFooter>
