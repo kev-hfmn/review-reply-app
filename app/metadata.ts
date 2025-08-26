@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   metadataBase: new URL("https://replifast.com"),
   title: {
-    default: "Google review reply automation | RepliFast",
+    default: "Reply to Google Reviews Automatically | RepliFast",
     template: "%s | RepliFast"
   },
   description:
-    "RepliFast is a Google review response tool for small businesses. Automate Google review replies with on‑brand responses, daily auto‑sync, and optional auto‑approve.",
+    "Reply to Google reviews automatically with RepliFast. On-brand responses, daily sync, and auto-approve options to keep your business reputation strong.",
   keywords: [
     "google review reply automation",
     "reply to Google reviews automatically",
@@ -16,13 +16,16 @@ export const metadata: Metadata = {
     "daily review sync",
     "auto‑approve review replies",
     "review reply software",
-    "reputation management replies"
+    "reputation management replies",
+    "google review response automation",
+    "google review respond tool",
+    "respond to google reviews automatically",
   ],
   openGraph: {
     type: "website",
     locale: "en_US",
     siteName: "RepliFast",
-    title: "Google review reply automation | RepliFast",
+    title: "Reply to Google Reviews Automatically | RepliFast",
     description:
       "Automate your Google review replies with on‑brand responses. Daily auto‑sync and optional auto‑approve for 4–5★ reviews.",
     url: "https://replifast.com",
@@ -37,10 +40,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Google review reply automation | RepliFast",
+    title: "Reply to Google Reviews Automatically | RepliFast",
     description:
       "Automate your Google review replies with on‑brand responses. Daily auto‑sync and optional auto‑approve for 4–5★ reviews.",
-    images: ["/RepliFast-logo.png"],
+    images: ["/og.png"],
     creator: "@replifast"
   },
   robots: {
