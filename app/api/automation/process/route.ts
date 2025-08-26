@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 import { automationService, type AutomationContext, type BusinessSettings, type Review } from '@/lib/services/automationService';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
 
@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has access to this business
-    const { data: business, error: businessError } = await supabase
+    // Verify user has access to this business (using admin client for service role auth)
+    const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
       .select('*')
       .eq('id', businessId)
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get business settings
-    const { data: settings, error: settingsError } = await supabase
+    // Get business settings (using admin client for service role auth)
+    const { data: settings, error: settingsError } = await supabaseAdmin
       .from('business_settings')
       .select('*')
       .eq('business_id', businessId)
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const result = await automationService.processBusinessAutomation(automationContext);
 
     // Log API call
-    await supabase.from('activities').insert({
+    await supabaseAdmin.from('activities').insert({
       business_id: businessId,
       type: 'automation_failed', // Using existing enum, we'll use metadata to indicate success
       description: `Automation API called via ${triggerType} trigger`,
@@ -275,7 +275,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log recovery action
-    await supabase.from('activities').insert({
+    await supabaseAdmin.from('activities').insert({
       business_id: businessId,
       type: 'settings_updated',
       description: `Automation recovery action: ${action}`,
