@@ -1,9 +1,12 @@
 import React from 'react';
 import {
-  MessageSquare,
+  NotebookText,
+  MessageSquareText,
+  Check,
   Activity,
   Star,
   Clock,
+  Send,
   Settings,
   PlusCircle,
   CheckCircle
@@ -78,14 +81,14 @@ export function createMetrics(
       title: "Reviews this month",
       value: reviewsThisWeek.toString(),
       change: formatMetricChange(reviewsThisWeekChange),
-      icon: React.createElement(MessageSquare, { className: "h-6 w-6 text-primary" }),
+      icon: React.createElement(MessageSquareText, { className: "h-6 w-6 text-primary" }),
       trend: reviewsThisWeekChange >= 0 ? 'up' : 'down'
     },
     {
       title: "Replies posted",
       value: repliesPosted.toString(),
       change: formatMetricChange(repliesPostedChange),
-      icon: React.createElement(Activity, { className: "h-6 w-6 text-primary" }),
+      icon: React.createElement(Send, { className: "h-6 w-6 text-primary" }),
       trend: repliesPostedChange >= 0 ? 'up' : 'down',
       subtitle: "This month"
     },

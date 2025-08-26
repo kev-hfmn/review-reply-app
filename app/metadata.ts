@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     url: "https://replifast.com",
     images: [
       {
-        url: "/RepliFast-logo.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "RepliFast – Google review reply automation"

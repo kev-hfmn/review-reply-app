@@ -80,9 +80,10 @@ export async function POST(request: NextRequest) {
 
     // Limit to recent reviews if this is a scheduled trigger
     if (triggerType === 'scheduled') {
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-      reviewQuery = reviewQuery.gte('created_at', oneDayAgo.toISOString());
+      // Only process reviews created in the last 24 hours (captures daily sync window)
+      // This ensures we only process newly synced reviews, not old pending ones
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      reviewQuery = reviewQuery.gte('created_at', twentyFourHoursAgo.toISOString());
     }
 
     const { data: reviews, error: reviewsError } = await reviewQuery.limit(50); // Process max 50 reviews at once
@@ -256,7 +257,7 @@ export async function PATCH(request: NextRequest) {
 
       case 'clear_errors':
         // Clear automation errors
-        await supabase
+        await supabaseAdmin
           .from('business_settings')
           .update({
             automation_errors: [],

@@ -1,4 +1,4 @@
-import { supabase } from '@/utils/supabase';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 import { automationService } from './automationService';
 import { retryFailedReplies } from './aiReplyService';
 
@@ -90,7 +90,7 @@ export class ErrorRecoveryService {
 
     try {
       // Get business settings and failed automation data
-      const { data: settings, error: settingsError } = await supabase
+      const { data: settings, error: settingsError } = await supabaseAdmin
         .from('business_settings')
         .select('*')
         .eq('business_id', businessId)
@@ -143,7 +143,7 @@ export class ErrorRecoveryService {
   async escalateToAdmin(error: CriticalError): Promise<void> {
     try {
       // Log critical error with special flag
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: null, // System-level activity
         type: 'automation_failed',
         description: `CRITICAL ERROR: ${error.error}`,
@@ -222,7 +222,7 @@ export class ErrorRecoveryService {
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
       // Get recent automation errors
-      const { data: errors } = await supabase
+      const { data: errors } = await supabaseAdmin
         .from('activities')
         .select('*')
         .eq('business_id', businessId)
@@ -231,7 +231,7 @@ export class ErrorRecoveryService {
         .order('created_at', { ascending: false });
 
       // Get last successful automation
-      const { data: lastSuccess } = await supabase
+      const { data: lastSuccess } = await supabaseAdmin
         .from('business_settings')
         .select('last_automation_run')
         .eq('business_id', businessId)
@@ -388,7 +388,7 @@ export class ErrorRecoveryService {
   private async retryFailedReplyPosting(businessId: string, context: RetryContext): Promise<void> {
     try {
       // Get approved reviews that failed to post
-      const { data: failedPosts } = await supabase
+      const { data: failedPosts } = await supabaseAdmin
         .from('reviews')
         .select('id, final_reply, ai_reply')
         .eq('business_id', businessId)
@@ -458,7 +458,7 @@ export class ErrorRecoveryService {
    */
   private async clearResolvedErrors(businessId: string): Promise<void> {
     try {
-      const { data: settings } = await supabase
+      const { data: settings } = await supabaseAdmin
         .from('business_settings')
         .select('automation_errors')
         .eq('business_id', businessId)
@@ -473,7 +473,7 @@ export class ErrorRecoveryService {
           new Date(error.timestamp) > oneDayAgo
         );
 
-        await supabase
+        await supabaseAdmin
           .from('business_settings')
           .update({
             automation_errors: recentErrors,
@@ -494,7 +494,7 @@ export class ErrorRecoveryService {
     context?: { businessId?: string; userId?: string }
   ): Promise<void> {
     try {
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: context?.businessId || null,
         type: 'automation_failed',
         description: `${error.step}: ${error.error}`,
@@ -514,7 +514,7 @@ export class ErrorRecoveryService {
    */
   private async logCriticalSystemError(originalError: any, handlingError: any): Promise<void> {
     try {
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: null,
         type: 'automation_failed',
         description: 'CRITICAL: Error handler failed',
@@ -566,7 +566,7 @@ export class ErrorRecoveryService {
    */
   private async logRecoveryActivity(businessId: string, result: RecoveryResult): Promise<void> {
     try {
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: businessId,
         type: 'automation_failed', // Using existing enum value
         description: 'Automation recovery completed',

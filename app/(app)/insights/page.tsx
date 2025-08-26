@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Target,
   Award,
-  Lock
+  Lock,
+  MessageSquareText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -405,13 +406,13 @@ export default function InsightsPage() {
           <CardContent className="py-12 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
-              No Reviews This {currentPeriodType === 'weekly' ? 'Week' : 
-                              currentPeriodType === 'monthly' ? 'Month' : 
+              No Reviews This {currentPeriodType === 'weekly' ? 'Week' :
+                              currentPeriodType === 'monthly' ? 'Month' :
                               currentPeriodType === 'quarterly' ? 'Quarter' : 'Year'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              There are no reviews for the selected {currentPeriodType === 'weekly' ? 'week' : 
-                                                   currentPeriodType === 'monthly' ? 'month' : 
+              There are no reviews for the selected {currentPeriodType === 'weekly' ? 'week' :
+                                                   currentPeriodType === 'monthly' ? 'month' :
                                                    currentPeriodType === 'quarterly' ? 'quarter' : 'year'}. Try selecting a different period or check back later.
             </p>
           </CardContent>
@@ -643,7 +644,7 @@ export default function InsightsPage() {
                     {insights?.stats.responseRate ?? 0}%
                   </p>
                 </div>
-                <MessageSquare className="h-8 w-8 text-blue-600" />
+                <MessageSquareText className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -764,7 +765,7 @@ export default function InsightsPage() {
                       const isBusinessCategory = lovePoint.includes('praised') || lovePoint.includes('Excellence') || lovePoint.includes('Quality');
                       const icon = isBusinessCategory ? Award : Star;
                       const IconComponent = icon;
-                      
+
                       // Generate tooltip content based on the love point category
                       const getTooltipContent = () => {
                         if (lovePoint.includes('Service Excellence')) {
@@ -799,9 +800,9 @@ export default function InsightsPage() {
                           };
                         }
                       };
-                      
+
                       const tooltipData = getTooltipContent();
-                      
+
                       return (
                         <Tooltip key={index}>
                           <TooltipTrigger>
@@ -843,7 +844,7 @@ export default function InsightsPage() {
                   </div>
                 </TooltipProvider>
               </div>
-              
+
               {/* Most Discussed Topics - Compact */}
               {insights.reviewAggregation.commonThemes && insights.reviewAggregation.commonThemes.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-blue-200 dark:border-blue-800">
@@ -855,10 +856,10 @@ export default function InsightsPage() {
                     {insights.reviewAggregation.commonThemes.slice(0, 8).map((theme, index) => {
                       const percentage = (theme.frequency / insights.stats.totalReviews) * 100;
                       const ratingColor = theme.avgRating >= 4.5 ? 'text-emerald-600' : theme.avgRating >= 4 ? 'text-blue-600' : 'text-amber-600';
-                      const badgeColor = theme.avgRating >= 4.5 ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' : 
-                                        theme.avgRating >= 4 ? 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200' : 
+                      const badgeColor = theme.avgRating >= 4.5 ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' :
+                                        theme.avgRating >= 4 ? 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200' :
                                         'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
-                      
+
                       return (
                         <TooltipProvider key={index}>
                           <Tooltip>
@@ -1128,7 +1129,7 @@ export default function InsightsPage() {
                       <Badge
                         variant={highlight.type === 'best' ? 'default' : highlight.type === 'worst' ? 'destructive' : 'secondary'}
                         className={`px-3 py-1 font-medium ${
-                          highlight.type === 'best' ? 'bg-emerald-600 hover:bg-emerald-700' : 
+                          highlight.type === 'best' ? 'bg-emerald-600 hover:bg-emerald-700' :
                           highlight.type === 'worst' ? 'bg-red-600 hover:bg-red-700' :
                           'bg-blue-600 hover:bg-blue-700'
                         }`}
@@ -1137,14 +1138,14 @@ export default function InsightsPage() {
                          highlight.type === 'worst' ? '⚠️ Needs Attention' : '📌 Notable'}
                       </Badge>
                     </div>
-                    
+
                     {/* Review Text */}
                     <div className="px-6 pb-4">
                       <blockquote className="text-foreground text-sm leading-relaxed italic border-l-4 border-current border-opacity-30 pl-4 py-2">
                         &ldquo;{highlight.review_text}&rdquo;
                       </blockquote>
                     </div>
-                    
+
                     {/* Business Intelligence */}
                     <div className="px-6 pb-6">
                       <div className={`p-4 rounded-lg border ${

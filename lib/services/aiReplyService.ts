@@ -1,4 +1,4 @@
-import { supabase } from '@/utils/supabase';
+import { supabaseAdminAdmin } from '@/utils/supabaseAdmin-admin';
 import { generateAIReply } from './openaiService';
 
 export interface ReviewData {
@@ -118,7 +118,7 @@ function getFallbackReply(review: ReviewData, tone: string = 'friendly'): string
  */
 export async function getBusinessSettings(businessId: string): Promise<BrandVoiceSettings | null> {
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('business_settings')
     .select('brand_voice_preset, formality_level, warmth_level, brevity_level, custom_instruction')
     .eq('business_id', businessId)
@@ -143,7 +143,7 @@ export async function getBusinessSettings(businessId: string): Promise<BrandVoic
  */
 export async function getBusinessInfo(businessId: string): Promise<BusinessInfo | null> {
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('businesses')
     .select('name, industry, customer_support_email, customer_support_phone')
     .eq('id', businessId)
@@ -390,7 +390,7 @@ export async function retryFailedReplies(
 ): Promise<BatchGenerateResult> {
   try {
     // Get reviews that failed automation
-    const { data: failedReviews, error } = await supabase
+    const { data: failedReviews, error } = await supabaseAdmin
       .from('reviews')
       .select('id, rating, review_text, customer_name')
       .eq('business_id', businessId)
@@ -426,7 +426,7 @@ export async function retryFailedReplies(
     for (const reviewResult of result.results) {
       if (reviewResult.success && reviewResult.reply) {
         // Clear failed status and add reply
-        await supabase
+        await supabaseAdmin
           .from('reviews')
           .update({
             ai_reply: reviewResult.reply,
@@ -438,7 +438,7 @@ export async function retryFailedReplies(
           .eq('id', reviewResult.reviewId);
       } else {
         // Update error status
-        await supabase
+        await supabaseAdmin
           .from('reviews')
           .update({
             automation_error: reviewResult.error || 'Retry failed',
