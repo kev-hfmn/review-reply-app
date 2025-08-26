@@ -86,11 +86,15 @@ async function processAutomationPipeline(business: any, slotId: string, settings
     console.log(`🤖 Checking automation for business: ${business.name}`)
 
     // Check if automation is enabled
+    console.log(`🔍 Checking automation settings for ${business.name}:`)
+    console.log(`   - auto_reply_enabled: ${settings?.auto_reply_enabled}`)
+    console.log(`   - auto_post_enabled: ${settings?.auto_post_enabled}`)
+    
     if (!settings?.auto_reply_enabled && !settings?.auto_post_enabled) {
-      console.log(`⏭️ Automation disabled for ${business.name}`)
+      console.log(`⏭️ Automation disabled for ${business.name} - neither auto_reply nor auto_post enabled`)
       return {
         enabled: false,
-        message: 'Automation disabled'
+        message: 'Automation disabled - neither auto_reply nor auto_post enabled'
       }
     }
 
@@ -247,10 +251,25 @@ serve(async (req) => {
       try {
         console.log(`🔄 Syncing reviews for Platform API business: ${business.name}`)
 
-        // Validate Platform API connection
-        const settings = business.business_settings?.[0]
+        // Validate Platform API connection and extract settings robustly
+        console.log(`🔍 Business settings structure:`, JSON.stringify(business.business_settings, null, 2))
+        
+        const settings = Array.isArray(business.business_settings) 
+          ? business.business_settings[0] 
+          : business.business_settings
+          
+        console.log(`⚙️ Extracted settings for ${business.name}:`, JSON.stringify(settings, null, 2))
+        
+        if (!settings) {
+          console.log(`⚠️ Skipping ${business.name} - no settings found`)
+          continue
+        }
+        
         if (!business.google_account_id || !business.google_location_id || !business.google_access_token) {
           console.log(`⚠️ Skipping ${business.name} - incomplete Platform API connection`)
+          console.log(`   - google_account_id: ${business.google_account_id ? '✓' : '✗'}`)
+          console.log(`   - google_location_id: ${business.google_location_id ? '✓' : '✗'}`)
+          console.log(`   - google_access_token: ${business.google_access_token ? '✓' : '✗'}`)
           continue
         }
 
@@ -268,6 +287,12 @@ serve(async (req) => {
         }
 
         // Call the existing review sync API endpoint
+        console.log(`📡 Calling sync API for ${business.name}:`)
+        console.log(`   - URL: ${appUrl}/api/reviews/sync`)
+        console.log(`   - businessId: ${business.id}`)
+        console.log(`   - userId: ${business.user_id}`)
+        console.log(`   - force: false`)
+        
         const syncResponse = await fetch(`${appUrl}/api/reviews/sync`, {
           method: 'POST',
           headers: {
@@ -281,12 +306,16 @@ serve(async (req) => {
           })
         })
 
+        console.log(`📊 Sync API response status: ${syncResponse.status}`)
+        
         if (!syncResponse.ok) {
           const errorText = await syncResponse.text()
+          console.error(`❌ Sync API error response:`, errorText)
           throw new Error(`Sync API returned ${syncResponse.status}: ${errorText}`)
         }
 
         const syncResult = await syncResponse.json()
+        console.log(`📈 Complete sync result for ${business.name}:`, JSON.stringify(syncResult, null, 2))
         console.log(`✅ Synced ${syncResult.newReviews || 0} new reviews for ${business.name}`)
 
         // Update last sync timestamp
