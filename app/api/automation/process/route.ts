@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get reviews that need automation processing
-    let reviewQuery = supabase
+    let reviewQuery = supabaseAdmin
       .from('reviews')
       .select('*')
       .eq('business_id', businessId)
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to this business
-    const { data: business, error: businessError } = await supabase
+    const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
       .select('id')
       .eq('id', businessId)
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     const healthStatus = await errorRecoveryService.getAutomationHealth(businessId);
 
     // Get recent automation activities
-    const { data: recentActivities } = await supabase
+    const { data: recentActivities } = await supabaseAdmin
       .from('activities')
       .select('*')
       .eq('business_id', businessId)
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     // Get business settings
-    const { data: settings } = await supabase
+    const { data: settings } = await supabaseAdmin
       .from('business_settings')
       .select('auto_reply_enabled, auto_post_enabled, email_notifications_enabled, last_automation_run, automation_errors')
       .eq('business_id', businessId)
@@ -232,7 +232,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify user has access to this business
-    const { data: business, error: businessError } = await supabase
+    const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
       .select('id')
       .eq('id', businessId)
