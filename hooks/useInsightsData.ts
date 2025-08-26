@@ -5,7 +5,9 @@ import type {
   DigestStats,
   ActionableTheme,
   ReviewHighlight,
-} from '@/lib/services/digestInsightsService';
+  ReviewAggregation,
+  KeywordFrequency,
+} from '@/lib/services/insightsService';
 
 // Time period selection types
 export type TimePeriodType = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
@@ -17,7 +19,7 @@ export interface TimePeriodSelection {
   label: string;
 }
 
-export function useDigestData(businessId?: string, initialPeriod?: Date, initialType: TimePeriodType = 'monthly') {
+export function useInsightsData(businessId?: string, initialPeriod?: Date, initialType: TimePeriodType = 'monthly') {
   const { user } = useAuth();
   
   // State management
@@ -420,7 +422,7 @@ function exportToCSV(insights: WeeklyDigestInsights): Blob {
   const csvData: string[] = [];
   
   // Header
-  csvData.push('Flowrise Reviews - Weekly Digest Report');
+  csvData.push('RepliFast Reviews - Weekly Insights Report');
   csvData.push(`Week: ${insights.week_start} to ${insights.week_end}`);
   csvData.push(`Generated: ${new Date(insights.generated_at).toLocaleString()}`);
   csvData.push('');

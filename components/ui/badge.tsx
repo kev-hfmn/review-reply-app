@@ -17,7 +17,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
         positive: "!bg-green-100 !text-green-800 !border-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:!border-green-800",
         negative: "!bg-orange-100 !text-orange-900 !border-orange-200 dark:!bg-orange-900/20 dark:!text-orange-300 dark:!border-orange-800",
-        pending: "!badge-pending !text-muted-foreground !border-muted-foreground/80 !bg-muted-foreground/10",
+        pending: "!badge-pending !text-orange-600 !border-orange-600 !bg-orange-50",
         approved: "!badge-approved",
         posted: "!badge-posted",
         needs_edit: "!badge-needs-edit",

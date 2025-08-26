@@ -9,7 +9,8 @@ import {
   Edit3,
   Calendar,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Wand2
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import type { ReviewTableProps } from '@/types/reviews';
@@ -146,9 +147,9 @@ export default function ReviewsTable({
     );
   }
 
-  if (reviews.length === 0) {
+  if (reviews.length === 0 && !isLoading) {
     return (
-      <div className="bg-background rounded-xl shadow-sm border border-border p-12">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-12">
         <div className="text-center">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">
@@ -163,9 +164,9 @@ export default function ReviewsTable({
   }
 
   return (
-    <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden">
+    <div className="bg-card-foreground/10 rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Table Header */}
-      <div className="px-6 py-4 border-b border-border bg-muted/50">
+      <div className="px-6 py-4 border-b border-border">
         <div className="flex items-center">
           <div className="flex items-center">
             <Checkbox
@@ -173,7 +174,7 @@ export default function ReviewsTable({
               onCheckedChange={handleSelectAll}
               className="h-4 w-4"
             />
-            <span className="ml-3 text-sm font-normal text-muted-foreground">
+            <span className="ml-3 text-sm font-normal text-foreground">
               {selection.selectedIds.size > 0
                 ? `${selection.selectedIds.size} selected`
                 : 'Select all'
@@ -191,8 +192,10 @@ export default function ReviewsTable({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`p-6 hover:bg-muted/20 transition-colors cursor-pointer ${
-              selection.selectedIds.has(review.id) ? 'bg-primary/5' : ''
+            className={`p-6 transition-colors cursor-pointer ${
+              selection.selectedIds.has(review.id)
+                ? 'bg-gray-50'
+                : 'bg-card hover:bg-card'
             }`}
             onClick={() => onReviewClick(review)}
           >
@@ -244,10 +247,10 @@ export default function ReviewsTable({
                 </div>
 
                 {/* AI Reply Section - Enhanced */}
-                <div className="bg-accent/10 dark:bg-accent/10 border border-accent/50 dark:border-accent/50 rounded-lg p-5 mb-5">
+                <div className="bg-muted-foreground/5 border border-muted-foreground/50 rounded-lg p-5 mb-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className="p-1.5 bg-accent/90 rounded-lg">
+                      <div className="p-1.5 bg-muted-foreground/90 rounded-lg">
                         <MessageSquare className="h-3 w-3 text-white" />
                       </div>
                       <span className="text-sm text-foreground/80 font-medium">
@@ -352,7 +355,7 @@ export default function ReviewsTable({
                       {generatingReviewId === review.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <MessageSquare className="h-4 w-4" />
+                        <Wand2 className="h-4 w-4" />
                       )}
                       <span>
                         {generatingReviewId === review.id ? 'Generating...' : isSubscriber ? 'Generate Reply' : 'Generate (Upgrade)'}
@@ -418,9 +421,9 @@ export default function ReviewsTable({
                         }
                       }}
                       size="sm"
-                      variant={isSubscriber ? "outlinePrimary" : "outline"}
+                      variant={isSubscriber ? "outlineGreen" : "outline"}
                       title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
-                      className={isSubscriber ? "border-green-500 text-green-500 hover:border-green-500 hover:bg-green-500 hover:text-background" : "text-gray-500"}
+                      className={isSubscriber ? "" : "text-gray-500"}
                     >
                       <Send className="h-4 w-4" />
                       <span>{isSubscriber ? "Post" : "Post (Upgrade)"}</span>

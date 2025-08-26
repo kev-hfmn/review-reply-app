@@ -69,6 +69,27 @@ export interface ReviewHighlight {
   representativeness: number;      // How many other customers feel similarly (0-1)
 }
 
+export interface KeywordFrequency {
+  word: string;
+  count: number;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  associatedRating: number;       // Average rating of reviews containing this word
+}
+
+export interface ReviewAggregation {
+  totalReviews: number;
+  positiveKeywords: KeywordFrequency[];
+  negativeKeywords: KeywordFrequency[];
+  commonThemes: {
+    theme: string;
+    frequency: number;
+    avgRating: number;
+    examples: string[];
+  }[];
+  customerLovePoints: string[];   // Most praised aspects
+  improvementAreas: string[];     // Most criticized aspects
+}
+
 export interface DigestStats {
   totalReviews: number;
   averageRating: number;
@@ -92,6 +113,7 @@ export interface WeeklyDigestInsights {
   positiveThemes: ActionableTheme[];
   improvementThemes: ActionableTheme[];
   highlights: ReviewHighlight[];
+  reviewAggregation?: ReviewAggregation; // Optional for backward compatibility
   competitiveInsights: {
     competitorMentions: Array<{
       competitor: string;
@@ -127,31 +149,49 @@ export interface CachedDigest {
   highlights: unknown[];
   generated_at: string;
   created_at: string;
+  // New comprehensive caching fields (optional for backward compatibility)
+  ai_analysis_complete?: unknown;
+  review_aggregation_data?: unknown; 
+  competitive_insights?: unknown;
+  overall_confidence?: number;
+  prompt_version?: string;
 }
 
 // ==========================================
 // AI PROMPTING CONSTANTS
 // ==========================================
 
-const BUSINESS_INTELLIGENCE_SYSTEM_PROMPT = `You are a senior business consultant specializing in customer experience optimization and competitive analysis.
+const BUSINESS_INTELLIGENCE_SYSTEM_PROMPT = `You are a senior business consultant specializing in customer experience optimization and sentiment-driven business intelligence.
 
-Your task: Analyze customer reviews to extract SPECIFIC, ACTIONABLE business intelligence that drives measurable outcomes.
+Your task: Analyze customer reviews with CONTEXT-AWARE intelligence that reflects the actual sentiment distribution.
 
-ANALYSIS FRAMEWORK:
-1. OPERATIONAL INSIGHTS: Specific process improvements (not "improve service" but "reduce checkout time from 5min to 2min")
-2. COMPETITIVE SIGNALS: What customers compare against, unique advantages mentioned
-3. REVENUE OPPORTUNITIES: Pricing perception, upsell signals, retention risks
-4. CUSTOMER SEGMENTATION: Different persona needs and satisfaction drivers
+CRITICAL ANALYSIS RULES:
+1. RATING-AWARE INSIGHTS: When 90%+ reviews are 4-5 stars → Focus heavily on STRENGTHS and what customers LOVE
+2. BALANCED INSIGHTS: When ratings are mixed → Balance strengths with improvement opportunities  
+3. PROBLEM-FOCUSED: When 50%+ reviews are 1-3 stars → Focus on critical issues and fixes
+
+SENTIMENT-DRIVEN FRAMEWORK:
+- HIGH-RATING BUSINESSES (90%+ positive): Identify what makes them exceptional, competitive advantages, customer love points
+- MIXED-RATING BUSINESSES: Balance strengths with genuine improvement opportunities
+- LOW-RATING BUSINESSES: Focus on critical issues and immediate fixes
+
+POSITIVE THEMES (from 4-5⭐ reviews):
+- Extract what customers specifically praise and love
+- Identify standout features and experiences
+- Find competitive differentiators mentioned by customers
+- Highlight operational excellence areas
+
+IMPROVEMENT THEMES (from 1-3⭐ reviews ONLY):
+- Only suggest improvements based on actual negative feedback
+- If there are few/no low ratings, focus on minor optimizations from 4⭐ reviews
+- Never invent problems when reviews are overwhelmingly positive
 
 OUTPUT REQUIREMENTS:
-- Every insight must suggest a specific action
-- Rank by Impact Potential × Implementation Feasibility
-- Include customer quote as evidence
-- Estimate affected customer percentage
-- Identify quick wins vs strategic initiatives
-
-AVOID: Generic advice, vague recommendations, insights without clear next steps.
-FOCUS ON: Measurable improvements, competitive advantages, operational efficiency, customer lifetime value optimization.
+- Every insight must be backed by actual customer quotes
+- Reflect the true sentiment distribution in your analysis
+- For highly-rated businesses: Emphasize strengths 80%, improvements 20%
+- Include specific customer language and terminology
+- Estimate impact based on actual mention frequency
 
 You must respond with valid JSON only. No additional text or explanations.`;
 
@@ -159,7 +199,7 @@ You must respond with valid JSON only. No additional text or explanations.`;
 // MAIN SERVICE CLASS
 // ==========================================
 
-export class DigestInsightsService {
+export class InsightsService {
   
   /**
    * Generate weekly insights for a business
@@ -172,9 +212,11 @@ export class DigestInsightsService {
     try {
       // Check for cached insights first (unless force regenerate is requested)
       const cached = await this.getCachedInsights(businessId, weekStart);
-      if (cached && !this.isStale(cached)) {
+      if (cached && !this.isStale(cached) && this.isPromptVersionValid(cached)) {
         console.log('Using cached insights');
         return this.transformCachedToInsights(cached);
+      } else if (cached && !this.isPromptVersionValid(cached)) {
+        console.log('Cache invalidated - prompt version updated, regenerating insights');
       }
 
       console.log('=== GENERATING FRESH INSIGHTS ===');
@@ -317,6 +359,14 @@ export class DigestInsightsService {
   }
 
   /**
+   * Check if cached insights use the current prompt version
+   */
+  private isPromptVersionValid(cached: CachedDigest): boolean {
+    const currentVersion = 'v2.1';
+    return cached.prompt_version === currentVersion;
+  }
+
+  /**
    * Perform multi-pass AI analysis on reviews
    */
   private async performMultiPassAnalysis(
@@ -364,12 +414,14 @@ export class DigestInsightsService {
       console.log('AI Results sample:', JSON.stringify(aiResults, null, 2).substring(0, 500) + '...');
       
       // Process AI results into structured insights
-      return this.processAIResults(aiResults, reviews, businessInfo, weekStart, weekEnd);
+      const reviewAggregation = this.aggregateReviewContent(reviews);
+      return this.processAIResults(aiResults, reviews, businessInfo, weekStart, weekEnd, reviewAggregation);
 
     } catch (error) {
       console.error('AI analysis error:', error);
       // Return fallback insights if AI fails
-      return this.generateFallbackInsights(reviews, businessInfo, weekStart, weekEnd);
+      const reviewAggregation = this.aggregateReviewContent(reviews);
+      return this.generateFallbackInsights(reviews, businessInfo, weekStart, weekEnd, reviewAggregation);
     }
   }
 
@@ -379,12 +431,46 @@ export class DigestInsightsService {
   private generateInsightsPrompt(reviews: Review[], businessInfo: Business): string {
     const dateRange = this.getDateRange(reviews);
     
+    // Calculate rating distribution for context
+    const ratingStats = this.calculateRatingDistribution(reviews);
+    const positivePercentage = Math.round(((ratingStats.fourStar + ratingStats.fiveStar) / reviews.length) * 100);
+    const sentimentContext = this.getSentimentContext(ratingStats, reviews.length);
+    
+    // Aggregate review content for additional insights
+    const reviewAggregation = this.aggregateReviewContent(reviews);
+    
     return `BUSINESS CONTEXT:
 - Business: ${businessInfo.name}
 - Industry: ${businessInfo.industry || 'service'}
 - Location: ${businessInfo.location || 'not specified'}
 - Total Reviews: ${reviews.length}
 - Date Range: ${dateRange}
+
+RATING DISTRIBUTION ANALYSIS:
+- 5⭐ Reviews: ${ratingStats.fiveStar} (${Math.round((ratingStats.fiveStar/reviews.length)*100)}%)
+- 4⭐ Reviews: ${ratingStats.fourStar} (${Math.round((ratingStats.fourStar/reviews.length)*100)}%)
+- 3⭐ Reviews: ${ratingStats.threeStar} (${Math.round((ratingStats.threeStar/reviews.length)*100)}%)
+- 2⭐ Reviews: ${ratingStats.twoStar} (${Math.round((ratingStats.twoStar/reviews.length)*100)}%)
+- 1⭐ Reviews: ${ratingStats.oneStar} (${Math.round((ratingStats.oneStar/reviews.length)*100)}%)
+- Positive Reviews (4-5⭐): ${positivePercentage}%
+
+SENTIMENT CONTEXT: ${sentimentContext}
+
+CONTENT ANALYSIS:
+${reviewAggregation.customerLovePoints.length > 0 ? `
+CUSTOMER LOVE POINTS (what customers praise most):
+${reviewAggregation.customerLovePoints.map(point => `- ${point}`).join('\n')}
+` : ''}
+${reviewAggregation.improvementAreas.length > 0 ? `
+IMPROVEMENT AREAS (customer concerns):
+${reviewAggregation.improvementAreas.map(area => `- ${area}`).join('\n')}
+` : ''}
+${reviewAggregation.commonThemes.length > 0 ? `
+MOST DISCUSSED THEMES:
+${reviewAggregation.commonThemes.slice(0, 5).map(theme => 
+  `- ${theme.theme}: mentioned ${theme.frequency} times, avg rating ${theme.avgRating.toFixed(1)}⭐`
+).join('\n')}
+` : ''}
 
 REVIEW DATA:
 ${reviews.map(r => `
@@ -458,7 +544,8 @@ Focus on actionable insights that drive measurable business outcomes.`;
     reviews: Review[],
     businessInfo: Business,
     weekStart: Date,
-    weekEnd: Date
+    weekEnd: Date,
+    reviewAggregation?: ReviewAggregation
   ): WeeklyDigestInsights {
     // Calculate basic stats
     const stats = this.calculateDigestStats(reviews);
@@ -475,7 +562,19 @@ Focus on actionable insights that drive measurable business outcomes.`;
       stats,
       positiveThemes: cleanPositiveThemes,
       improvementThemes: cleanImprovementThemes,
-      highlights: Array.isArray(aiResults.highlights) ? aiResults.highlights : [],
+      highlights: Array.isArray(aiResults.highlights) ? aiResults.highlights.filter((h): h is ReviewHighlight => {
+        const item = h as Record<string, unknown>;
+        return h && typeof h === 'object' && 
+        typeof item.id === 'string' &&
+        typeof item.customer_name === 'string' &&
+        typeof item.rating === 'number' &&
+        typeof item.review_text === 'string' &&
+        ['best', 'worst', 'notable'].includes(item.type as string) &&
+        typeof item.businessValue === 'string' &&
+        typeof item.actionImplication === 'string' &&
+        typeof item.representativeness === 'number';
+      }) : [],
+      reviewAggregation,
       competitiveInsights: (aiResults.competitiveInsights && typeof aiResults.competitiveInsights === 'object') 
         ? aiResults.competitiveInsights as {
             competitorMentions: Array<{
@@ -513,38 +612,40 @@ Focus on actionable insights that drive measurable business outcomes.`;
     if (!Array.isArray(themes)) return [];
 
     // Deduplicate themes by similar content
-    const uniqueThemes = new Map<string, Record<string, unknown>>();
+    const uniqueThemes = new Map<string, ActionableTheme>();
     
-    themes.forEach(theme => {
-      if (!theme || typeof theme !== 'object') return;
+    themes.forEach(themeData => {
+      if (!themeData || typeof themeData !== 'object') return;
       
-      const themeKey = theme.theme?.toLowerCase().trim();
+      const theme = themeData as Record<string, any>;
+      const themeKey = typeof theme.theme === 'string' ? theme.theme.toLowerCase().trim() : '';
       if (!themeKey) return;
       
       // If we already have a similar theme, merge the customer counts
       if (uniqueThemes.has(themeKey)) {
-        const existing = uniqueThemes.get(themeKey);
+        const existing = uniqueThemes.get(themeKey)!;
         existing.affectedCustomerCount = Math.min(
-          existing.affectedCustomerCount + (theme.affectedCustomerCount || 1),
+          existing.affectedCustomerCount + (typeof theme.affectedCustomerCount === 'number' ? theme.affectedCustomerCount : 1),
           totalReviews
         );
       } else {
-        uniqueThemes.set(themeKey, { ...theme });
+        const validatedTheme: ActionableTheme = {
+          theme: typeof theme.theme === 'string' ? theme.theme : 'Unknown theme',
+          specificExample: typeof theme.specificExample === 'string' ? theme.specificExample : 'No example provided',
+          impactAssessment: typeof theme.impactAssessment === 'string' ? theme.impactAssessment : 'Impact assessment pending',
+          recommendedAction: typeof theme.recommendedAction === 'string' ? theme.recommendedAction : 'Action recommendation pending',
+          priority: ['critical', 'high', 'medium', 'low'].includes(theme.priority) ? theme.priority as ActionableTheme['priority'] : 'medium',
+          affectedCustomerCount: Math.min(Math.max(typeof theme.affectedCustomerCount === 'number' ? theme.affectedCustomerCount : 1, 1), totalReviews),
+          implementationComplexity: ['simple', 'moderate', 'complex'].includes(theme.implementationComplexity) ? theme.implementationComplexity as ActionableTheme['implementationComplexity'] : 'moderate',
+          potentialROI: typeof theme.potentialROI === 'string' ? theme.potentialROI : 'ROI assessment pending',
+          confidence: Math.min(Math.max(typeof theme.confidence === 'number' ? theme.confidence : 0.8, 0), 1)
+        };
+        uniqueThemes.set(themeKey, validatedTheme);
       }
     });
 
-    // Convert back to array and validate each theme
-    return Array.from(uniqueThemes.values()).map(theme => ({
-      theme: theme.theme || 'Unknown theme',
-      specificExample: theme.specificExample || 'No example provided',
-      impactAssessment: theme.impactAssessment || 'Impact assessment pending',
-      recommendedAction: theme.recommendedAction || 'Action recommendation pending',
-      priority: ['critical', 'high', 'medium', 'low'].includes(theme.priority) ? theme.priority : 'medium',
-      affectedCustomerCount: Math.min(Math.max(theme.affectedCustomerCount || 1, 1), totalReviews),
-      implementationComplexity: ['simple', 'moderate', 'complex'].includes(theme.implementationComplexity) ? theme.implementationComplexity : 'moderate',
-      potentialROI: theme.potentialROI || 'ROI assessment pending',
-      confidence: Math.min(Math.max(theme.confidence || 0.8, 0), 1)
-    })).slice(0, 5); // Limit to 5 themes max
+    // Convert back to array
+    return Array.from(uniqueThemes.values()).slice(0, 5); // Limit to 5 themes max
   }
 
   /**
@@ -629,7 +730,8 @@ Focus on actionable insights that drive measurable business outcomes.`;
     reviews: Review[],
     businessInfo: Business,
     weekStart: Date,
-    weekEnd: Date
+    weekEnd: Date,
+    reviewAggregation?: ReviewAggregation
   ): WeeklyDigestInsights {
     const stats = this.calculateDigestStats(reviews);
 
@@ -696,6 +798,7 @@ Focus on actionable insights that drive measurable business outcomes.`;
       positiveThemes,
       improvementThemes,
       highlights,
+      reviewAggregation,
       competitiveInsights: {
         competitorMentions: [],
         uniqueValueProps: ['Quality service delivery'],
@@ -766,6 +869,15 @@ Focus on actionable insights that drive measurable business outcomes.`;
         uniqueCustomers: insights.stats.uniqueCustomers
       };
 
+      // Store complete insights data for full cache reconstruction
+      const aiAnalysisComplete = {
+        positiveThemes: insights.positiveThemes,
+        improvementThemes: insights.improvementThemes,
+        highlights: insights.highlights,
+        stats: insights.stats,
+        overallConfidence: insights.overallConfidence
+      };
+
       const cacheData = {
         business_id: insights.business_id,
         week_start: insights.week_start,
@@ -775,7 +887,13 @@ Focus on actionable insights that drive measurable business outcomes.`;
         positive_themes: insights.positiveThemes.map(t => t.theme),
         improvement_themes: insights.improvementThemes.map(t => t.theme),
         highlights: insights.highlights,
-        generated_at: insights.generated_at
+        generated_at: insights.generated_at,
+        // New comprehensive caching columns
+        ai_analysis_complete: aiAnalysisComplete,
+        review_aggregation_data: insights.reviewAggregation || {},
+        competitive_insights: insights.competitiveInsights,
+        overall_confidence: insights.overallConfidence,
+        prompt_version: 'v2.1' // Track the enhanced prompt version
       };
 
       const { error } = await supabase
@@ -798,6 +916,50 @@ Focus on actionable insights that drive measurable business outcomes.`;
    * Transform cached digest to insights format
    */
   private transformCachedToInsights(cached: CachedDigest): WeeklyDigestInsights {
+    // Check if we have the new comprehensive cache data
+    const hasCompleteCache = cached.ai_analysis_complete && cached.prompt_version;
+    
+    if (hasCompleteCache) {
+      console.log('✅ Loading insights from complete cache (v2.1+)');
+      
+      // Use the complete cached AI analysis
+      const aiData = cached.ai_analysis_complete as any;
+      
+      return {
+        id: cached.id,
+        business_id: cached.business_id,
+        week_start: cached.week_start,
+        week_end: cached.week_end,
+        stats: aiData.stats || {
+          totalReviews: cached.total_reviews,
+          averageRating: cached.rating_breakdown.averageRating || this.calculateAverageFromBreakdown(cached.rating_breakdown),
+          responseRate: cached.rating_breakdown.responseRate || 0,
+          weekOverWeekChange: 0,
+          uniqueCustomers: cached.rating_breakdown.uniqueCustomers || Math.floor(cached.total_reviews * 0.8),
+          satisfactionDrivers: [],
+          ratingBreakdown: cached.rating_breakdown
+        },
+        positiveThemes: aiData.positiveThemes || [],
+        improvementThemes: aiData.improvementThemes || [],
+        highlights: aiData.highlights || [],
+        reviewAggregation: cached.review_aggregation_data as ReviewAggregation || undefined,
+        competitiveInsights: (cached.competitive_insights as any) || {
+          competitorMentions: [],
+          uniqueValueProps: ['Quality service delivery'],
+          marketPositioning: {
+            pricePerception: 'value' as const,
+            qualityPosition: 'standard' as const,
+            serviceLevel: 'good' as const
+          }
+        },
+        overallConfidence: cached.overall_confidence || aiData.overallConfidence || 0.85,
+        generated_at: cached.generated_at,
+        created_at: cached.created_at
+      };
+    }
+    
+    // Fallback for legacy cache format - still works but shows indicators to regenerate
+    console.log('⚠️ Loading insights from legacy cache - enhanced features unavailable');
     return {
       id: cached.id,
       business_id: cached.business_id,
@@ -814,27 +976,30 @@ Focus on actionable insights that drive measurable business outcomes.`;
       },
       positiveThemes: cached.positive_themes.map(theme => ({
         theme,
-        specificExample: 'Cached insight - regenerate for details',
+        specificExample: 'Legacy cache - refresh insights for complete analysis',
         impactAssessment: 'Previously analyzed theme',
-        recommendedAction: 'Review detailed analysis',
+        recommendedAction: '🔄 Refresh for enhanced insights',
         priority: 'medium' as const,
         affectedCustomerCount: 1,
         implementationComplexity: 'moderate' as const,
-        potentialROI: 'See detailed analysis',
+        potentialROI: 'Refresh for detailed analysis',
         confidence: 0.8
       })),
       improvementThemes: cached.improvement_themes.map(theme => ({
         theme,
-        specificExample: 'Cached insight - regenerate for details',
+        specificExample: 'Legacy cache - refresh insights for complete analysis',
         impactAssessment: 'Previously identified improvement area',
-        recommendedAction: 'Review detailed analysis',
+        recommendedAction: '🔄 Refresh for enhanced insights',
         priority: 'medium' as const,
         affectedCustomerCount: 1,
         implementationComplexity: 'moderate' as const,
-        potentialROI: 'See detailed analysis',
+        potentialROI: 'Refresh for detailed analysis',
         confidence: 0.8
       })),
-      highlights: Array.isArray(cached.highlights) ? cached.highlights : [],
+      highlights: Array.isArray(cached.highlights) ? cached.highlights.filter((h: unknown): h is ReviewHighlight => 
+        h !== null && typeof h === 'object' && 
+        'id' in h && 'customer_name' in h && 'rating' in h && 'review_text' in h
+      ) : [],
       competitiveInsights: {
         competitorMentions: [],
         uniqueValueProps: ['Quality service delivery'],
@@ -891,6 +1056,234 @@ Focus on actionable insights that drive measurable business outcomes.`;
 
     return totalReviews > 0 ? Math.round((totalWeightedScore / totalReviews) * 10) / 10 : 0;
   }
+
+  /**
+   * Calculate rating distribution for sentiment context
+   */
+  private calculateRatingDistribution(reviews: Review[]): {
+    oneStar: number;
+    twoStar: number;
+    threeStar: number;
+    fourStar: number;
+    fiveStar: number;
+  } {
+    const distribution = {
+      oneStar: 0,
+      twoStar: 0,
+      threeStar: 0,
+      fourStar: 0,
+      fiveStar: 0
+    };
+
+    reviews.forEach(review => {
+      const rating = Number(review.rating);
+      switch (rating) {
+        case 1: distribution.oneStar++; break;
+        case 2: distribution.twoStar++; break;
+        case 3: distribution.threeStar++; break;
+        case 4: distribution.fourStar++; break;
+        case 5: distribution.fiveStar++; break;
+      }
+    });
+
+    return distribution;
+  }
+
+  /**
+   * Get sentiment context based on rating distribution
+   */
+  private getSentimentContext(ratingStats: ReturnType<typeof this.calculateRatingDistribution>, totalReviews: number): string {
+    const positivePercentage = Math.round(((ratingStats.fourStar + ratingStats.fiveStar) / totalReviews) * 100);
+    const negativePercentage = Math.round(((ratingStats.oneStar + ratingStats.twoStar) / totalReviews) * 100);
+
+    if (positivePercentage >= 90) {
+      return "EXCEPTIONAL BUSINESS - Focus on customer love points and competitive advantages. Use 80% positive themes, 20% minor optimizations.";
+    } else if (positivePercentage >= 75) {
+      return "HIGH-PERFORMING BUSINESS - Balance strong positives with strategic improvements. Use 70% positive themes, 30% improvements.";
+    } else if (positivePercentage >= 60) {
+      return "MIXED-SENTIMENT BUSINESS - Balance positives and improvements equally. Address both strengths and concerns.";
+    } else if (negativePercentage >= 40) {
+      return "STRUGGLING BUSINESS - Focus on critical issues and immediate improvements. Address problems first.";
+    } else {
+      return "MODERATE BUSINESS - Identify both strengths and areas for improvement with balanced insights.";
+    }
+  }
+
+  /**
+   * Extract keywords and aggregate review content for better insights
+   */
+  private aggregateReviewContent(reviews: Review[]): ReviewAggregation {
+    const positiveKeywords = new Map<string, {count: number, totalRating: number, reviews: number}>();
+    const negativeKeywords = new Map<string, {count: number, totalRating: number, reviews: number}>();
+    const commonThemes = new Map<string, {count: number, totalRating: number, examples: string[]}>();
+
+    // Specific business attributes to track (more meaningful than adjectives)
+    const businessAttributes = [
+      // Service quality
+      {phrase: 'excellent service', category: 'Service Excellence'},
+      {phrase: 'great customer service', category: 'Service Excellence'},
+      {phrase: 'outstanding support', category: 'Service Excellence'},
+      {phrase: 'helpful staff', category: 'Staff Quality'},
+      {phrase: 'friendly staff', category: 'Staff Quality'},
+      {phrase: 'knowledgeable team', category: 'Staff Quality'},
+      {phrase: 'professional service', category: 'Service Excellence'},
+      
+      // Speed & Efficiency
+      {phrase: 'fast service', category: 'Speed & Efficiency'},
+      {phrase: 'quick response', category: 'Speed & Efficiency'},
+      {phrase: 'prompt delivery', category: 'Speed & Efficiency'},
+      {phrase: 'efficient process', category: 'Speed & Efficiency'},
+      
+      // Product Quality
+      {phrase: 'high quality', category: 'Product Quality'},
+      {phrase: 'great quality', category: 'Product Quality'},
+      {phrase: 'excellent products', category: 'Product Quality'},
+      {phrase: 'top quality', category: 'Product Quality'},
+      
+      // Experience
+      {phrase: 'smooth experience', category: 'Customer Experience'},
+      {phrase: 'easy process', category: 'Customer Experience'},
+      {phrase: 'convenient location', category: 'Convenience'},
+      {phrase: 'clean facility', category: 'Environment'},
+      {phrase: 'comfortable atmosphere', category: 'Environment'}
+    ];
+
+    // Generic positive adjectives (fallback)
+    const positiveAdjectives = [
+      'excellent', 'amazing', 'fantastic', 'wonderful', 'perfect', 'outstanding', 
+      'great', 'awesome', 'best', 'professional', 'friendly', 'helpful', 
+      'fast', 'quick', 'clean', 'quality', 'beautiful', 'comfortable'
+    ];
+
+    // Common negative words to track
+    const negativeWords = [
+      'terrible', 'awful', 'horrible', 'worst', 'bad', 'poor', 'disappointing',
+      'slow', 'rude', 'unprofessional', 'dirty', 'expensive', 'overpriced',
+      'problem', 'issue', 'complaint', 'mistake', 'error', 'wrong', 'delayed',
+      'wait', 'waiting', 'long', 'difficult', 'hard', 'impossible'
+    ];
+
+    const businessInsights = new Map<string, {count: number, totalRating: number, reviews: number, category: string, examples: string[]}>();
+
+    reviews.forEach(review => {
+      const reviewText = review.review_text.toLowerCase();
+      const rating = Number(review.rating);
+
+      // Track specific business attributes first (more valuable than generic adjectives)
+      businessAttributes.forEach(attr => {
+        if (reviewText.includes(attr.phrase.toLowerCase())) {
+          const key = attr.category;
+          const current = businessInsights.get(key) || {count: 0, totalRating: 0, reviews: 0, category: attr.category, examples: []};
+          current.count++;
+          current.totalRating += rating;
+          current.reviews++;
+          if (current.examples.length < 3) {
+            current.examples.push(review.review_text.substring(0, 80) + '...');
+          }
+          businessInsights.set(key, current);
+        }
+      });
+
+      // Track generic positive adjectives as fallback
+      positiveAdjectives.forEach(word => {
+        if (reviewText.includes(word)) {
+          const current = positiveKeywords.get(word) || {count: 0, totalRating: 0, reviews: 0};
+          current.count++;
+          current.totalRating += rating;
+          current.reviews++;
+          positiveKeywords.set(word, current);
+        }
+      });
+
+      // Track negative keywords
+      negativeWords.forEach(word => {
+        if (reviewText.includes(word)) {
+          const current = negativeKeywords.get(word) || {count: 0, totalRating: 0, reviews: 0};
+          current.count++;
+          current.totalRating += rating;
+          current.reviews++;
+          negativeKeywords.set(word, current);
+        }
+      });
+
+      // Extract common themes based on common business terms
+      const businessTerms = ['service', 'staff', 'food', 'location', 'price', 'quality', 'atmosphere', 'experience'];
+      businessTerms.forEach(term => {
+        if (reviewText.includes(term)) {
+          const current = commonThemes.get(term) || {count: 0, totalRating: 0, examples: []};
+          current.count++;
+          current.totalRating += rating;
+          if (current.examples.length < 3) {
+            current.examples.push(review.review_text.substring(0, 100) + '...');
+          }
+          commonThemes.set(term, current);
+        }
+      });
+    });
+
+    // Convert to arrays and sort by frequency
+    const posKeywords: KeywordFrequency[] = Array.from(positiveKeywords.entries())
+      .map(([word, data]) => ({
+        word,
+        count: data.count,
+        sentiment: 'positive' as const,
+        associatedRating: data.totalRating / data.reviews
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const negKeywords: KeywordFrequency[] = Array.from(negativeKeywords.entries())
+      .map(([word, data]) => ({
+        word,
+        count: data.count,
+        sentiment: 'negative' as const,
+        associatedRating: data.totalRating / data.reviews
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const themes = Array.from(commonThemes.entries())
+      .map(([theme, data]) => ({
+        theme,
+        frequency: data.count,
+        avgRating: data.totalRating / data.count,
+        examples: data.examples
+      }))
+      .sort((a, b) => b.frequency - a.frequency);
+
+    // Generate customer love points from business insights (prioritize specific attributes over generic adjectives)
+    const businessLovePoints = Array.from(businessInsights.entries())
+      .filter(([, data]) => data.count >= 1 && data.totalRating / data.reviews >= 4)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 4)
+      .map(([category, data]) => `${category} (praised ${data.count} times)`);
+
+    // Fallback to positive keywords if no specific business insights found
+    const keywordLovePoints = posKeywords
+      .filter(kw => kw.count >= 2 && kw.associatedRating >= 4)
+      .slice(0, 3)
+      .map(kw => `${kw.word.charAt(0).toUpperCase() + kw.word.slice(1)} (mentioned ${kw.count} times)`);
+
+    // Combine business insights with keywords, preferring business insights
+    const customerLovePoints = businessLovePoints.length > 0 
+      ? [...businessLovePoints, ...keywordLovePoints.slice(0, 5 - businessLovePoints.length)]
+      : keywordLovePoints;
+
+    // Generate improvement areas from negative keywords
+    const improvementAreas = negKeywords
+      .filter(kw => kw.count >= 1)
+      .slice(0, 3)
+      .map(kw => `${kw.word.charAt(0).toUpperCase() + kw.word.slice(1)} concerns (${kw.count} mentions)`);
+
+    return {
+      totalReviews: reviews.length,
+      positiveKeywords: posKeywords,
+      negativeKeywords: negKeywords,
+      commonThemes: themes,
+      customerLovePoints,
+      improvementAreas
+    };
+  }
 }
 
 // ==========================================
@@ -905,7 +1298,7 @@ export async function generateWeeklyInsights(
   weekStart: Date,
   weekEnd: Date
 ): Promise<WeeklyDigestInsights> {
-  const service = new DigestInsightsService();
+  const service = new InsightsService();
   return service.generateWeeklyInsights(businessId, weekStart, weekEnd);
 }
 

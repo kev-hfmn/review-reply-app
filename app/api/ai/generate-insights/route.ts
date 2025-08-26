@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateWeeklyInsights } from '@/lib/services/digestInsightsService';
+import { generateWeeklyInsights } from '@/lib/services/insightsService';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 import { checkUserSubscription } from '@/lib/utils/subscription';
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: 'Subscription required',
-          message: 'AI-powered digest insights require an active subscription. Please upgrade your plan.',
+          message: 'AI-powered insights require an active subscription. Please upgrade your plan.',
           code: 'SUBSCRIPTION_REQUIRED'
         },
         { status: 403 }

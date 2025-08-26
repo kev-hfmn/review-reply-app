@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/contexts/ThemeContext';
 import Image from 'next/image';
 import { showCookiePreferences } from '@/lib/cookieConsent';
+import { Button } from '@/components/ui/button';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -31,7 +32,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-primary/10 border-t border-slate-200 dark:border-slate-800">
+    <footer className="bg-sidebar-primary border-t border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-16">
@@ -51,44 +52,44 @@ export function Footer() {
                 height={30}
                 className="rounded-md"
               />
-                  <span className="text-xl font-bold leading-tight text-slate-900 dark:text-white">
+                  <span className="text-xl font-bold leading-tight text-primary-foreground">
                     RepliFast
                   </span>
                 </Link>
-                <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-sm">
+                <p className="text-primary-foreground mb-4 max-w-sm">
                   AI-powered review management for small businesses. Automate Google Business Profile replies with intelligent, personalized responses.
                 </p>
-                <p className="text-sm text-slate-500 dark:text-slate-500 mb-6">
+                <p className="text-sm text-primary-foreground mb-6">
                   RepliFast is a product of Soulrise LLC
                 </p>
                 <div className="flex items-center space-x-4">
-                  <motion.a
-                    href="/login"
-                    whileHover={{ scale: 1.05 }}
-                    className="inline-flex items-center px-4 py-2 bg-primary hover:bg-primary/80 text-white text-sm font-medium rounded-lg transition-colors"
+                  <Button
+                    onClick={() => window.location.href = "/login"}
+className="hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
+                   variant="outline"
                   >
                     Sign Up
-                  </motion.a>
-                  <motion.a
-                    href="mailto:hello@replifast.com"
-                    whileHover={{ scale: 1.05 }}
-                    className="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 hover:border-primary dark:hover:border-primary text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary text-sm font-medium rounded-lg transition-colors"
+                  </Button>
+                  <Button
+                    onClick={() => window.location.href = "mailto:hello@replifast.com"}
+className="hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
+                   variant="outline"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Contact Us
-                  </motion.a>
+                  </Button>
                 </div>
 
                 {/* Theme Toggle */}
                 <div className="flex items-center gap-2 mt-4">
-                  <Sun className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <Sun className="h-4 w-4 text-primary-foreground" />
                   <Switch
                     checked={theme === 'dark'}
                     onCheckedChange={toggleTheme}
                     aria-label="Toggle theme"
-                    className="data-[state=checked]:bg-primary"
+                    className="data-[state=checked]:bg-card"
                   />
-                  <Moon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <Moon className="h-4 w-4 text-primary-foreground" />
                 </div>
               </motion.div>
             </div>
@@ -100,7 +101,7 @@ export function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                <h3 className="text-sm font-semibold text-primary-foreground uppercase tracking-wider mb-4">
                   Product
                 </h3>
                 <ul className="space-y-3">
@@ -108,7 +109,7 @@ export function Footer() {
                     <li key={link.name}>
                       <Link
                         href={link.href}
-                        className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm"
+                        className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                       >
                         {link.name}
                       </Link>
@@ -125,7 +126,7 @@ export function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                <h3 className="text-sm font-semibold text-primary-foreground uppercase tracking-wider mb-4">
                   Support
                 </h3>
                 <ul className="space-y-3">
@@ -133,7 +134,7 @@ export function Footer() {
                     <li key={link.name}>
                       <Link
                         href={link.href}
-                        className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm"
+                        className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                       >
                         {link.name}
                       </Link>
@@ -150,7 +151,7 @@ export function Footer() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                <h3 className="text-sm font-semibold text-primary-foreground uppercase tracking-wider mb-4">
                   Legal
                 </h3>
                 <ul className="space-y-3">
@@ -158,7 +159,7 @@ export function Footer() {
                     <li key={link.name}>
                       <Link
                         href={link.href}
-                        className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm"
+                        className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                       >
                         {link.name}
                       </Link>
@@ -167,7 +168,7 @@ export function Footer() {
                   <li>
                     <button
                       onClick={() => showCookiePreferences()}
-                      className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm text-left"
+                      className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm text-left"
                     >
                       Manage Cookies
                     </button>
@@ -187,10 +188,10 @@ export function Footer() {
             className="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0"
           >
             <div className="flex items-center space-x-4">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-primary-foreground">
                 © {currentYear} RepliFast. All rights reserved.
               </p>
-              <div className="flex items-center space-x-1 text-sm text-slate-600 dark:text-slate-400">
+              <div className="flex items-center space-x-1 text-sm text-primary-foreground">
                 <span>Made with</span>
                 <Heart className="h-4 w-4 text-red-500 fill-current" />
                 <span>for small businesses</span>

@@ -193,16 +193,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(currentUser);
 
           if (currentUser && mounted) {
-            // Run user data loading in background - don't block initial render
-            Promise.all([
-              checkSubscription(currentUser.id),
-              loadBusinessInfo(currentUser.id)
-
-              // ensureBusinessRecord removed to prevent race condition - only called in auth state change
-            ]).catch(error => {
+            // Wait for user data loading to complete before setting loading to false
+            try {
+              await Promise.all([
+                checkSubscription(currentUser.id),
+                loadBusinessInfo(currentUser.id)
+              ]);
+            } catch (error) {
               console.error('Error loading user data:', error);
               // Don't throw - allow app to continue with basic auth
-            });
+            }
           }
         }
 
@@ -216,11 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(newUser);
 
               if (newUser) {
-                // Run these in background - don't block auth state update
+                // Run these in background for auth state changes
                 Promise.all([
                   checkSubscription(newUser.id),
                   loadBusinessInfo(newUser.id)
-                  // Business records now created only during Google Business Profile connection
                 ]).catch(error => {
                   console.error('Error loading user data in background:', error);
                 });
@@ -238,7 +237,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authSubscription = subscription;
 
         // Only set loading to false after everything is initialized
-        if (mounted) setIsLoading(false);
+        if (mounted) {
+          console.log('AuthContext: Setting loading to false');
+          setIsLoading(false);
+        }
 
       } catch (error) {
         console.error("Auth initialization error:", error);
