@@ -1,4 +1,4 @@
-import { supabaseAdminAdmin } from '@/utils/supabaseAdmin-admin';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 import { generateAIReply } from './openaiService';
 
 export interface ReviewData {
