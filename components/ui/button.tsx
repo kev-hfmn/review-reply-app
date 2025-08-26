@@ -15,18 +15,18 @@ const buttonVariants = cva(
         destructiveOutline:
           "border border-destructive text-destructive bg-background hover:bg-destructive hover:text-destructive-foreground",
           outline:
-          "border border-input bg-background hover:bg-primary hover:text-primary-foreground",
+          "border border-border bg-transparent text-foreground/80 hover:bg-muted hover:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-accent text-secondary-foreground hover:bg-accent/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-        outlinePrimary: "border text-primary border-primary bg-background hover:bg-primary hover:text-primary-foreground",
-        outlineSecondary: "border text-secondary border-secondary bg-background hover:bg-secondary hover:text-secondary-foreground",
+        outlinePrimary: "border text-primary border-primary bg-transparent hover:bg-primary hover:text-primary-foreground",
+        outlineSecondary: "border text-accent border-accent bg-transparent hover:bg-accent hover:text-primary-foreground",
         pill: "rounded-full border border-input bg-background hover:bg-muted",
         pillActive: "rounded-full border border-input border-primary/60 shadow-inner bg-muted",
-        outlineDefault: "border border-input bg-background hover:bg-muted hover:text-default-foreground",
-        outlineGreen: "border text-green-600 border-green-600 bg-background hover:bg-green-600 hover:text-green-600 hover:text-background",
+        outlineDefault: "border border-input bg-transparent hover:bg-muted hover:text-default-foreground",
+        outlineGreen: "border text-green-600 border-green-600 bg-transparent hover:bg-green-600 hover:text-green-600 hover:text-primary-foreground",
 
       },
       size: {

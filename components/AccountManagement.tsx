@@ -45,7 +45,7 @@ export function AccountManagement() {
 
 
       {/* User Information */}
-      <div className="mb-6 space-y-2">
+      <div className="mb-6 space-y-2 text-base">
         <p><span className="font-medium">Email:</span> {user?.email}</p>
         <p><span className="font-medium">Last Sign In:</span> {user?.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'd. MMMM yyyy') : 'Never'}</p>
         <p><span className="font-medium">Account Type:</span> {isOAuthUser ? 'Google Account' : 'Email Account'}</p>

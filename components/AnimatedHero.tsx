@@ -46,7 +46,7 @@ export default function AnimatedHero() {
   return (
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="pt-20 pb-24 sm:pt-32 sm:pb-32">
+        <div className="pt-16 pb-16 sm:pt-24 sm:pb-16">
             <motion.div
               ref={heroRef}
               initial={{ opacity: 0, y: 20 }}
@@ -59,10 +59,10 @@ export default function AnimatedHero() {
                 Your Reputation, On Autopilot
               </div>
               <div className="max-w-3xl mx-auto">
-                <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+                <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white !leading-[1.2]">
                   Automatic Replies for Your Google Reviews
                 </h1>
-                <p className="mt-8 text-xl text-slate-600 dark:text-slate-200">
+                <p className="mt-8 text-[1.375rem] text-foreground/80">
                   RepliFast makes sure every review gets a reply in your tone of voice, helping you save time, build trust with customers, and keep your reputation strong.
                 </p>
               </div>
@@ -78,11 +78,11 @@ export default function AnimatedHero() {
                   <Button
                     size="lg"
                     onClick={() => router.push('/dashboard')}
-                    className="px-8 py-4 text-lg mb-2"
+                    className="px-6 py-4 text-md mb-2 group !font-normal"
                     variant="primary"
                   >
                     Start now
-                    <ArrowRight className="h-5 w-5 ml-2" />
+                    <ArrowRight className="h-5 w-5 ml-0 group-hover:translate-x-2 transition-all duration-200" />
                   </Button>
                 </div>
               </motion.div>

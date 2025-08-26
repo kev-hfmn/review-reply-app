@@ -164,7 +164,7 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
           ` : ''}
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/digest" class="button">View Full Digest 📊</a>
+            <a href="https://replifast.com/digest" class="button">View Full Digest 📊</a>
           </div>
 
           <p style="color: #6B7280; font-size: 14px;">
@@ -175,7 +175,7 @@ function digestExportTemplate(data: DigestEmailData): EmailTemplate {
         <div class="footer">
           <p>Keep up the great work managing your reviews! 🚀</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage email preferences</a> |
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Manage email preferences</a> |
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -251,14 +251,14 @@ function reviewNotificationTemplate(data: ReviewNotificationData): EmailTemplate
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/reviews" class="button">Manage Reviews 💬</a>
+            <a href="https://replifast.com/reviews" class="button">Manage Reviews 💬</a>
           </div>
         </div>
 
         <div class="footer">
           <p>Respond quickly to maintain great customer relationships! ⚡</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Manage notifications</a> |
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Manage notifications</a> |
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -326,14 +326,14 @@ function replyConfirmationTemplate(data: ReplyConfirmationData): EmailTemplate {
           ` : ''}
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/reviews" class="button">Manage More Reviews 📱</a>
+            <a href="https://replifast.com/reviews" class="button">Manage More Reviews 📱</a>
           </div>
         </div>
 
         <div class="footer">
           <p>Great job staying engaged with your customers! 👏</p>
           <p>
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Notification settings</a> |
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Notification settings</a> |
             <a href="https://support.replifast.com" style="color: #3B82F6;">Support</a>
           </p>
         </div>
@@ -396,7 +396,7 @@ function onboardingTemplate(data: OnboardingEmailData): EmailTemplate {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/dashboard" class="button">Go to Dashboard 📊</a>
+            <a href="https://replifast.com/dashboard" class="button">Go to Dashboard 📊</a>
           </div>
 
           <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -410,7 +410,7 @@ function onboardingTemplate(data: OnboardingEmailData): EmailTemplate {
           <p>
             <a href="mailto:${data.supportContactEmail}" style="color: #3B82F6;">Contact Support</a> |
             <a href="https://docs.replifast.com" style="color: #3B82F6;">Documentation</a> |
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a>
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Settings</a>
           </p>
         </div>
       </div>
@@ -517,7 +517,7 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
             ${data.invoiceUrl ? `
               <a href="${data.invoiceUrl}" class="button" style="margin-right: 12px;">View Invoice 📄</a>
             ` : ''}
-            <a href="https://app.replifast.com/settings?tab=billing" class="button">Manage Billing ⚙️</a>
+            <a href="https://replifast.com/settings?tab=billing" class="button">Manage Billing ⚙️</a>
           </div>
         </div>
 
@@ -525,7 +525,7 @@ function billingTemplate(data: BillingEmailData): EmailTemplate {
           <p>Questions about your billing? We're here to help! 💬</p>
           <p>
             <a href="mailto:billing@replifast.com" style="color: #3B82F6;">Contact Billing Support</a> |
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Account Settings</a>
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Account Settings</a>
           </p>
         </div>
       </div>
@@ -605,7 +605,7 @@ function systemAlertTemplate(data: SystemAlertData): EmailTemplate {
           ` : ''}
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/settings" class="button" style="background-color: #6B7280;">Check Settings ⚙️</a>
+            <a href="https://replifast.com/settings" class="button" style="background-color: #6B7280;">Check Settings ⚙️</a>
           </div>
 
           <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 16px; margin: 20px 0;">
@@ -693,7 +693,7 @@ function automationErrorTemplate(data: AutomationErrorData): EmailTemplate {
           ` : ''}
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.replifast.com/settings?tab=integrations" class="button" style="background-color: #DC2626;">Check Settings 🔧</a>
+            <a href="https://replifast.com/settings?tab=integrations" class="button" style="background-color: #DC2626;">Check Settings 🔧</a>
           </div>
 
           <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 8px; padding: 16px; margin: 20px 0;">
@@ -706,7 +706,7 @@ function automationErrorTemplate(data: AutomationErrorData): EmailTemplate {
           <p>Error detected at ${new Date().toLocaleString()} 🕐</p>
           <p>
             <a href="mailto:support@replifast.com" style="color: #3B82F6;">Contact Support</a> |
-            <a href="https://app.replifast.com/dashboard" style="color: #3B82F6;">Dashboard</a> |
+            <a href="https://replifast.com/dashboard" style="color: #3B82F6;">Dashboard</a> |
             <a href="https://docs.replifast.com/troubleshooting" style="color: #3B82F6;">Troubleshooting</a>
           </p>
         </div>
@@ -789,7 +789,7 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
             <h4 style="margin: 0 0 8px 0; color: #92400E;">💡 Automate Your Responses</h4>
             <p style="margin: 0; color: #92400E;">Enable automation to automatically generate and post AI replies to new reviews!</p>
             <div style="margin-top: 12px;">
-              <a href="https://app.replifast.com/settings?tab=integrations" style="color: #92400E; text-decoration: underline;">Enable Automation →</a>
+              <a href="https://replifast.com/settings?tab=integrations" style="color: #92400E; text-decoration: underline;">Enable Automation →</a>
             </div>
           </div>
           ` : `
@@ -804,8 +804,8 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
           <p>Keep engaging with your customers! 🚀</p>
           <p>
             <a href="${data.dashboardUrl}" style="color: #3B82F6;">Dashboard</a> |
-            <a href="https://app.replifast.com/reviews" style="color: #3B82F6;">All Reviews</a> |
-            <a href="https://app.replifast.com/settings" style="color: #3B82F6;">Settings</a>
+            <a href="https://replifast.com/reviews" style="color: #3B82F6;">All Reviews</a> |
+            <a href="https://replifast.com/settings" style="color: #3B82F6;">Settings</a>
           </p>
         </div>
       </div>
@@ -823,7 +823,7 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
 export function automationSummaryTemplate(data: AutomationSummaryData): EmailTemplate {
   // Smart subject line based on what happened
   let subject: string;
-  
+
   if (data.postedRepliesCount > 0 && data.pendingReviewsCount > 0) {
     // Both posted and pending
     subject = `${data.postedRepliesCount} ${data.postedRepliesCount === 1 ? 'reply' : 'replies'} posted • ${data.pendingReviewsCount} need your review`;
@@ -1131,7 +1131,7 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
           <div style="background-color: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 20px; margin: 30px 0;">
             <h3 style="margin: 0 0 16px 0; color: #92400E; font-size: 18px;">⚠️ Manual Review Required</h3>
             <p style="margin: 0 0 20px 0; color: #92400E;">${data.pendingReviewsCount} ${data.pendingReviewsCount === 1 ? 'review needs' : 'reviews need'} your approval before posting${data.approvalMode === 'auto_4_plus' ? ' (due to ratings below 4 stars)' : data.approvalMode === 'auto_except_low' ? ' (due to low ratings)' : ''}:</p>
-            
+
             <div style="background-color: #FFFBEB; border-radius: 8px; padding: 16px; margin: 16px 0;">
               ${data.pendingReviews.map((review, index) => `
                 <div style="border-bottom: ${index < data.pendingReviews.length - 1 ? '1px solid #FDE68A' : 'none'}; padding: ${index > 0 ? '16px 0' : '0 0 16px 0'}; margin: ${index < data.pendingReviews.length - 1 ? '0 0 16px 0' : '0'};">
@@ -1155,9 +1155,9 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
                 </div>
               `).join('')}
             </div>
-            
+
             <div style="text-align: center; margin: 20px 0 0 0;">
-              <a href="https://app.replifast.com/reviews?filter=pending" style="display: inline-block; background-color: #F59E0B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Review Pending Replies →</a>
+              <a href="https://replifast.com/reviews?filter=pending" style="display: inline-block; background-color: #F59E0B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 14px;">Review Pending Replies →</a>
             </div>
           </div>
           ` : ''}
@@ -1182,7 +1182,7 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
           <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h4 style="margin: 0 0 12px 0; color: #374151;">⚙️ Automation Details</h4>
             <p style="margin: 0 0 8px 0; color: #6B7280; font-size: 14px;">This summary was generated from your <strong>${data.slotId}</strong> daily automation sync completed at ${new Date(data.syncTimestamp).toLocaleString()}.</p>
-            <p style="margin: 0; color: #6B7280; font-size: 14px;">You can adjust your automation settings anytime in your <a href="https://app.replifast.com/settings?tab=integrations" style="color: #3B82F6;">dashboard settings</a>.</p>
+            <p style="margin: 0; color: #6B7280; font-size: 14px;">You can adjust your automation settings anytime in your <a href="https://replifast.com/settings?tab=integrations" style="color: #3B82F6;">dashboard settings</a>.</p>
           </div>
         </div>
 

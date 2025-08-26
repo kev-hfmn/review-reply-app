@@ -19,7 +19,7 @@ export default function ClientPageWrapper({ children, navigationSections }: Clie
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
+    <div className="min-h-screen bg-background  relative">
       {/* Navigation */}
       <PublicNavigation
         navigationSections={navigationSections}

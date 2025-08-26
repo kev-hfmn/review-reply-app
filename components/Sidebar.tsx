@@ -24,7 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Reviews', href: '/reviews', icon: MessageSquare },
-  { name: 'Insights', href: '/digest', icon: BarChart3 },
+  { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Help', href: '/help', icon: HelpCircle },
   { name: 'Profile', href: '/profile', icon: User },
@@ -41,7 +41,7 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <button
         type="button"
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-background shadow-lg border border-border lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar shadow-lg border border-border lg:hidden"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
       >
         {isMobileMenuOpen ? (
@@ -62,7 +62,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div className={`
         fixed lg:static inset-y-0 left-0 z-40 h-full
-        w-64 bg-primary/5 border-r border-border
+        w-64 bg-sidebar border-r border-border
         transition-transform duration-300 ease-in-out flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -72,8 +72,8 @@ export function Sidebar() {
             <div className="flex items-center gap-2 w-full">
               <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               {businesses.length > 1 ? (
-                <Select 
-                  value={selectedBusinessId || ''} 
+                <Select
+                  value={selectedBusinessId || ''}
                   onValueChange={setSelectedBusinessId}
                 >
                   <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none p-0 focus:ring-0 hover:bg-accent/50">
@@ -113,7 +113,7 @@ export function Sidebar() {
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                     ${isActive
                       ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-primary hover:text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground'
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}

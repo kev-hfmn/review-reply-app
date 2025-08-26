@@ -86,7 +86,7 @@ export default function ReviewFilters({
   }, [onReset]);
 
   return (
-    <div className="bg-foreground/5 rounded-xl p-4 border-2 border-border">
+    <div className="bg-card rounded-xl p-4 border border-border">
       {/* Search and Filter Toggle Row */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Search */}

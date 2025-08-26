@@ -14,7 +14,7 @@ import GoogleAnalytics from '@/components/GoogleAnalytics';
 export { metadata } from './metadata';
 
 const notoSans = Noto_Sans({ subsets: ['latin'] });
-const indieFlower = Indie_Flower({ 
+const indieFlower = Indie_Flower({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-indie-flower',
@@ -91,7 +91,7 @@ export default function RootLayout({
               </AuthProvider>
             {/* </PostHogProvider>
           </PostHogErrorBoundary> */}
-          
+
           {/* Cookie Consent Banner */}
           <CookieConsent />
         </ThemeProvider>

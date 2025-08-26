@@ -111,7 +111,7 @@ export default function SettingsPage() {
     if (oldValue >= 1 && oldValue <= 5) {
       return oldValue;
     }
-    
+
     // Otherwise, convert from old 1-10 scale to new 1-5 scale
     if (oldValue <= 2) return 1;  // 1-2 → 1
     if (oldValue <= 4) return 2;  // 3-4 → 2
@@ -400,7 +400,7 @@ export default function SettingsPage() {
         };
 
         const errorMessage = errorMessages[error as keyof typeof errorMessages] || 'An unknown error occurred.';
-        
+
         showToast({
           type: 'error',
           title: 'Google Connection Failed',

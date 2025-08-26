@@ -327,7 +327,7 @@ function ProfileContent() {
                       {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Calendar className="h-4 w-4" />
                     Started: {formatSubscriptionDate(subscription.created_at)}
                   </div>

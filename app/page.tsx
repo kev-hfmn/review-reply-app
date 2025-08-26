@@ -152,7 +152,7 @@ export default function LandingPage() {
   return (
     <ClientPageWrapper navigationSections={navigationSections}>
       {/* Hero Section with Extended Particles Background */}
-      <section id="home" className="relative overflow-hidden bg-slate-300 dark:bg-slate-800 bg-gradient-to-br from-primary/40 via-accent/20 to-secondary/20">
+      <section id="home" className="relative overflow-hidden bg-foreground/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/20 to-foreground/50 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
         {/* Darker overlay for light mode */}
@@ -168,7 +168,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-slate-50 dark:bg-[#0f1629]">
+      <section id="features" className="py-24 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-16">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
@@ -189,7 +189,7 @@ export default function LandingPage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="relative p-8 bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 group"
+                className="relative p-8 bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:border-blue-300 dark:hover:border-blue-600 group h-full"
               >
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   {feature.icon}
@@ -224,7 +224,7 @@ export default function LandingPage() {
           {/* Why Reviews Matter Cards */}
           <AnimatedGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20" staggerDelay={0.1}>
             {reviewMatters.map((item) => (
-              <div key={item.title} className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group">
+              <div key={item.title} className="h-full relative p-6 bg-card rounded-2xl shadow-lg border border-border  hover:border-blue-500/50 transition-all duration-300 group">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
                   {item.icon}
                 </div>
@@ -272,13 +272,13 @@ export default function LandingPage() {
           </AnimatedGrid>
 
           {/* Testimonial */}
-          <AnimatedSection className="mt-20 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/10 rounded-2xl p-8 lg:p-12 text-center max-w-4xl mx-auto">
+          <AnimatedSection className="mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-8 lg:p-12 text-center max-w-4xl mx-auto">
             <div className="flex justify-center mb-6">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
               ))}
             </div>
-            <blockquote className="text-xl lg:text-xl font-thin text-slate-900 dark:text-white mb-6">
+            <blockquote className="text-xl lg:text-xl font-light text-slate-900 dark:text-white mb-6">
               &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
             </blockquote>
             <div className="flex items-center justify-center space-x-2">

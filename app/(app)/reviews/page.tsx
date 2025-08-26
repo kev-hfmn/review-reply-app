@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, MessageSquare, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,14 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function ReviewsPage() {
-  const { user, isSubscriber } = useAuth();
+  const { isSubscriber, isLoading: authLoading } = useAuth();
   const {
     businesses,
     reviews,
     allReviews,
     filters,
     pagination,
-    isLoading,
+    isLoading: dataLoading,
     isUpdating,
     error,
     toasts,
@@ -42,6 +42,9 @@ export default function ReviewsPage() {
   } = useReviewsData();
 
   const [isFetchingReviews, setIsFetchingReviews] = useState(false);
+
+  // Combined loading state - show loading until both auth and data are ready
+  const isPageLoading = authLoading || dataLoading;
 
   // Selection state
   const [selection, setSelection] = useState<SelectionState>({
@@ -218,6 +221,57 @@ export default function ReviewsPage() {
 
   const filteredCount = reviews.length;
 
+  // Debug logging to check loading states
+  console.log('Reviews Page Loading States:', { authLoading, dataLoading, isPageLoading });
+
+  // Force loading screen to show for at least 500ms to prevent flicker
+  const [minLoadingTime, setMinLoadingTime] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingTime(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading screen while page is initializing or during minimum loading time
+  if (isPageLoading || minLoadingTime) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Reviews
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage and respond to customer reviews
+            </p>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center space-y-4">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary mx-auto"></div>
+              <MessageSquare className="h-6 w-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium text-foreground">
+                Loading Reviews
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {authLoading ? 'Checking subscription status...' : 'Fetching your reviews...'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -298,7 +352,7 @@ export default function ReviewsPage() {
         businesses={businesses}
         onFiltersChange={updateFilters}
         onReset={resetFilters}
-        isLoading={isLoading}
+        isLoading={dataLoading}
         resultCount={filteredCount}
       />
 
@@ -345,7 +399,7 @@ export default function ReviewsPage() {
       {isSubscriber && (
         <ReviewsTable
           reviews={reviews}
-          isLoading={isLoading}
+          isLoading={dataLoading}
           selection={selection}
           onSelectionChange={setSelection}
           onReviewClick={handleReviewClick}
@@ -353,7 +407,6 @@ export default function ReviewsPage() {
           onQuickAction={handleQuickAction}
           onGenerateReply={reviewActions.regenerateReply}
           isSubscriber={isSubscriber}
-          user={user}
           onUpgradeRequired={() => showToast({
             type: 'info',
             message: 'Posting replies requires an active subscription. Please upgrade your plan to access this feature.',

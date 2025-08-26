@@ -304,7 +304,7 @@ serve(async (req) => {
           .insert({
             business_id: business.id,
             type: 'review_sync_automated',
-            description: `Platform API automated daily review sync completed for ${slotId} - ${syncResult.newReviews || 0} new reviews`,
+            description: `Automated Daily Sync Completed - ${syncResult.newReviews || 0} new reviews`,
             metadata: {
               source: 'edge_function',
               slot_id: slotId,
@@ -342,7 +342,7 @@ serve(async (req) => {
           .insert({
             business_id: business.id,
             type: 'automation_failed',
-            description: `Platform API automated review sync failed for ${slotId}: ${error.message}`,
+            description: `Automated Daily Sync Failed: ${error.message}`,
             metadata: {
               source: 'edge_function',
               slot_id: slotId,

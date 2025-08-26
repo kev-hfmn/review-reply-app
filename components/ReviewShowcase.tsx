@@ -21,18 +21,7 @@ const sampleReviews = [
     replyText: "Thanks for dropping by, Tommy. Glad we could help you pick out your first board and track down that bag in the stock room. Hope the board's treating you well! Enjoy the waves.",
     replyDate: "a month ago"
   },
-  {
-    userName: "Sarah Chen",
-    userRole: "Local Guide",
-    userReviewCount: 32,
-    userPhotoCount: 8,
-    userAvatar: "/icons/sarah.jpeg",
-    rating: 4,
-    reviewText: "Great coffee and friendly staff! The atmosphere is perfect for working on my laptop. Only minor complaint is that it can get quite noisy during peak hours, but overall a solid choice for a local café.",
-    reviewDate: "2 weeks ago",
-    replyText: "Hi Sarah, good to hear you've been enjoying the coffee and using the café as a work spot. You're right about the noise when it gets busy. It's something we're keeping an eye on. Thanks for pointing it out and for spending time with us.",
-    replyDate: "2 weeks ago"
-  },
+
   {
     "userName": "Karen Simmons",
     "userReviewCount": 15,
@@ -43,6 +32,18 @@ const sampleReviews = [
     "reviewDate": "2 weeks ago",
     "replyText": "Karen, thanks for sharing both the good and the not-so-good. I'm glad our staff made you feel welcome, but I'm sorry about the wait and the mistake with your order. That's not the experience we want for anyone. If you give us another chance, we'll work to make it a smoother visit.",
     "replyDate": "2 weeks ago"
+  },
+  {
+    userName: "Sarah Chen",
+    userRole: "Local Guide",
+    userReviewCount: 32,
+    userPhotoCount: 8,
+    userAvatar: "/icons/sarah.jpeg",
+    rating: 1,
+    reviewText: "We waited over 40 minutes for a table, even though we had a reservation. The host seemed overwhelmed and didn’t give any updates. Food was okay but not worth the wait.",
+    reviewDate: "3 days ago",
+    replyText: "Hi Sofia. I’m sorry about the wait. Even with a reservation, you shouldn’t have been left without updates. We’re checking what caused the delay that night and will be working with our team to communicate more clearly. If you’d like to talk further, just reach us at feedback@elmwoodbistro.com.",
+    replyDate: "3 days ago"
   }
 ]
 
@@ -78,7 +79,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
               onClick={() => setShowReplies(true)}
               className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                 showReplies
-                  ? 'bg-accent border border-accent dark:text-background text-foreground'
+                  ? 'bg-accent/80 border border-accent dark:text-background text-foreground'
                   : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >

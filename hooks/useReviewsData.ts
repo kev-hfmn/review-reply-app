@@ -24,7 +24,7 @@ const DEFAULT_FILTERS: ReviewFilters = {
 const PAGE_SIZE = 25;
 
 export function useReviewsData() {
-  const { user, selectedBusinessId } = useAuth();
+  const { user, selectedBusinessId, isLoading: authLoading } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<ReviewTableItem[]>([]);
@@ -38,6 +38,9 @@ export function useReviewsData() {
     hasPrevPage: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Debug logging
+  console.log('useReviewsData loading states:', { isLoading, authLoading, user: !!user, selectedBusinessId });
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -142,8 +145,12 @@ export function useReviewsData() {
   const fetchReviews = useCallback(async () => {
     if (!user?.id) return;
 
+    // Don't start fetching if auth is still loading
+    if (authLoading) return;
+
     try {
       setError(null);
+      setIsLoading(true);
 
       // Handle case where user has no businesses connected or no business selected
       if (businesses.length === 0 || !selectedBusinessId) {
@@ -156,6 +163,7 @@ export function useReviewsData() {
           hasNextPage: false,
           hasPrevPage: false
         }));
+        console.log('fetchReviews: No business selected, setting isLoading to false');
         setIsLoading(false);
         return;
       }
@@ -234,9 +242,10 @@ export function useReviewsData() {
       console.error('Failed to fetch reviews:', err);
       setError(err instanceof Error ? err.message : 'Failed to load reviews');
     } finally {
+      console.log('fetchReviews: Setting isLoading to false');
       setIsLoading(false);
     }
-  }, [user?.id, businesses, selectedBusinessId, filters, pagination.currentPage, transformReviewForTable]);
+  }, [user?.id, businesses, selectedBusinessId, filters, pagination.currentPage, transformReviewForTable, authLoading]);
 
   // Fetch reviews from Google Business Profile
   const fetchReviewsFromGoogle = useCallback(async (options: { timePeriod: string; reviewCount: number }) => {
@@ -322,11 +331,17 @@ export function useReviewsData() {
     fetchBusinesses();
   }, [fetchBusinesses]);
 
+  // Fetch reviews when dependencies change
   useEffect(() => {
-    if (businesses.length >= 0) { // Allow empty array (no businesses case)
-      fetchReviews();
+    // Don't fetch if auth is still loading
+    if (authLoading) {
+      console.log('Skipping reviews fetch - auth still loading');
+      return;
     }
-  }, [fetchReviews, businesses, selectedBusinessId]);
+
+    console.log('Starting reviews fetch...');
+    fetchReviews();
+  }, [fetchReviews, authLoading]);
 
   // Helper function to update a review in local state
   const updateReviewInState = useCallback((reviewId: string, updates: Partial<Review>) => {
