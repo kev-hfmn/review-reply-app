@@ -29,7 +29,7 @@
     "@tanstack/react-query": "^5.85.5",
     "@tanstack/react-query-devtools": "^5.85.5",
     "@types/stripe": "^8.0.416",
-    "@vercel/analytics": "^1.4.1",
+    "@vercel/analytics": "^1.5.0",
     "autoprefixer": "^10.4.21",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",

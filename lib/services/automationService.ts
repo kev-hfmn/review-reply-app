@@ -1,4 +1,4 @@
-import { supabaseAdminAdmin } from '@/utils/supabaseAdmin-admin';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 import { generateAutomatedReply, batchGenerateReplies } from './aiReplyService';
 import { AutoApprovalService } from './autoApprovalService';
 
@@ -482,7 +482,7 @@ export class AutomationService {
           await this.logActivity(context.businessId, 'email_notification_sent', 
             'Automation summary email sent', {
               slot_id: context.slotId,
-              new_reviews: newReviews.length,
+              new_reviews: reviews.length,
               posted_replies: postedReplies.length,
             });
         } else {
