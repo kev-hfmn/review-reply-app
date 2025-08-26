@@ -65,14 +65,14 @@ export function Footer() {
                 <div className="flex items-center space-x-4">
                   <Button
                     onClick={() => window.location.href = "/login"}
-className="hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
+className="text-primary-foreground dark:border-primary-foreground hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
                    variant="outline"
                   >
                     Sign Up
                   </Button>
                   <Button
                     onClick={() => window.location.href = "mailto:hello@replifast.com"}
-className="hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
+className="text-primary-foreground dark:border-primary-foreground hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
                    variant="outline"
                   >
                     <Mail className="h-4 w-4 mr-2" />
@@ -180,7 +180,7 @@ className="hover:bg-primary-foreground hover:text-primary transition-colors text
         </div>
 
         {/* Bottom Footer */}
-        <div className="border-t border-slate-200 dark:border-slate-800 py-8">
+        <div className="border-t border-primary-foreground/60 py-8">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -189,7 +189,7 @@ className="hover:bg-primary-foreground hover:text-primary transition-colors text
           >
             <div className="flex items-center space-x-4">
               <p className="text-sm text-primary-foreground">
-                © {currentYear} RepliFast. All rights reserved.
+                © {currentYear} Soulrise LLC. All rights reserved.
               </p>
               <div className="flex items-center space-x-1 text-sm text-primary-foreground">
                 <span>Made with</span>

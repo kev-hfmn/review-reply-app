@@ -30,6 +30,7 @@ import ClientPageWrapper from '@/components/ClientPageWrapper'
 import AnimatedHero from '@/components/AnimatedHero'
 import ReviewShowcase from '@/components/ReviewShowcase'
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection'
+import { Button } from '@/components/ui/button'
 
 const toPlain = (s: string) =>
   s
@@ -260,8 +261,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-secondary/10 dark:to-secondary/15 rounded-2xl border border-purple-200 dark:border-purple-700/50">
-              <div className="text-3xl font-bold text-purple-600 dark:text-secondary mb-2">Higher</div>
+            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-600/10 dark:to-purple-400/10 rounded-2xl border border-purple-200 dark:border-purple-700/50">
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-600 mb-2">Higher</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 local search rankings for businesses that respond to reviews
               </div>
@@ -398,31 +399,35 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-primary to-secondary/45 via-accent/20 relative overflow-hidden">
+      <section className="py-16 bg-gradient-to-br from-primary/80 to-foreground/70 via-accent/80 relative overflow-hidden">
         <div className="absolute inset-0 dark:bg-grid-white/10 bg-[length:40px_40px] bg-slate-700/50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-4">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6">
-              🚀 Get Started Today
+              🚀 Get Started Now
             </AnimatedSection>
           </div>
           <AnimatedSection className="text-center text-white">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
               Keep your reviews working for you
             </h2>
-            <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
+            <p className="text-xl opacity-95 mb-10 max-w-2xl mx-auto">
               Join other business owners who have put their review replies on autopilot. Start today and see the difference in a week.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <div className="flex flex-col items-center">
-                <a
-                  href="/dashboard"
-                  className="inline-flex items-center px-6 py-4 text-lg font-semibold mb-2 bg-white text-primary hover:bg-slate-50 rounded-md transition-colors"
+                <Button
+                  variant="primary"
+                  asChild
+                  className="group text-md shadow-lg hover:shadow-none transition-all duration-300 hover:scale-[1.02]"
+                  size="xl"
                 >
-                  Start now
-                  <ChevronRight className="h-5 w-5 ml-2" />
-                </a>
+                  <a href="/login">
+                    Let RepliFast handle your replies
+                    <ChevronRight className="h-5 w-5 ml-0 group-hover:translate-x-2 transition-transform" />
+                  </a>
+                </Button>
 
               </div>
             </div>

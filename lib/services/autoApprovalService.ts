@@ -1,4 +1,4 @@
-import { supabase } from '@/utils/supabase';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 
 export type ApprovalMode = 'manual' | 'auto_4_plus' | 'auto_except_low';
 
@@ -67,7 +67,7 @@ export class AutoApprovalService {
    */
   async approveReview(reviewId: string, reason: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('reviews')
         .update({
           status: 'approved',
@@ -118,7 +118,7 @@ export class AutoApprovalService {
     for (const reviewId of reviewIds) {
       try {
         // Get the review details
-        const { data: review, error: fetchError } = await supabase
+        const { data: review, error: fetchError } = await supabaseAdmin
           .from('reviews')
           .select('*')
           .eq('id', reviewId)
@@ -160,7 +160,7 @@ export class AutoApprovalService {
       const since = new Date();
       since.setDate(since.getDate() - days);
 
-      const { data: reviews, error } = await supabase
+      const { data: reviews, error } = await supabaseAdmin
         .from('reviews')
         .select('status, auto_approved')
         .eq('business_id', businessId)
@@ -201,7 +201,7 @@ export class AutoApprovalService {
    */
   async updateApprovalMode(businessId: string, mode: ApprovalMode): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('business_settings')
         .update({
           approval_mode: mode,
@@ -214,7 +214,7 @@ export class AutoApprovalService {
       }
 
       // Log the settings change
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: businessId,
         type: 'settings_updated',
         description: `Auto-approval mode changed to: ${mode}`,
@@ -251,7 +251,7 @@ export class AutoApprovalService {
           break;
       }
 
-      const { data: reviews, error } = await supabase
+      const { data: reviews, error } = await supabaseAdmin
         .from('reviews')
         .select('*')
         .eq('business_id', businessId)
@@ -280,7 +280,7 @@ export class AutoApprovalService {
     byRating: Record<number, { approve: number; skip: number }>;
   }> {
     try {
-      const { data: pendingReviews, error } = await supabase
+      const { data: pendingReviews, error } = await supabaseAdmin
         .from('reviews')
         .select('rating, ai_reply')
         .eq('business_id', businessId)
@@ -342,14 +342,14 @@ export class AutoApprovalService {
   private async logApprovalActivity(reviewId: string, reason: string): Promise<void> {
     try {
       // Get review details for logging
-      const { data: review } = await supabase
+      const { data: review } = await supabaseAdmin
         .from('reviews')
         .select('business_id, rating, customer_name')
         .eq('id', reviewId)
         .single();
 
       if (review) {
-        await supabase.from('activities').insert({
+        await supabaseAdmin.from('activities').insert({
           business_id: review.business_id,
           type: 'reply_auto_approved',
           description: reason,

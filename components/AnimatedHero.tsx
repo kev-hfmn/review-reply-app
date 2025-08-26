@@ -78,7 +78,7 @@ export default function AnimatedHero() {
                   <Button
                     size="lg"
                     onClick={() => router.push('/dashboard')}
-                    className="px-6 py-4 text-md mb-2 group !font-normal"
+                    className="px-6 py-4 text-md mb-2 group !font-normal shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 "
                     variant="primary"
                   >
                     Start now

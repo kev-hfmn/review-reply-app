@@ -1,4 +1,4 @@
-import { supabase } from '@/utils/supabase';
+import { supabaseAdminAdmin } from '@/utils/supabaseAdmin-admin';
 import { generateAutomatedReply, batchGenerateReplies } from './aiReplyService';
 import { AutoApprovalService } from './autoApprovalService';
 
@@ -220,7 +220,7 @@ export class AutomationService {
 
         if (result.success && result.reply) {
           // Update review with AI reply
-          const { error } = await supabase
+          const { error } = await supabaseAdmin
             .from('reviews')
             .update({
               ai_reply: result.reply,
@@ -252,7 +252,7 @@ export class AutomationService {
           }
         } else {
           // Mark as failed
-          await supabase
+          await supabaseAdmin
             .from('reviews')
             .update({
               automation_failed: true,
@@ -521,7 +521,7 @@ export class AutomationService {
         });
 
       // Update business settings with error
-      const { data: currentSettings } = await supabase
+      const { data: currentSettings } = await supabaseAdmin
         .from('business_settings')
         .select('automation_errors')
         .eq('business_id', context.businessId)
@@ -535,7 +535,7 @@ export class AutomationService {
         // Keep only last 10 errors
         const updatedErrors = [error, ...errors].slice(0, 10);
 
-        await supabase
+        await supabaseAdmin
           .from('business_settings')
           .update({
             automation_errors: updatedErrors,
@@ -554,7 +554,7 @@ export class AutomationService {
    */
   private async updateLastAutomationRun(businessId: string, errors: AutomationError[]): Promise<void> {
     try {
-      await supabase
+      await supabaseAdmin
         .from('business_settings')
         .update({
           last_automation_run: new Date().toISOString(),
@@ -576,7 +576,7 @@ export class AutomationService {
     metadata: Record<string, any> = {}
   ): Promise<void> {
     try {
-      await supabase.from('activities').insert({
+      await supabaseAdmin.from('activities').insert({
         business_id: businessId,
         type: type as any, // Cast to activity_type enum
         description,
