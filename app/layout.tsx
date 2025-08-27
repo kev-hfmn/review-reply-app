@@ -2,6 +2,7 @@ import { Noto_Sans, Indie_Flower } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import Providers from './providers';
 
 import ProtectedRoute from '@/contexts/ProtectedRoute';
 import { Analytics } from "@vercel/analytics/react";
@@ -80,21 +81,23 @@ export default function RootLayout({
       <body className={`${notoSans.className} ${indieFlower.variable}`}>
         <Analytics mode="auto" />
         <GoogleAnalytics />
-        <ThemeProvider>
-          {/* <PostHogErrorBoundary>
-            <PostHogProvider> */}
-              <AuthProvider>
-                  <ProtectedRoute>
+        <Providers>
+          <ThemeProvider>
+            {/* <PostHogErrorBoundary>
+              <PostHogProvider> */}
+                <AuthProvider>
+                    <ProtectedRoute>
 
-                    <main>{children}</main>
-                  </ProtectedRoute>
-              </AuthProvider>
-            {/* </PostHogProvider>
-          </PostHogErrorBoundary> */}
+                      <main>{children}</main>
+                    </ProtectedRoute>
+                </AuthProvider>
+              {/* </PostHogProvider>
+            </PostHogErrorBoundary> */}
 
-          {/* Cookie Consent Banner */}
-          <CookieConsent />
-        </ThemeProvider>
+            {/* Cookie Consent Banner */}
+            <CookieConsent />
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
