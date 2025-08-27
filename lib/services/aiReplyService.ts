@@ -1,33 +1,14 @@
 import { supabaseAdmin } from '@/utils/supabase-admin';
 import { generateAIReply } from './openaiService';
 
-export interface ReviewData {
-  id: string;
-  rating: number;
-  text: string;
-  customerName: string;
-}
-
-export interface BrandVoiceSettings {
-  preset: 'friendly' | 'professional' | 'playful' | 'custom';
-  formality: number;
-  warmth: number;
-  brevity: number;
-  customInstruction?: string;
-}
-
-export interface BusinessInfo {
-  name: string;
-  industry: string;
-  contactEmail?: string;
-  phone?: string;
-}
-
-export interface GenerateReplyResult {
-  reply: string;
-  tone: string;
-  error?: string;
-}
+// Re-export types from shared types file
+export type {
+  ReviewData,
+  BrandVoiceSettings, 
+  BusinessInfo,
+  GenerateReplyResult,
+  BatchGenerateResult
+} from '@/lib/types/aiTypes';
 
 // Template fallbacks (copied from current implementation)
 const toneTemplates = {
@@ -54,64 +35,7 @@ const toneTemplates = {
   }
 };
 
-/**
- * Generate an AI reply for a review using OpenAI
- */
-export async function generateReply(
-  review: ReviewData,
-  brandVoice: BrandVoiceSettings,
-  businessInfo: BusinessInfo,
-  userId?: string
-): Promise<GenerateReplyResult> {
-  try {
-    // Call our API route
-    const response = await fetch('/api/ai/generate-reply', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        review,
-        brandVoice,
-        businessInfo,
-        userId,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate reply');
-    }
-
-    const data = await response.json();
-    return {
-      reply: data.reply,
-      tone: brandVoice.preset,
-    };
-  } catch (error: unknown) {
-    console.error('Error generating AI reply:', error);
-
-    // Fall back to template system
-    const fallbackReply = getFallbackReply(review, brandVoice.preset);
-
-    return {
-      reply: fallbackReply,
-      tone: brandVoice.preset,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get a fallback reply from templates if AI generation fails
- */
-function getFallbackReply(review: ReviewData, tone: string = 'friendly'): string {
-  const templates = toneTemplates[tone as keyof typeof toneTemplates] || toneTemplates.friendly;
-  const ratingKey = review.rating as keyof typeof templates;
-  const template = templates[ratingKey] || templates[3];
-
-  return template(review.customerName);
-}
+// generateReply function moved to @/lib/client/aiReplyService for client-side use
 
 /**
  * Fetch business settings from Supabase
@@ -162,25 +86,7 @@ export async function getBusinessInfo(businessId: string): Promise<BusinessInfo 
   };
 }
 
-/**
- * Interface for batch generation results
- */
-export interface BatchGenerateResult {
-  successCount: number;
-  failureCount: number;
-  results: Array<{
-    reviewId: string;
-    success: boolean;
-    reply?: string;
-    error?: string;
-  }>;
-  errors: Array<{
-    step: string;
-    error: string;
-    timestamp: string;
-    reviewId?: string;
-  }>;
-}
+// BatchGenerateResult type moved to @/lib/types/aiTypes
 
 /**
  * Generate AI reply for a single review (automated version)
@@ -200,14 +106,19 @@ export async function generateAutomatedReply(
       throw new Error('Missing business configuration');
     }
 
-    // Use the existing generateReply function
-    return await generateReply(review, brandVoice, businessInfo);
+    // Call OpenAI service directly (server-side)
+    const aiResult = await generateAIReply(review, brandVoice, businessInfo);
+    
+    return {
+      reply: aiResult.reply,
+      tone: brandVoice.preset,
+    };
 
   } catch (error: unknown) {
     console.error('Error generating automated reply:', error);
 
-    // Fall back to template system
-    const fallbackReply = getFallbackReply(review);
+    // Fall back to template system (server-side)
+    const fallbackReply = getServerFallbackReply(review);
 
     return {
       reply: fallbackReply,
@@ -215,6 +126,17 @@ export async function generateAutomatedReply(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Server-side fallback reply generator
+ */
+function getServerFallbackReply(review: ReviewData, tone: string = 'friendly'): string {
+  const templates = toneTemplates[tone as keyof typeof toneTemplates] || toneTemplates.friendly;
+  const ratingKey = review.rating as keyof typeof templates;
+  const template = templates[ratingKey] || templates[3];
+
+  return template(review.customerName);
 }
 
 /**

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { BrandVoiceSettings, BusinessInfo, ReviewData } from './aiReplyService';
+import { BrandVoiceSettings, BusinessInfo, ReviewData } from '@/lib/types/aiTypes';
 
 // Lazy initialization of OpenAI client to ensure environment variables are loaded
 function getOpenAIClient() {
