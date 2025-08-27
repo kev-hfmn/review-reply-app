@@ -4,7 +4,7 @@ import { generateAIReply } from './openaiService';
 // Re-export types from shared types file
 export type {
   ReviewData,
-  BrandVoiceSettings, 
+  BrandVoiceSettings,
   BusinessInfo,
   GenerateReplyResult,
   BatchGenerateResult
@@ -95,6 +95,8 @@ export async function generateAutomatedReply(
   review: ReviewData,
   businessId: string
 ): Promise<GenerateReplyResult> {
+  console.log('🤖 Starting automated reply generation for review:', review.id);
+
   try {
     // Get business settings and info
     const [brandVoice, businessInfo] = await Promise.all([
@@ -103,22 +105,43 @@ export async function generateAutomatedReply(
     ]);
 
     if (!brandVoice || !businessInfo) {
+      console.error('❌ Missing business configuration:', {
+        brandVoice: !!brandVoice,
+        businessInfo: !!businessInfo,
+        businessId
+      });
       throw new Error('Missing business configuration');
     }
 
+    console.log('✅ Business config loaded:', {
+      businessName: businessInfo.name,
+      industry: businessInfo.industry,
+      brandVoice: brandVoice.preset,
+      customInstruction: !!brandVoice.customInstruction
+    });
+
     // Call OpenAI service directly (server-side)
+    console.log('🚀 Calling OpenAI service...');
     const aiResult = await generateAIReply(review, brandVoice, businessInfo);
-    
+    console.log('✅ OpenAI success - Reply length:', aiResult.reply.length);
+
     return {
       reply: aiResult.reply,
       tone: brandVoice.preset,
     };
 
   } catch (error: unknown) {
-    console.error('Error generating automated reply:', error);
+    console.error('❌ CRITICAL: OpenAI failed, falling back to templates:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      businessId,
+      reviewId: review.id,
+      reviewRating: review.rating
+    });
 
     // Fall back to template system (server-side)
     const fallbackReply = getServerFallbackReply(review);
+    console.log('⚠️ Using fallback template reply:', fallbackReply);
 
     return {
       reply: fallbackReply,
@@ -170,7 +193,7 @@ export async function batchGenerateReplies(
         getBusinessSettings(businessId),
         getBusinessInfo(businessId),
       ]);
-      
+
       finalBrandVoice = finalBrandVoice || fetchedBrandVoice || undefined;
       finalBusinessInfo = finalBusinessInfo || fetchedBusinessInfo || undefined;
     }
