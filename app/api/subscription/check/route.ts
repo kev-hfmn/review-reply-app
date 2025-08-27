@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         isSubscriber: false,
         subscription: null,
         planId: 'basic',
-        status: 'error',
+        status: 'free',
         isBasic: true,
         isPaid: false
       },
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         isSubscriber: false,
         subscription: null,
         planId: 'basic',
-        status: 'error',
+        status: 'free',
         isBasic: true,
         isPaid: false
       },
