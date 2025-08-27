@@ -3,6 +3,8 @@ import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateReply } from '@/lib/client/aiReplyService';
 import { getBusinessSettings, getBusinessInfo } from '@/lib/client/businessDataService';
+import { useQueryClient } from '@tanstack/react-query';
+import { useBusinessesQuery, useReviewsQuery } from './queries/useReviewsQueries';
 import type {
   ReviewFilters,
   ReviewTableItem,
@@ -24,8 +26,11 @@ const DEFAULT_FILTERS: ReviewFilters = {
 
 const PAGE_SIZE = 25;
 
-export function useReviewsData() {
+export function useReviewsData(options = { useCache: true }) {
   const { user, selectedBusinessId, isLoading: authLoading } = useAuth();
+  
+  // NEW: Query client for cache invalidation
+  const queryClient = useQueryClient();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<ReviewTableItem[]>([]);
@@ -52,6 +57,16 @@ export function useReviewsData() {
     totalReviews: 0,
     isFirstTime: true
   });
+
+  // NEW: Optional cached data layer
+  const cachedBusinesses = useBusinessesQuery(options.useCache ? user?.id : null)
+  const cachedReviews = useReviewsQuery(
+    options.useCache ? selectedBusinessId : null, 
+    filters, 
+    pagination.currentPage, 
+    PAGE_SIZE
+  )
+
 
   // Helper function to show toast notifications
   const showToast = useCallback((toast: Omit<ToastNotification, 'id'>) => {
@@ -327,22 +342,66 @@ export function useReviewsData() {
     }
   }, [user?.id, businesses, selectedBusinessId, showToast, fetchBusinesses, fetchReviews]);
 
-  // Initial data fetch
+  // Initial data fetch (only if cache is disabled)
   useEffect(() => {
-    fetchBusinesses();
-  }, [fetchBusinesses]);
+    if (!options.useCache) {
+      fetchBusinesses();
+    }
+  }, [fetchBusinesses, options.useCache]);
 
-  // Fetch reviews when dependencies change
+  // Fetch reviews when dependencies change (only if cache is disabled)
   useEffect(() => {
     // Don't fetch if auth is still loading
     if (authLoading) {
       console.log('Skipping reviews fetch - auth still loading');
       return;
     }
+    
+    // Skip if cache is enabled
+    if (options.useCache) {
+      console.log('Skipping reviews fetch - cache enabled');
+      return;
+    }
 
     console.log('Starting reviews fetch...');
     fetchReviews();
-  }, [fetchReviews, authLoading]);
+  }, [fetchReviews, authLoading, options.useCache]);
+
+  // Sync cache data with local state when cache is enabled (after function definitions)
+  useEffect(() => {
+    if (options.useCache && cachedBusinesses.data) {
+      setBusinesses(cachedBusinesses.data);
+      setIsLoading(cachedBusinesses.isLoading);
+      if (cachedBusinesses.error) {
+        setError(cachedBusinesses.error.message);
+      }
+    }
+  }, [options.useCache, cachedBusinesses.data, cachedBusinesses.isLoading, cachedBusinesses.error]);
+
+  useEffect(() => {
+    if (options.useCache && cachedReviews.data) {
+      const { reviews: rawReviews, totalCount } = cachedReviews.data;
+      setReviews(rawReviews);
+      
+      // Transform for table display and apply pagination
+      const tableReviews = rawReviews.map(transformReviewForTable);
+      const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+      
+      setFilteredReviews(tableReviews);
+      setPagination(prev => ({
+        ...prev,
+        totalItems: totalCount,
+        totalPages,
+        hasNextPage: pagination.currentPage < totalPages,
+        hasPrevPage: pagination.currentPage > 1
+      }));
+      
+      setIsLoading(cachedReviews.isLoading);
+      if (cachedReviews.error) {
+        setError(cachedReviews.error.message);
+      }
+    }
+  }, [options.useCache, cachedReviews.data, cachedReviews.isLoading, cachedReviews.error, transformReviewForTable, pagination.currentPage]);
 
   // Helper function to update a review in local state
   const updateReviewInState = useCallback((reviewId: string, updates: Partial<Review>) => {
@@ -389,6 +448,11 @@ export function useReviewsData() {
               description: `Reply approved for review from ${review.customer_name}`,
               metadata: { review_id: reviewId, rating: review.rating }
             });
+        }
+
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
         }
 
         showToast({
@@ -450,6 +514,11 @@ export function useReviewsData() {
           posted_at: postedAt,
           final_reply: replyText
         });
+
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
+        }
 
         // Show success notification - clear and specific
         showToast({
@@ -518,6 +587,11 @@ export function useReviewsData() {
 
         // Update local state immediately to preserve scroll position
         updateReviewInState(reviewId, { ai_reply: reply });
+
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
+        }
 
         showToast({
           type: 'success',
@@ -602,6 +676,11 @@ export function useReviewsData() {
         // Update local state immediately to preserve scroll position
         updateReviewInState(reviewId, { ai_reply: result.reply, reply_tone: brandVoice.preset });
 
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
+        }
+
         // Show success message (with warning if fallback was used)
         showToast({
           type: result.error ? 'warning' : 'success',
@@ -660,7 +739,7 @@ export function useReviewsData() {
         setIsUpdating(false);
       }
     }
-  }), [reviews, showToast, updateReviewInState, user]);
+  }), [reviews, showToast, updateReviewInState, user, options.useCache, queryClient]);
 
   // Helper function to update multiple reviews in local state
   const updateMultipleReviewsInState = useCallback((reviewIds: string[], updates: Partial<Review>) => {
@@ -838,6 +917,11 @@ export function useReviewsData() {
         // Update local state immediately to preserve scroll position
         updateMultipleReviewsInState(reviewIds, { status: 'approved' });
 
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
+        }
+
         showToast({
           type: 'success',
           title: 'Reviews approved',
@@ -987,7 +1071,7 @@ export function useReviewsData() {
         setIsUpdating(false);
       }
     }
-  }), [reviews, showToast, updateMultipleReviewsInState, transformReviewForTable, updateReviewInState, user?.id]);
+  }), [reviews, showToast, updateMultipleReviewsInState, transformReviewForTable, updateReviewInState, user?.id, options.useCache, queryClient]);
 
   // Filter functions
   const updateFilters = useCallback((newFilters: Partial<ReviewFilters>) => {
@@ -1014,7 +1098,7 @@ export function useReviewsData() {
   }, [fetchReviews]);
 
   return {
-    // Data
+    // Data (now properly synchronized when cache is enabled)
     businesses,
     reviews: filteredReviews,
     allReviews: reviews,
@@ -1041,6 +1125,14 @@ export function useReviewsData() {
     refetch,
     removeToast,
     showToast,
-    fetchReviewsFromGoogle
+    fetchReviewsFromGoogle,
+    
+    // NEW: Cache control and status
+    cacheStatus: {
+      businessesFromCache: !!(options.useCache && cachedBusinesses.data),
+      reviewsFromCache: !!(options.useCache && cachedReviews.data),
+      isRefetching: cachedReviews.isFetching || cachedBusinesses.isFetching,
+      cacheEnabled: options.useCache
+    }
   };
 }
