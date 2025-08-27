@@ -767,7 +767,7 @@ function newReviewAlertTemplate(data: NewReviewAlertData): EmailTemplate {
             ${review.aiReply ? `
             <div style="background-color: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 6px; padding: 12px; margin-top: 12px;">
               <p style="margin: 0; color: #0369A1; font-size: 14px;"><strong>🤖 AI Reply Generated:</strong></p>
-              <p style="margin: 4px 0 0 0; color: #0369A1; font-size: 14px;">"${review.aiReply.length > 150 ? review.aiReply.substring(0, 150) + '...' : review.aiReply}"</p>
+              <p style="margin: 4px 0 0 0; color: #0369A1; font-size: 14px;">"${truncateText(review.aiReply, 150)}"</p>
               <p style="margin: 8px 0 0 0; color: #6B7280; font-size: 12px;">Status: <strong>${review.status}</strong></p>
             </div>
             ` : ''}
@@ -918,7 +918,7 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
         .metrics-grid {
           display: flex;
           justify-content: space-around;
-          gap: 15px;
+          gap: 25px;
           margin: 30px 0;
           flex-wrap: wrap;
         }
@@ -1089,17 +1089,10 @@ export function automationSummaryTemplate(data: AutomationSummaryData): EmailTem
             ` : ''}
 
             <div class="metric-card">
-              <span class="metric-number">${data.automationMetrics.generatedReplies}</span>
-              <div class="metric-label">AI Generated</div>
-            </div>
-
-            <div class="metric-card">
               <span class="metric-number">${data.automationMetrics.processedReviews}</span>
               <div class="metric-label">Reviews Processed</div>
             </div>
           </div>
-
-
 
           ${data.postedReviews && data.postedReviews.length > 0 ? `
           <h3 class="table-title">Reviews That Received Replies</h3>
