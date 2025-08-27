@@ -21,7 +21,7 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
         isSubscriber: false,
         subscription: null,
         planId: 'basic',
-        status: 'inactive',
+        status: 'free',
         isBasic: true,
         isPaid: false
       };
@@ -49,10 +49,12 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
     }
 
     // Determine subscription status
+    // With the new system: 'active' = paying customer, 'free' = basic user
     const isActiveSubscription = subscription.status === 'active';
     const isPaidPlan = subscription.plan_id !== 'basic';
     const isWithinPeriod = new Date(subscription.current_period_end) > new Date();
 
+    // Only consider users with active status AND paid plans as subscribers
     const isSubscriber = isActiveSubscription && isPaidPlan && isWithinPeriod;
     const isBasic = subscription.plan_id === 'basic';
 
