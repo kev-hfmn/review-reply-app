@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import { useDashboardDataOptimized } from '@/hooks/useDashboardDataOptimized';
 import { motion } from 'framer-motion';
+import type { Business } from '@/types/dashboard';
 import { Activity } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -26,16 +27,26 @@ export default function Dashboard() {
   // Removed trial system - users are either basic or premium subscribers
   const [authTimeout, setAuthTimeout] = useState(false);
 
-  // Fetch dashboard data
+  // Debug user ID (only once when user changes)
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Dashboard: Current user ID:', user.id);
+    }
+  }, [user?.id]);
+
+  // Fetch dashboard data using optimized hook
   const {
-    businesses,
-    stats,
-    chartData,
-    onboardingSteps,
+    data: dashboardData,
     isLoading: isDashboardLoading,
     error: dashboardError,
     refetch
-  } = useDashboardData();
+  } = useDashboardDataOptimized();
+
+  // Extract data from optimized response
+  const businesses = dashboardData?.businesses || [];
+  const stats = dashboardData?.stats || null;
+  const chartData = dashboardData?.chartData || [];
+  const onboardingSteps = dashboardData?.onboardingSteps || [];
 
   // Temporarily disabled subscription checks for MVP development
   // TODO: Re-enable subscription gating in production
@@ -100,6 +111,7 @@ export default function Dashboard() {
 
   // Handle dashboard error
   if (dashboardError) {
+    const errorMessage = dashboardError instanceof Error ? dashboardError.message : 'Unknown error occurred';
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -109,10 +121,10 @@ export default function Dashboard() {
         </div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <p className="text-red-800 dark:text-red-200">
-            Error loading dashboard data: {dashboardError}
+            Error loading dashboard data: {errorMessage}
           </p>
           <Button
-            onClick={refetch}
+            onClick={() => refetch()}
             variant="link"
             className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-medium text-sm p-0 h-auto"
           >
@@ -139,7 +151,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-muted-foreground">
-            {subscription?.status === 'active' && subscription?.plan_id !== 'basic' ?
+            {subscription?.status === 'active' && subscription?.plan_id && subscription.plan_id !== 'basic' ?
               `${subscription.plan_id.charAt(0).toUpperCase() + subscription.plan_id.slice(1).replace('-', ' ')} User` :
               'Basic User'
             }
@@ -153,7 +165,7 @@ export default function Dashboard() {
       {/* Show onboarding for basic users who haven't completed Google integration setup */}
       {(() => {
         // Show onboarding for basic plan users who don't have Google integration complete
-        const hasGoogleIntegration = businesses.some(b => b.google_access_token && b.google_refresh_token);
+        const hasGoogleIntegration = businesses.some((b: Business) => b.google_access_token && b.google_refresh_token);
         const isBasicUser = !subscription || subscription.plan_id === 'basic' || subscription.status !== 'active';
         const shouldShowOnboarding = isBasicUser && !hasGoogleIntegration;
 
@@ -187,7 +199,7 @@ export default function Dashboard() {
                   <p>
                     Get set up in minutes and start turning reviews into customer trust today.
                   </p>
-                  <p>Any questions, feedback or suggestions? <Link href="/contact" className="underline">Click here</Link> to send us a message. We're here to help!</p>
+                  <p>Any questions, feedback or suggestions? <Link href="/contact" className="underline">Click here</Link> to send us a message. We&apos;re here to help!</p>
                   <p className="italic">Enjoy using RepliFast!</p>
                 </div>
               )}
