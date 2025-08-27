@@ -360,13 +360,18 @@ export class AutomationService {
 
     for (const review of approvedReviews) {
       try {
-        // Call the existing reply posting API
-        const response = await fetch('/api/reviews/post-reply', {
+        // Build full URL for API call - required when running in API route context
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                       `https://${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('.supabase.co', '')}.vercel.app`;
+        
+        // Call the existing reply posting API with correct field names
+        const response = await fetch(`${appUrl}/api/reviews/post-reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             reviewId: review.id,
-            reply: review.final_reply || review.ai_reply,
+            replyText: review.final_reply || review.ai_reply,  // Fixed: API expects 'replyText', not 'reply'
+            userId: context.userId,  // Fixed: Added missing userId field
             businessId: context.businessId,
             automated: true,
           }),
@@ -461,8 +466,12 @@ export class AutomationService {
 
       // Only send email if there are posted replies OR pending reviews
       if (postedReplies.length > 0 || pendingReviews.length > 0) {
+        // Build full URL for API call - required when running in API route context
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                       `https://${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('.supabase.co', '')}.vercel.app`;
+      
         // Call email notification API
-        const response = await fetch('/api/email/automation-summary', {
+        const response = await fetch(`${appUrl}/api/email/automation-summary`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
