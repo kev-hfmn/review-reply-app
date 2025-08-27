@@ -46,7 +46,7 @@ export function getActivityIcon(type: ActivityType['type']): React.ReactElement 
     case 'review_received':
       return React.createElement(PlusCircle, { className: "h-4 w-4" });
     case 'reply_posted':
-      return React.createElement(MessageSquare, { className: "h-4 w-4" });
+      return React.createElement(MessageSquareText, { className: "h-4 w-4" });
     case 'reply_approved':
       return React.createElement(CheckCircle, { className: "h-4 w-4" });
     case 'settings_updated':
