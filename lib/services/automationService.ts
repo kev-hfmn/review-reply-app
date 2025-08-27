@@ -183,7 +183,7 @@ export class AutomationService {
         timestamp: new Date().toISOString(),
       };
       result.errors.push(automationError);
-      
+
       await this.handleAutomationError(automationError, context);
     }
 
@@ -195,7 +195,7 @@ export class AutomationService {
    * Generate AI replies for reviews
    */
   private async generateAIReplies(
-    reviews: Review[], 
+    reviews: Review[],
     context: AutomationContext
   ): Promise<{ successCount: number; errors: AutomationError[] }> {
     const errors: AutomationError[] = [];
@@ -241,8 +241,16 @@ export class AutomationService {
             });
           } else {
             successCount++;
+
+            // Update in-memory review object with AI reply for downstream processing
+            review.ai_reply = result.reply;
+            review.automated_reply = true;
+            review.automation_failed = false;
+            review.automation_error = undefined;
+            review.reply_tone = context.settings.brand_voice_preset;
+
             // Log AI reply generation
-            await this.logActivity(context.businessId, 'ai_reply_generated', 
+            await this.logActivity(context.businessId, 'ai_reply_generated',
               `AI reply generated for ${review.rating}-star review from ${review.customer_name}`, {
                 review_id: review.id,
                 rating: review.rating,
@@ -285,7 +293,7 @@ export class AutomationService {
    * Apply auto-approval logic to reviews
    */
   private async applyAutoApproval(
-    reviews: Review[], 
+    reviews: Review[],
     context: AutomationContext
   ): Promise<{ approvedCount: number; errors: AutomationError[] }> {
     const errors: AutomationError[] = [];
@@ -304,12 +312,16 @@ export class AutomationService {
 
         if (shouldApprove) {
           const reason = this.autoApprovalService.getApprovalReason(review, context.settings.approval_mode);
-          
+
           await this.autoApprovalService.approveReview(review.id, reason);
           approvedCount++;
 
+          // Update in-memory review object with approved status for downstream processing
+          review.status = 'approved';
+          review.auto_approved = true;
+
           // Log auto-approval
-          await this.logActivity(context.businessId, 'reply_auto_approved', 
+          await this.logActivity(context.businessId, 'reply_auto_approved',
             `Auto-approved ${review.rating}-star review reply from ${review.customer_name}`, {
               review_id: review.id,
               rating: review.rating,
@@ -335,7 +347,7 @@ export class AutomationService {
    * Post approved replies to Google Business Profile
    */
   private async postApprovedReplies(
-    reviews: Review[], 
+    reviews: Review[],
     context: AutomationContext
   ): Promise<{ postedCount: number; errors: AutomationError[] }> {
     const errors: AutomationError[] = [];
@@ -362,9 +374,12 @@ export class AutomationService {
 
         if (response.ok) {
           postedCount++;
-          
+
+          // Update in-memory review object with posted status for downstream processing
+          review.status = 'posted';
+
           // Log auto-posting
-          await this.logActivity(context.businessId, 'reply_auto_posted', 
+          await this.logActivity(context.businessId, 'reply_auto_posted',
             `Auto-posted reply for ${review.rating}-star review from ${review.customer_name}`, {
               review_id: review.id,
               rating: review.rating,
@@ -397,7 +412,7 @@ export class AutomationService {
    * Send email notifications for new reviews and posted replies
    */
   private async sendNotifications(
-    reviews: Review[], 
+    reviews: Review[],
     context: AutomationContext
   ): Promise<{ sentCount: number; errors: AutomationError[] }> {
     const errors: AutomationError[] = [];
@@ -406,12 +421,12 @@ export class AutomationService {
     try {
       // Identify different types of reviews
       const postedReplies = reviews.filter(r => r.status === 'posted');
-      
+
       // Pending reviews are those with AI replies but not yet posted
       // This includes reviews that need manual approval due to rating or approval mode
-      const pendingReviews = reviews.filter(r => 
-        r.automated_reply && 
-        r.ai_reply && 
+      const pendingReviews = reviews.filter(r =>
+        r.automated_reply &&
+        r.ai_reply &&
         r.status !== 'posted' &&
         r.status !== 'skipped'
       );
@@ -419,12 +434,12 @@ export class AutomationService {
       // Determine pending reasons based on approval mode and rating
       const pendingReviewsWithReason = pendingReviews.map(review => {
         let pendingReason: 'low_rating' | 'manual_approval' | 'custom_rule' = 'manual_approval';
-        
+
         // If approval mode is auto_4_plus and rating is below 4, it's pending due to low rating
         if (context.settings.approval_mode === 'auto_4_plus' && review.rating < 4) {
           pendingReason = 'low_rating';
         }
-        // If approval mode is auto_except_low and rating is 1-2, it's pending due to low rating  
+        // If approval mode is auto_except_low and rating is 1-2, it's pending due to low rating
         else if (context.settings.approval_mode === 'auto_except_low' && review.rating <= 2) {
           pendingReason = 'low_rating';
         }
@@ -477,9 +492,9 @@ export class AutomationService {
 
         if (response.ok) {
           sentCount = 1; // One summary email sent
-          
+
           // Log email notification
-          await this.logActivity(context.businessId, 'email_notification_sent', 
+          await this.logActivity(context.businessId, 'email_notification_sent',
             'Automation summary email sent', {
               slot_id: context.slotId,
               new_reviews: reviews.length,
@@ -512,7 +527,7 @@ export class AutomationService {
   private async handleAutomationError(error: AutomationError, context: AutomationContext): Promise<void> {
     try {
       // Log the error as an activity
-      await this.logActivity(context.businessId, 'automation_failed', 
+      await this.logActivity(context.businessId, 'automation_failed',
         `Automation failed: ${error.error}`, {
           step: error.step,
           error: error.error,
@@ -528,10 +543,10 @@ export class AutomationService {
         .single();
 
       if (currentSettings) {
-        const errors = Array.isArray(currentSettings.automation_errors) 
-          ? currentSettings.automation_errors 
+        const errors = Array.isArray(currentSettings.automation_errors)
+          ? currentSettings.automation_errors
           : [];
-        
+
         // Keep only last 10 errors
         const updatedErrors = [error, ...errors].slice(0, 10);
 
@@ -570,9 +585,9 @@ export class AutomationService {
    * Log activity to the activities table
    */
   private async logActivity(
-    businessId: string, 
-    type: string, 
-    description: string, 
+    businessId: string,
+    type: string,
+    description: string,
     metadata: Record<string, any> = {}
   ): Promise<void> {
     try {
