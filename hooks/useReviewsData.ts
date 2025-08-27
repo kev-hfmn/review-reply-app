@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { generateReply, getBusinessSettings, getBusinessInfo } from '@/lib/services/aiReplyService';
+import { generateReply } from '@/lib/client/aiReplyService';
+import { getBusinessSettings, getBusinessInfo } from '@/lib/client/businessDataService';
 import type {
   ReviewFilters,
   ReviewTableItem,

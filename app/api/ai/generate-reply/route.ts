@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkUserSubscription } from '@/lib/utils/subscription';
 import { generateAIReply } from '@/lib/services/openaiService';
-import type { BrandVoiceSettings, BusinessInfo, ReviewData } from '@/lib/services/aiReplyService';
+import type { BrandVoiceSettings, BusinessInfo, ReviewData } from '@/lib/types/aiTypes';
 
 export async function POST(request: Request) {
   try {

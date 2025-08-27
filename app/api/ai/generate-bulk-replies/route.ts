@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase-admin';
-import { batchGenerateReplies, type ReviewData, type BatchGenerateResult } from '@/lib/services/aiReplyService';
+import { batchGenerateReplies } from '@/lib/services/aiReplyService';
+import type { ReviewData, BatchGenerateResult } from '@/lib/types/aiTypes';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
 import { checkUserSubscription } from '@/lib/utils/subscription';
 
