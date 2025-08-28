@@ -17,7 +17,7 @@ interface DashboardApiResponse {
   stats: DashboardStats;
   chartData: ChartDataPoint[];
   onboardingSteps: OnboardingStep[];
-  subscription: Subscription | null;
+  subscription?: Subscription | null; // Optional - handled by centralized cache
 }
 
 export async function GET(request: NextRequest) {
@@ -108,19 +108,18 @@ export async function GET(request: NextRequest) {
         businesses: businessesData || [],
         stats: emptyStats,
         chartData: emptyChartData,
-        onboardingSteps: [],
-        subscription: null
+        onboardingSteps: []
+        // subscription removed - handled by centralized cache
       });
     }
 
-    // Execute remaining 6 queries in parallel using Promise.all
+    // Execute remaining 5 queries in parallel using Promise.all (subscription removed)
     const [
       allReviewsResult,
       reviewsThisMonthResult,
       reviewsLastMonthResult,
       activitiesResult,
-      businessSettingsResult,
-      subscriptionResult
+      businessSettingsResult
     ] = await Promise.all([
       // 1. Fetch all reviews for total count and pending approvals
       supabase
@@ -162,15 +161,6 @@ export async function GET(request: NextRequest) {
         .eq('business_id', businessIds[0])
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle(),
-
-      // 6. Fetch subscription data
-      supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
         .maybeSingle()
     ]);
 
@@ -190,9 +180,7 @@ export async function GET(request: NextRequest) {
     if (businessSettingsResult.error) {
       throw new Error(`Failed to fetch business settings: ${businessSettingsResult.error.message}`);
     }
-    if (subscriptionResult.error) {
-      throw new Error(`Failed to fetch subscription: ${subscriptionResult.error.message}`);
-    }
+    // Subscription error check removed - handled by centralized cache
 
     // Extract data from results
     const businesses = businessesData || [];
@@ -201,7 +189,7 @@ export async function GET(request: NextRequest) {
     const reviewsLastMonth = reviewsLastMonthResult.data || [];
     const activities = activitiesResult.data || [];
     const businessSettings = businessSettingsResult.data;
-    const subscription = subscriptionResult.data;
+    // Subscription data removed - handled by centralized cache
 
     // Calculate stats using the same logic as useDashboardData
     const calculateStats = (
@@ -304,7 +292,7 @@ export async function GET(request: NextRequest) {
     const generateOnboardingSteps = (
       businesses: Business[], 
       businessSettings: BusinessSettings | null, 
-      subscription: Subscription | null
+      subscription: Subscription | null = null // Default to null
     ): OnboardingStep[] => {
       const hasGoogleConnection = businesses.some(b =>
         b.google_access_token && b.google_refresh_token && b.connection_status === 'connected'
@@ -364,14 +352,14 @@ export async function GET(request: NextRequest) {
     // Calculate all dashboard data
     const stats = calculateStats(reviewsThisMonth, reviewsLastMonth, activities, allReviews);
     const chartData = generateChartData(allReviews);
-    const onboardingSteps = generateOnboardingSteps(businesses, businessSettings, subscription);
+    const onboardingSteps = generateOnboardingSteps(businesses, businessSettings); // subscription removed
 
     const response: DashboardApiResponse = {
       businesses,
       stats,
       chartData,
-      onboardingSteps,
-      subscription
+      onboardingSteps
+      // subscription removed - handled by centralized cache
     };
 
     return NextResponse.json(response);

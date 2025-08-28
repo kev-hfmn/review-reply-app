@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
 import type {
   DashboardStats,
   Business,
@@ -7,6 +8,14 @@ import type {
   OnboardingStep
 } from '@/types/dashboard';
 import type { Subscription } from '@/hooks/useSubscription';
+
+interface DashboardApiData {
+  businesses: Business[];
+  stats: DashboardStats;
+  chartData: ChartDataPoint[];
+  onboardingSteps: OnboardingStep[];
+  subscription?: Subscription | null; // Optional - comes from centralized cache
+}
 
 interface DashboardData {
   businesses: Business[];
@@ -16,7 +25,7 @@ interface DashboardData {
   subscription: Subscription | null;
 }
 
-async function fetchDashboardData(userId: string): Promise<DashboardData> {
+async function fetchDashboardData(userId: string): Promise<DashboardApiData> {
   console.log('Frontend: Fetching dashboard data for userId:', userId);
   const response = await fetch(`/api/dashboard/data?userId=${encodeURIComponent(userId)}`, {
     method: 'GET',
@@ -37,40 +46,49 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
 
 export function useDashboardDataOptimized() {
   const { user } = useAuth();
-
-  return useQuery({
+  
+  // Get subscription from centralized cache
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null);
+  
+  const dashboardQuery = useQuery({
     queryKey: ['dashboard-optimized', user?.id],
     queryFn: () => fetchDashboardData(user!.id),
     enabled: !!user?.id,
     
-    // Temporarily reduce cache times for debugging
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    // Restore proper cache times (was staleTime: 0 for debugging)
+    staleTime: 5 * 60 * 1000,   // 5 minutes
+    gcTime: 30 * 60 * 1000,     // 30 minutes
     
     // Prevent unnecessary refetches
-    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
-    refetchOnMount: false, // Don't refetch if data is still fresh
-    refetchOnReconnect: false, // Don't refetch on network reconnect
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     
     // Smart retry logic
     retry: (failureCount, error) => {
-      // Don't retry on 4xx client errors (user/auth errors)
       if (error instanceof Error && error.message.includes('40')) {
         return false;
       }
-      // Only retry up to 2 times for server errors
       return failureCount < 2;
     },
     
-    // Exponential backoff for retries
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    
-    // Enable background refetching but with longer intervals
-    refetchInterval: false, // Disable automatic refetching since data changes infrequently
-    
-    // Network mode - show cached data even when offline
+    refetchInterval: false,
     networkMode: 'offlineFirst',
   });
+
+  // Combine dashboard data with subscription from cache
+  const data: DashboardData | undefined = dashboardQuery.data ? {
+    ...dashboardQuery.data,
+    subscription: subscriptionQuery.data?.subscription || null
+  } : undefined;
+
+  return {
+    data,
+    isLoading: dashboardQuery.isLoading || subscriptionQuery.isLoading,
+    error: dashboardQuery.error || subscriptionQuery.error,
+    refetch: dashboardQuery.refetch
+  };
 }
 
 // Helper hook for cache invalidation when user performs actions
@@ -82,6 +100,11 @@ export function useDashboardCacheInvalidation() {
     if (user?.id) {
       queryClient.invalidateQueries({ 
         queryKey: ['dashboard-optimized', user.id],
+        exact: true 
+      });
+      // Also invalidate subscription cache if needed
+      queryClient.invalidateQueries({ 
+        queryKey: ['subscription', user.id],
         exact: true 
       });
     }

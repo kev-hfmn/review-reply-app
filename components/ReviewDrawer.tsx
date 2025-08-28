@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function ReviewDrawer({
   data,
+  allReviews,
   onClose,
   onSave,
   onApprove,
@@ -39,14 +40,17 @@ export default function ReviewDrawer({
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Derive current review from allReviews
+  const review = data.reviewId ? allReviews.find(r => r.id === data.reviewId) : null;
+
   // Update local state when review changes
   useEffect(() => {
-    if (data.review) {
-      console.log('ReviewDrawer: updating state with ai_reply:', data.review.ai_reply);
-      setEditedReply(data.review.ai_reply || '');
-      setSelectedTone(data.review.reply_tone || 'friendly');
+    if (review) {
+      console.log('ReviewDrawer: updating state with ai_reply:', review.ai_reply);
+      setEditedReply(review.ai_reply || '');
+      setSelectedTone(review.reply_tone || 'friendly');
     }
-  }, [data.review?.ai_reply, data.review?.reply_tone, data.review?.id]);
+  }, [review]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -74,7 +78,7 @@ export default function ReviewDrawer({
   };
 
   const handleRegenerate = async () => {
-    if (!data.review) return;
+    if (!review) return;
 
     // Check subscription before proceeding
     if (!isSubscriber) {
@@ -84,40 +88,33 @@ export default function ReviewDrawer({
 
     setIsRegenerating(true);
     try {
-      console.log('Before regenerate - current ai_reply:', data.review.ai_reply);
+      console.log('Before regenerate - current ai_reply:', review.ai_reply);
       console.log('Before regenerate - editedReply state:', editedReply);
 
-      await onRegenerate(data.review.id, selectedTone);
-
-      // Force immediate update - we'll get the new data via props
-      setTimeout(() => {
-        if (data.review?.ai_reply) {
-          console.log('Forcing update with new ai_reply:', data.review.ai_reply);
-          setEditedReply(data.review.ai_reply);
-        }
-      }, 300);
-
+      await onRegenerate(review.id, selectedTone);
+      // No need for setTimeout - the useEffect will handle the update when allReviews changes
+      
     } finally {
       setIsRegenerating(false);
     }
   };
 
   const handleSave = async () => {
-    if (!data.review) return;
+    if (!review) return;
 
     setIsSaving(true);
     try {
-      await onSave(data.review.id, editedReply, selectedTone);
+      await onSave(review.id, editedReply, selectedTone);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleApprove = async () => {
-    if (!data.review) return;
+    if (!review) return;
 
     try {
-      await onApprove(data.review.id);
+      await onApprove(review.id);
     } catch (error) {
       console.error('Error approving review:', error);
       // Error handling is done in the parent component
@@ -125,7 +122,7 @@ export default function ReviewDrawer({
   };
 
   const handlePost = async () => {
-    if (!data.review) return;
+    if (!review) return;
 
     // Check subscription before proceeding
     if (!isSubscriber) {
@@ -134,16 +131,15 @@ export default function ReviewDrawer({
     }
 
     try {
-      await onPost(data.review.id);
+      await onPost(review.id);
     } catch (error) {
       console.error('Error posting review:', error);
       // Error handling is done in the parent component
     }
   };
 
-  if (!data.review) return null;
+  if (!review) return null;
 
-  const review = data.review;
   const hasChanges = editedReply !== (review.ai_reply || '') || selectedTone !== (review.reply_tone || 'friendly');
 
   return (
@@ -211,7 +207,7 @@ export default function ReviewDrawer({
             </div>
 
             {/* Review Text */}
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium text-muted-foreground">
@@ -250,7 +246,7 @@ export default function ReviewDrawer({
               <Textarea
                 value={editedReply}
                 onChange={(e) => setEditedReply(e.target.value)}
-                className="resize-none"
+                className="resize-none !text-lg"
                 rows={6}
                 placeholder="AI reply will appear here..."
                 disabled={data.isLoading || isRegenerating}
@@ -290,7 +286,7 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  variant={isSubscriber ? "outlineSecondary" : "outline"}
+                  variant={isSubscriber ? "secondary" : "outline"}
                   className={isSubscriber ? "" : "text-gray-500"}
                   title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                 >
@@ -303,8 +299,8 @@ export default function ReviewDrawer({
                 </Button>
               )}
 
-              {/* Show Regenerate button when AI reply exists */}
-              {review.ai_reply && (
+              {/* Show Regenerate button when AI reply exists and not posted */}
+              {review.ai_reply && review.status !== 'posted' && (
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}

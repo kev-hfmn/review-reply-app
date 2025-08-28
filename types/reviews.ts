@@ -45,7 +45,7 @@ export interface ReviewActions {
 }
 
 export interface ReviewDrawerData {
-  review: Review | null;
+  reviewId: string | null;
   isOpen: boolean;
   isLoading: boolean;
   availableTones: Array<{
@@ -142,6 +142,7 @@ export interface ReviewFiltersProps {
 
 export interface ReviewDrawerProps {
   data: ReviewDrawerData;
+  allReviews: Review[];
   onClose: () => void;
   onSave: (reviewId: string, reply: string, tone: string) => Promise<void>;
   onApprove: (reviewId: string) => Promise<void>;

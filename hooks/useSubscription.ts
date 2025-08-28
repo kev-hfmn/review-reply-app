@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscriptionQuery, useSubscriptionInvalidation } from '@/hooks/queries/useSubscriptionQuery';
 import debounce from 'lodash/debounce';
 
 export interface Subscription {
@@ -22,90 +23,27 @@ export interface Subscription {
 }
 
 export function useSubscription() {
-  const { user, supabase } = useAuth();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  
+  // NEW: Use centralized query instead of direct Supabase
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null);
+  const { invalidateSubscription } = useSubscriptionInvalidation();
+  
+  // Keep local state for backward compatibility but sync with cache
   const [error, setError] = useState<string | null>(null);
 
-  const subscriptionCache = new Map<string, {data: Subscription | null, timestamp: number}>();
-  const CACHE_DURATION = 30000; // 30 seconds
-
-  const fetchSubscription = useCallback(async () => {
-    if (!user?.id) {
-      setSubscription(null);
-      setLoading(false);
-      return;
-    }
-
-    // Check cache first
-    const cached = subscriptionCache.get(user.id);
-    const now = Date.now();
-    
-    if (cached && (now - cached.timestamp < CACHE_DURATION)) {
-      setSubscription(cached.data);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Get potentially valid subscriptions (active or cancelled but still in period)
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('status', ['active', 'cancelled'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Find the most recent valid subscription
-      const validSubscription = data?.find(sub => {
-        const periodEndDate = new Date(sub.current_period_end);
-        const now = new Date();
-        
-        return (
-          // Active and not cancelling
-          (sub.status === 'active' && sub.cancel_at_period_end === false) ||
-          // Cancelled but still within the valid period
-          (sub.status === 'cancelled' && periodEndDate > now)
-        );
-      });
-
-      const result = validSubscription || null;
-      
-      // Update cache
-      subscriptionCache.set(user.id, {
-        data: result,
-        timestamp: now
-      });
-      
-      setSubscription(result);
-    } catch (err) {
-      console.error('Subscription fetch error:', err);
-      setError('Failed to load subscription');
-      setSubscription(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id, supabase]);
-
+  // Sync cache errors with local state for backward compatibility
   useEffect(() => {
-    fetchSubscription();
-  }, [fetchSubscription]);
+    if (subscriptionQuery.error) {
+      setError(subscriptionQuery.error.message || 'Failed to load subscription');
+    } else {
+      setError(null);
+    }
+  }, [subscriptionQuery.error]);
 
-  const checkValidSubscription = useCallback((data: Subscription[]): boolean => {
-    return data.some(sub => {
-      const periodEndDate = new Date(sub.current_period_end);
-      const now = new Date();
-      
-      return (
-        // Active and not cancelling
-        (sub.status === 'active' && sub.cancel_at_period_end === false) ||
-        // Cancelled but still within the valid period
-        (sub.status === 'cancelled' && periodEndDate > now)
-      );
-    });
-  }, []);
+  // Remove old fetchSubscription useEffect - handled by centralized cache
+
+  // Remove checkValidSubscription - handled by centralized API logic
 
   const MAX_SYNC_RETRIES = 3;
   const [syncRetries, setSyncRetries] = useState(0);
@@ -129,7 +67,10 @@ export function useSubscription() {
           throw new Error(errorData.details || 'Failed to sync with Stripe');
         }
         
-        await fetchSubscription();
+        // Invalidate cache instead of direct fetch
+        if (user?.id) {
+          invalidateSubscription(user.id);
+        }
         setSyncRetries(0); // Reset retries on success
       } catch (error) {
         console.error('Error syncing with Stripe:', error);
@@ -137,43 +78,18 @@ export function useSubscription() {
         setSyncRetries(prev => prev + 1);
       }
     }, 30000), // 30 second delay between calls
-    [fetchSubscription, syncRetries]
+    [invalidateSubscription, user?.id, syncRetries]
   );
 
   const syncWithStripe = useCallback((subscriptionId: string) => {
     debouncedSyncWithStripe(subscriptionId);
   }, [debouncedSyncWithStripe]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('subscription_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`
-        },
-        async (payload) => {
-          const isValid = checkValidSubscription([payload.new as Subscription]);
-          setSubscription(isValid ? payload.new as Subscription : null);
-          if (!isValid) {
-            console.log('Subscription expired or invalidated');
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase, checkValidSubscription]);
+  // Remove real-time listener - cache handles updates and prevents conflicts
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
+    const subscription = subscriptionQuery.data?.subscription;
     
     if (subscription?.stripe_subscription_id) {
       // Add a delay before first sync
@@ -185,15 +101,15 @@ export function useSubscription() {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [syncWithStripe, subscription?.stripe_subscription_id]);
+  }, [syncWithStripe, subscriptionQuery.data?.subscription?.stripe_subscription_id]);
 
   return {
-    subscription,
-    isLoading: loading,
+    subscription: subscriptionQuery.data?.subscription || null,
+    isLoading: subscriptionQuery.isLoading,
     error,
     syncWithStripe: useCallback((subscriptionId: string) => {
       debouncedSyncWithStripe(subscriptionId);
     }, [debouncedSyncWithStripe]),
-    fetchSubscription // Expose fetch function for manual refresh
+    fetchSubscription: subscriptionQuery.refetch // Use cache refetch instead
   };
 } 

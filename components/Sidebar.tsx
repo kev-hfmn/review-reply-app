@@ -17,7 +17,7 @@ import {
   User
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -68,16 +68,21 @@ export function Sidebar() {
       `}>
         <div className="flex h-full flex-col">
           {/* Logo area - hidden on mobile since it's in TopBar */}
-          <div className="hidden lg:flex h-16 items-center px-6 border-b border-border">
-            <div className="flex items-center gap-2 w-full">
+          <div className="hidden lg:flex h-16 items-center pl-6 pr-2 border-b border-border">
+            <div className="flex items-center gap-1 w-full min-w-0">
               <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               {businesses.length > 1 ? (
                 <Select
                   value={selectedBusinessId || ''}
                   onValueChange={setSelectedBusinessId}
                 >
-                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none p-0 focus:ring-0 hover:bg-accent/50">
-                    <SelectValue placeholder="Select Business" />
+                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none px-2 py-1 focus:ring-0 hover:bg-accent/50 min-w-0 w-full flex-1">
+                    <div className="truncate text-left">
+                      {selectedBusinessId
+                        ? businesses.find(b => b.id === selectedBusinessId)?.name
+                        : "Select Business"
+                      }
+                    </div>
                   </SelectTrigger>
                   <SelectContent>
                     {businesses.map((business) => (
@@ -93,7 +98,7 @@ export function Sidebar() {
                   </SelectContent>
                 </Select>
               ) : (
-                <span className="font-normal leading-tighter text-foreground/90 truncate">
+                <span className="font-normal leading-tighter text-foreground/90 truncate min-w-0 flex-1">
                   {businesses[0]?.name || 'Your Business'}
                 </span>
               )}
@@ -134,15 +139,15 @@ export function Sidebar() {
                 <span className="text-sm text-foreground">Theme</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {theme === 'light' ? 'Light' : 'Dark'}
+                <span className="text-xs text-muted-foreground/75">
+                  <Sun className="h-4 w-4 text-card-foreground/75" />
                 </span>
                 <Switch
                   checked={theme === 'dark'}
                   onCheckedChange={toggleTheme}
                   aria-label="Toggle theme"
                 />
-                <Moon className="h-4 w-4 text-muted-foreground" />
+                <Moon className="h-4 w-4 text-card-foreground/75" />
               </div>
             </div>
 

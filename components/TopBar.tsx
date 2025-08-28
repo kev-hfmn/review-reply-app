@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
 
 // TopBar component handles user profile display and navigation
 export default function TopBar() {
@@ -123,9 +124,7 @@ export default function TopBar() {
                   className="flex items-center gap-2 hover:bg-primary hover:text-foreground px-3 py-2 rounded-full transition-colors"
                   disabled={isLoggingOut}
                 >
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary hover:text-primary-foreground">
-                    {user.email?.[0].toUpperCase()}
-                  </div>
+                  <UserAvatar size="sm" />
                 </button>
 
                 {isDropdownOpen && !isLoggingOut && (
