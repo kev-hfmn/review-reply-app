@@ -17,8 +17,11 @@ import {
   Clock,
   RefreshCw,
   Mail,
-  Phone
+  Phone,
+  Clock11,
+  Clock3Icon
 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +30,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/utils/supabase';
 import ToastNotifications from '@/components/ToastNotifications';
 import type { ToastNotification } from '@/types/reviews';
+import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
+import { hasFeature } from '@/lib/utils/subscription-client';
 import { Input } from '@/components/ui/input';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,8 +90,9 @@ interface BillingInfo {
   trialEnds?: string;
 }
 
-export default function SettingsPage() {
+function SettingsPage() {
   const { user, selectedBusinessId } = useAuth();
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null);
 
   // Initialize active tab from URL parameter
   const getInitialTab = () => {
@@ -253,11 +259,13 @@ export default function SettingsPage() {
         // Get the selected business data
         const { data: business, error: businessError } = await supabase
           .from('businesses')
-          .select('id, name, location, industry, google_business_id, customer_support_email, customer_support_phone, user_id, created_at, updated_at, last_review_sync')
+          .select('id, name, location, industry, google_business_id, connection_status, customer_support_email, customer_support_phone, user_id, created_at, updated_at, last_review_sync')
           .eq('id', selectedBusinessId)
           .single();
 
         console.log('Business query result:', { business, businessError });
+        console.log('Google Business ID from database:', business?.google_business_id);
+        console.log('Connection status from database:', business?.connection_status);
 
         if (businessError) throw businessError;
 
@@ -337,11 +345,15 @@ export default function SettingsPage() {
             });
           }
 
-          // Set integration state with simplified Google integration (now handled by GoogleBusinessProfileIntegration component)
+          // Set integration state based on actual database values
+          const isGoogleConnected = business.connection_status === 'connected';
+          console.log('🔍 DEBUG: business.connection_status =', business.connection_status);
+          console.log('🔍 DEBUG: isGoogleConnected =', isGoogleConnected);
+          
           const integrationState = {
             googleBusiness: {
-              connected: false, // Will be managed by GoogleBusinessProfileIntegration component
-              status: 'not_connected' as const,
+              connected: isGoogleConnected,
+              status: isGoogleConnected ? 'approved' as const : 'not_connected' as const,
               lastSync: business.last_review_sync
             },
             makeWebhook: {
@@ -350,7 +362,7 @@ export default function SettingsPage() {
             }
           };
 
-          console.log('Setting integration state:', integrationState);
+          console.log('🔍 DEBUG: Final integration state:', integrationState);
           if (mounted) {
             setIntegrations(integrationState);
 
@@ -376,6 +388,13 @@ export default function SettingsPage() {
       mounted = false;
     };
   }, [user, selectedBusinessId]); // Depend on user and selectedBusinessId for reactive updates
+
+  // Check plan features
+  const hasAutoSync = subscriptionQuery.data ? hasFeature(subscriptionQuery.data.planId, 'autoSync') : false;
+  const hasAutoApproval = subscriptionQuery.data ? hasFeature(subscriptionQuery.data.planId, 'autoApproval') : false;
+  const hasCustomVoice = subscriptionQuery.data ? hasFeature(subscriptionQuery.data.planId, 'customVoice') : false;
+  const currentPlan = subscriptionQuery.data?.planId || 'basic';
+  const currentPlanName = currentPlan === 'pro' ? 'Pro' : currentPlan === 'pro-plus' ? 'Pro Plus' : currentPlan === 'starter' ? 'Starter' : 'Basic';
 
   // Handle OAuth callback feedback
   useEffect(() => {
@@ -624,11 +643,16 @@ export default function SettingsPage() {
 
   // Google Business Profile handlers
 
+  const GoogleIcon = () => (
+    <img src="/icons/google.png" alt="Google" className="h-5 w-5" />
+  );
+
   const tabs = [
     { id: 'profile', label: 'Business Profile', icon: Building2 },
     { id: 'voice', label: 'Brand Voice', icon: MessageSquare },
-    { id: 'approval', label: 'Approval Mode', icon: SettingsIcon },
-    { id: 'integrations', label: 'Google Connection', icon: Zap },
+    { id: 'automation', label: 'Reply Automation', icon: Clock3Icon },
+    { id: 'integrations', label: 'Google Connection', icon: GoogleIcon },
+
    // { id: 'billing', label: 'Billing', icon: CreditCard }
   ];
 
@@ -921,68 +945,145 @@ export default function SettingsPage() {
           </Card>
         )}
 
-        {/* Approval Mode Tab */}
-        {activeTab === 'approval' && (
+
+
+        {/* automation Tab */}
+        {activeTab === 'automation' && (
           <div className="space-y-6">
-            {/* Approval Mode Card */}
+            {/* Pro Plan Banner for Automation Features */}
+            {!hasAutoSync && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Automation Features Require Pro Plan
+                    </h4>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      You&apos;re currently on the {currentPlanName} plan. Upgrade to Pro to unlock automated review sync, AI reply generation, auto-posting, and approval workflows.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="mt-2 bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={() => window.location.href = '/profile'}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Automated Review Sync Card */}
             <Card className="text-card-foreground">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <SettingsIcon className="h-5 w-5 " />
-                  Approval Mode
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <RefreshCw className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  Automated Review Sync
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Automatically check for new reviews daily at a scheduled time
+                </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: 'manual',
-                      title: 'Manual Approval',
-                      description: 'Review and approve every reply before posting'
-                    },
-                    {
-                      id: 'auto_4_plus',
-                      title: 'Auto-approve 4+ Stars',
-                      description: 'Automatically post replies to 4 and 5-star reviews'
-                    },
-                    {
-                      id: 'auto_except_low',
-                      title: 'Auto-approve Except Low Ratings',
-                      description: 'Automatically post replies except for 1 and 2-star reviews'
-                    }
-                  ].map((mode) => (
-                    <div
-                      key={mode.id}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                        approvalSettings.mode === mode.id
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                          : 'border-border hover:border-border/80'
-                      }`}
-                      onClick={() => setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
-                          approvalSettings.mode === mode.id
-                            ? 'border-primary bg-primary'
-                            : 'border-muted-foreground'
-                        }`}>
-                          {approvalSettings.mode === mode.id && (
-                            <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-card-foreground">{mode.title}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
-                        </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${autoSyncSettings.enabled && hasAutoSync ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <div>
+                      <div className="text-sm font-medium text-foreground">
+                        {autoSyncSettings.enabled && hasAutoSync ? 'Auto-sync Enabled' : 'Auto-sync Disabled'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {autoSyncSettings.enabled && hasAutoSync
+                          ? `Daily at ${autoSyncSettings.slot === 'slot_1' ? '12:00 PM UTC (Europe/Africa)' : '12:00 AM UTC (Americas/Asia)'}`
+                          : 'Manual review sync only'
+                        }
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <Switch
+                    checked={autoSyncSettings.enabled && hasAutoSync}
+                    onCheckedChange={(enabled) => setAutoSyncSettings(prev => ({ ...prev, enabled }))}
+                    disabled={!hasAutoSync}
+                  />
+                </div>
+
+                {autoSyncSettings.enabled && hasAutoSync && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground mb-3">
+                        <Clock className="h-4 w-4 inline mr-1" />
+                        Sync Time Slot
+                      </label>
+                      <div className="space-y-3">
+                        {[
+                          {
+                            id: 'slot_1',
+                            title: 'Slot 1 - 12:00 PM UTC',
+                            description: 'Good for Europe and Africa (morning/afternoon business hours)'
+                          },
+                          {
+                            id: 'slot_2',
+                            title: 'Slot 2 - 12:00 AM UTC',
+                            description: 'Good for Americas and Asia (evening/morning business hours)'
+                          }
+                        ].map((slot) => (
+                          <div
+                            key={slot.id}
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                              autoSyncSettings.slot === slot.id
+                                ? 'border-primary bg-primary/10'
+                                : 'border-border hover:border-border/80'
+                            }`}
+                            onClick={() => setAutoSyncSettings(prev => ({ ...prev, slot: slot.id }))}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+                                autoSyncSettings.slot === slot.id
+                                  ? 'border-primary bg-primary'
+                                  : 'border-border'
+                              }`}>
+                                {autoSyncSettings.slot === slot.id && (
+                                  <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-foreground">{slot.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{slot.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                  <h4 className="text-sm font-medium text-foreground mb-2">How it works:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Automatically checks for new reviews from your Google Business Profile</li>
+                    <li>• Generates AI replies for new reviews based on your brand voice settings</li>
+                    <li>• Sends email notifications when new reviews are found</li>
+                    <li>• Requires valid Google Business Profile integration</li>
+                  </ul>
+                  {integrations.googleBusiness.status !== 'approved' && (
+                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        Google Business Profile must be connected and approved to use automated sync.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveApproval} disabled={isSaving}>
+                  <Button
+                    onClick={handleSaveAutoSync}
+                    disabled={isSaving}
+                  >
                     <Save className="h-4 w-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save Approval Settings'}
+                    {isSaving ? 'Saving...' : 'Save Auto-Sync Settings'}
                   </Button>
                 </div>
               </CardContent>
@@ -1045,6 +1146,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
+
                 {/* Automation Controls */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -1057,8 +1159,9 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={automationSettings.autoReplyEnabled}
+                      checked={automationSettings.autoReplyEnabled && hasAutoSync}
                       onCheckedChange={(enabled) => setAutomationSettings(prev => ({ ...prev, autoReplyEnabled: enabled }))}
+                      disabled={!hasAutoSync}
                     />
                   </div>
 
@@ -1072,9 +1175,9 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={automationSettings.autoPostEnabled}
+                      checked={automationSettings.autoPostEnabled && hasAutoApproval}
                       onCheckedChange={(enabled) => setAutomationSettings(prev => ({ ...prev, autoPostEnabled: enabled }))}
-                      disabled={!automationSettings.autoReplyEnabled}
+                      disabled={!hasAutoApproval || !automationSettings.autoReplyEnabled}
                     />
                   </div>
 
@@ -1176,6 +1279,79 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Approval Mode Card */}
+            <Card className="text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <SettingsIcon className="h-5 w-5 " />
+                  Approval Mode
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      id: 'manual',
+                      title: 'Manual Approval',
+                      description: 'Review and approve every reply before posting'
+                    },
+                    {
+                      id: 'auto_4_plus',
+                      title: 'Auto-approve 4+ Stars',
+                      description: 'Automatically post replies to 4 and 5-star reviews'
+                    },
+                    {
+                      id: 'auto_except_low',
+                      title: 'Auto-approve Except Low Ratings',
+                      description: 'Automatically post replies except for 1 and 2-star reviews'
+                    }
+                  ].map((mode) => {
+                    const isProFeature = mode.id !== 'manual';
+                    const hasAutoApproval = hasFeature(subscriptionQuery.data?.planId || 'basic', 'autoApproval');
+                    const isDisabled = isProFeature && !hasAutoApproval;
+
+                    return (
+                    <div
+                      key={mode.id}
+                      className={`p-4 rounded-lg border-2 transition-colors ${
+                        isDisabled
+                          ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
+                          : approvalSettings.mode === mode.id
+                            ? 'border-primary bg-primary/5 dark:bg-primary/10 cursor-pointer'
+                            : 'border-border hover:border-border/80 cursor-pointer'
+                      }`}
+                      onClick={() => !isDisabled && setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+                          approvalSettings.mode === mode.id
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground'
+                        }`}>
+                          {approvalSettings.mode === mode.id && (
+                            <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-card-foreground">{mode.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveApproval} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Approval Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -1190,126 +1366,11 @@ export default function SettingsPage() {
               onShowToast={showToast}
             />
 
-            {/* Automated Review Sync Card */}
-            <Card className="text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <RefreshCw className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  Automated Review Sync
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Automatically check for new reviews daily at a scheduled time
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${autoSyncSettings.enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                    <div>
-                      <div className="text-sm font-medium text-foreground">
-                        {autoSyncSettings.enabled ? 'Auto-sync Enabled' : 'Auto-sync Disabled'}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {autoSyncSettings.enabled
-                          ? `Daily at ${autoSyncSettings.slot === 'slot_1' ? '12:00 PM UTC (Europe/Africa)' : '12:00 AM UTC (Americas/Asia)'}`
-                          : 'Manual review sync only'
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={autoSyncSettings.enabled}
-                    onCheckedChange={(enabled) => setAutoSyncSettings(prev => ({ ...prev, enabled }))}
-                  />
-                </div>
-
-                {autoSyncSettings.enabled && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-3">
-                        <Clock className="h-4 w-4 inline mr-1" />
-                        Sync Time Slot
-                      </label>
-                      <div className="space-y-3">
-                        {[
-                          {
-                            id: 'slot_1',
-                            title: 'Slot 1 - 12:00 PM UTC',
-                            description: 'Good for Europe and Africa (morning/afternoon business hours)'
-                          },
-                          {
-                            id: 'slot_2',
-                            title: 'Slot 2 - 12:00 AM UTC',
-                            description: 'Good for Americas and Asia (evening/morning business hours)'
-                          }
-                        ].map((slot) => (
-                          <div
-                            key={slot.id}
-                            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                              autoSyncSettings.slot === slot.id
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border hover:border-border/80'
-                            }`}
-                            onClick={() => setAutoSyncSettings(prev => ({ ...prev, slot: slot.id }))}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
-                                autoSyncSettings.slot === slot.id
-                                  ? 'border-primary bg-primary'
-                                  : 'border-border'
-                              }`}>
-                                {autoSyncSettings.slot === slot.id && (
-                                  <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
-                                )}
-                              </div>
-                              <div>
-                                <h3 className="font-medium text-foreground">{slot.title}</h3>
-                                <p className="text-sm text-muted-foreground mt-1">{slot.description}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                  <h4 className="text-sm font-medium text-foreground mb-2">How it works:</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Automatically checks for new reviews from your Google Business Profile</li>
-                    <li>• Generates AI replies for new reviews based on your brand voice settings</li>
-                    <li>• Sends email notifications when new reviews are found</li>
-                    <li>• Requires valid Google Business Profile integration</li>
-                  </ul>
-                  {integrations.googleBusiness.status !== 'approved' && (
-                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                        <AlertCircle className="h-4 w-4 inline mr-1" />
-                        Google Business Profile must be connected and approved to use automated sync.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSaveAutoSync}
-                    disabled={isSaving}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save Auto-Sync Settings'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-
           </div>
         )}
 
         {/* Billing Tab */}
-        {/* {activeTab === 'billing' && (
+        {activeTab === 'billing' && (
           <Card className="text-card-foreground">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -1325,35 +1386,38 @@ export default function SettingsPage() {
                       {billing.plan} Plan
                     </h3>
                     <Badge variant={billing.status === 'active' ? 'default' : 'destructive'}>
-                      {billing.status === 'active' ? 'Active' : 'Past Due'}
+                      {billing.status}
                     </Badge>
                   </div>
-                  {billing.trialEnds && (
-                    <p className="text-sm text-muted-foreground">
-                      Trial ends: {new Date(billing.trialEnds).toLocaleDateString()}
-                    </p>
-                  )}
-                  {billing.nextBilling && (
-                    <p className="text-sm text-muted-foreground">
-                      Next billing: {new Date(billing.nextBilling).toLocaleDateString()}
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {billing.plan === 'pro' ? 'Access to all premium features' : 'Basic features only'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="text-right">
+                  <div className="text-lg font-semibold text-foreground">
+                    ${billing.amount}/month
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Next billing: {billing.nextBilling}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex gap-3">
+                  <Button variant="outline" className="flex-1">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Manage Billing
                   </Button>
-                  {billing.plan === 'basic' && (
-                    <Button size="sm">
-                      Upgrade Plan
-                    </Button>
-                  )}
+                  <Button className="flex-1">
+                    {billing.plan === 'basic' ? 'Upgrade to Pro' : 'Change Plan'}
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-        )} */}
+        )}
+
       </motion.div>
 
       {/* Toast Notifications */}
@@ -1361,3 +1425,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+export default SettingsPage;

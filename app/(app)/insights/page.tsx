@@ -29,9 +29,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInsightsData, downloadBlob, type TimePeriodType } from '@/hooks/useInsightsData';
 import { supabase } from '@/utils/supabase';
 import type { Business } from '@/types/dashboard';
+import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
+import { hasFeature } from '@/lib/utils/subscription-client';
 
 export default function InsightsPage() {
-  const { user, isSubscriber } = useAuth();
+  const { user } = useAuth();
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
@@ -170,8 +173,13 @@ export default function InsightsPage() {
     return null;
   };
 
-  // Show upgrade prompt for basic users
-  if (!isSubscriber) {
+  // Check if user has access to advanced insights feature
+  const hasInsightsAccess = subscriptionQuery.data ? hasFeature(subscriptionQuery.data.planId, 'advancedInsights') : false;
+  const currentPlan = subscriptionQuery.data?.planId || 'basic';
+  const planName = currentPlan === 'basic' ? 'Basic' : currentPlan === 'starter' ? 'Starter' : currentPlan === 'pro' ? 'Pro' : 'Pro Plus';
+  
+  // Show upgrade prompt for users without insights access
+  if (!hasInsightsAccess) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -184,16 +192,16 @@ export default function InsightsPage() {
           <CardContent className="py-12 text-center">
             <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">
-              Subscription Required
+              Pro Plan Required
             </h3>
             <p className="text-muted-foreground mb-6">
-              AI-powered insights are available to subscribers. Upgrade your plan to access this feature and to analyze your reviews at a glance.
+              AI-powered insights require a Pro plan or higher. You&apos;re currently on the {planName} plan. Upgrade to access advanced analytics and insights for your reviews.
             </p>
             <Button
               onClick={() => window.location.href = '/profile'}
               className="bg-primary hover:bg-primary/90"
             >
-              Upgrade Plan
+              Upgrade to Pro
             </Button>
           </CardContent>
         </Card>
@@ -252,6 +260,8 @@ export default function InsightsPage() {
 
   // Error state
   if (error && !insights) {
+    const isSubscriptionError = error.includes('Pro plan') || error.includes('subscription') || error.includes('require');
+    
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -262,21 +272,34 @@ export default function InsightsPage() {
 
         <Card>
           <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            {isSubscriptionError ? (
+              <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            ) : (
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            )}
             <h3 className="text-lg font-medium text-foreground mb-2">
-              Unable to Generate Insights
+              {isSubscriptionError ? 'Pro Plan Required' : 'Unable to Generate Insights'}
             </h3>
             <p className="text-muted-foreground mb-4">
               {error}
             </p>
-            <Button onClick={() => regenerateInsights()} disabled={isGenerating}>
-              {isGenerating ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Try Again
-            </Button>
+            {isSubscriptionError ? (
+              <Button
+                onClick={() => window.location.href = '/profile'}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Upgrade to Pro
+              </Button>
+            ) : (
+              <Button onClick={() => regenerateInsights()} disabled={isGenerating}>
+                {isGenerating ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Try Again
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

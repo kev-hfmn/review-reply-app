@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncReviews } from '@/lib/services/googleBusinessService';
 import { createClient } from '@supabase/supabase-js';
+import { checkUserSubscription, hasFeature, getPlanLimit } from '@/lib/utils/subscription';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,31 +35,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check subscription status for access control
-    const { data: subscription, error: subError } = await supabaseAdmin
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .maybeSingle();
-
-    const isSubscriber = subscription && 
-      subscription.status === 'active' && 
-      new Date(subscription.current_period_end) > new Date();
-
-    if (!isSubscriber) {
+    // Check subscription status using centralized utility
+    const subscription = await checkUserSubscription(userId);
+    
+    // Check if user has review sync feature
+    if (!hasFeature(subscription.planId, 'reviewSync')) {
       return NextResponse.json(
         { 
-          error: 'Subscription required',
-          message: 'Review syncing requires an active subscription. Please upgrade your plan.',
+          error: 'Review sync not available on Basic plan',
+          message: 'Review syncing requires a Starter plan or higher.',
+          requiredPlan: 'starter',
           code: 'SUBSCRIPTION_REQUIRED'
         },
         { status: 403 }
       );
     }
 
-    console.log(`🚀 Starting two-phase review sync for business ${businessId}, user ${userId}`);
+    // Get and apply plan-specific review limits
+    const maxReviews = getPlanLimit(subscription.planId, 'maxReviewsPerSync');
+    
+    if (maxReviews === 0) {
+      return NextResponse.json(
+        { 
+          error: 'Review sync not available',
+          message: 'Your current plan does not include review syncing.',
+          requiredPlan: 'starter'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Apply limit to sync operation (if not unlimited)
+    if (maxReviews !== -1 && typeof maxReviews === 'number') {
+      options.reviewCount = Math.min(options.reviewCount || 50, maxReviews);
+      console.log(`📊 Applying plan limit: max ${maxReviews} reviews for ${subscription.planId} plan`);
+    }
+
+    console.log(`🚀 Starting two-phase review sync for business ${businessId}, user ${userId}, plan: ${subscription.planId}`);
     
     const syncResult = await syncReviews(businessId, userId, options);
     

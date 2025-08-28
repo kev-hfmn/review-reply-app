@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Hash, RefreshCw, Download, CheckCircle } from 'lucide-react';
+import { Calendar, Hash, RefreshCw, Download, CheckCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -30,6 +30,8 @@ interface ReviewFetchControlsProps {
   isLoading: boolean;
   disabled?: boolean;
   syncStatus?: SyncStatus;
+  isSubscriber?: boolean;
+  onUpgradeRequired?: () => void;
 }
 
 const TIME_PERIOD_OPTIONS = [
@@ -52,7 +54,9 @@ export default function ReviewFetchControls({
   onFetch,
   isLoading,
   disabled = false,
-  syncStatus
+  syncStatus,
+  isSubscriber = true,
+  onUpgradeRequired
 }: ReviewFetchControlsProps) {
   const [timePeriod, setTimePeriod] = useState<FetchOptions['timePeriod']>('30days');
   const [reviewCount, setReviewCount] = useState<FetchOptions['reviewCount']>(50);
@@ -62,6 +66,12 @@ export default function ReviewFetchControls({
   const hasReviews = (syncStatus?.totalReviews ?? 0) > 0;
 
   const handleFetch = async () => {
+    // Check subscription for sync feature
+    if (!isSubscriber) {
+      onUpgradeRequired?.();
+      return;
+    }
+    
     // For initial backfill, ignore user selections and fetch everything
     if (isInitialBackfill) {
       await onFetch({ timePeriod: 'all', reviewCount: 200 });
@@ -111,11 +121,17 @@ export default function ReviewFetchControls({
             disabled={isLoading || disabled}
             className="flex items-center gap-2"
             size="lg"
+            variant={isSubscriber ? "default" : "outline"}
           >
             {isLoading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 Importing Reviews...
+              </>
+            ) : !isSubscriber ? (
+              <>
+                <Lock className="h-4 w-4" />
+                Upgrade to Import
               </>
             ) : (
               <>
@@ -161,12 +177,17 @@ export default function ReviewFetchControls({
           onClick={handleFetch}
           disabled={isLoading || disabled}
           className="flex items-center gap-2"
-          variant="primary"
+          variant={isSubscriber ? "primary" : "outline"}
         >
           {isLoading ? (
             <>
               <RefreshCw className="h-4 w-4 animate-spin" />
               Syncing...
+            </>
+          ) : !isSubscriber ? (
+            <>
+              <Lock className="h-4 w-4" />
+              Upgrade to Sync
             </>
           ) : (
             <>
@@ -224,7 +245,13 @@ export default function ReviewFetchControls({
           </div>
 
           <Button
-            onClick={() => onFetch({ timePeriod, reviewCount })}
+            onClick={() => {
+              if (!isSubscriber) {
+                onUpgradeRequired?.();
+                return;
+              }
+              onFetch({ timePeriod, reviewCount });
+            }}
             disabled={isLoading || disabled}
             className="flex items-center gap-2"
             variant="outline"
@@ -232,10 +259,12 @@ export default function ReviewFetchControls({
           >
             {isLoading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : !isSubscriber ? (
+              <Lock className="h-4 w-4" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Manual Fetch
+            {!isSubscriber ? 'Upgrade' : 'Manual Fetch'}
           </Button>
         </div>
       </details>

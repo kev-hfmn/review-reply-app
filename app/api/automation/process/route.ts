@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 import { automationService, type AutomationContext, type BusinessSettings, type Review } from '@/lib/services/automationService';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
+import { checkUserSubscription, hasFeature } from '@/lib/utils/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Check subscription status for automation feature
+    const subscriptionStatus = await checkUserSubscription(userId);
+    if (!hasFeature(subscriptionStatus.planId, 'autoSync')) {
+      return NextResponse.json(
+        {
+          error: 'Automation not available',
+          message: 'Automation features require a Pro plan or higher.',
+          requiredPlan: 'pro',
+          code: 'FEATURE_NOT_AVAILABLE'
+        },
+        { status: 403 }
       );
     }
 

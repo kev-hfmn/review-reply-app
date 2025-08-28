@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { pricingTiers } from '@/lib/pricing';
@@ -51,6 +51,12 @@ export function PricingSection() {
               <li key={feature} className="flex items-center flex-row gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
                 <span className="text-slate-600 dark:text-slate-300">{feature}</span>
+              </li>
+            ))}
+            {tier.excludedFeatures?.map((feature) => (
+              <li key={`excluded-${feature}`} className="flex items-center flex-row gap-2">
+                <X className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                <span className="text-slate-400 dark:text-slate-500 line-through">{feature}</span>
               </li>
             ))}
           </ul>

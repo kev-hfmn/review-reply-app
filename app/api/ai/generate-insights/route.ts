@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateWeeklyInsights } from '@/lib/services/insightsService';
 import { supabaseAdmin } from '@/utils/supabase-admin';
-import { checkUserSubscription } from '@/lib/utils/subscription';
+import { checkUserSubscription, hasFeature } from '@/lib/utils/subscription';
 
 export async function POST(request: Request) {
   try {
@@ -18,12 +18,14 @@ export async function POST(request: Request) {
     // Check subscription status using centralized utility
     const subscriptionStatus = await checkUserSubscription(userId);
 
-    if (!subscriptionStatus.isSubscriber) {
+    // Check if user has advanced insights feature
+    if (!hasFeature(subscriptionStatus.planId, 'advancedInsights')) {
       return NextResponse.json(
         {
-          error: 'Subscription required',
-          message: 'AI-powered insights require an active subscription. Please upgrade your plan.',
-          code: 'SUBSCRIPTION_REQUIRED'
+          error: 'Advanced insights not available',
+          message: 'AI-powered insights require a Pro plan or higher.',
+          requiredPlan: 'pro',
+          code: 'FEATURE_NOT_AVAILABLE'
         },
         { status: 403 }
       );

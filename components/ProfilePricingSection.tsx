@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, CreditCard, Crown, Zap, Building2 } from 'lucide-react';
+import { CheckCircle2, CreditCard, Crown, Zap, Building2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -166,6 +166,12 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
                 <li key={index} className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground">{feature}</span>
+                </li>
+              ))}
+              {tier.excludedFeatures?.map((feature, index) => (
+                <li key={`excluded-${index}`} className="flex items-start gap-3">
+                  <X className="h-5 w-5 text-muted-foreground/60 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground/70 line-through">{feature}</span>
                 </li>
               ))}
             </ul>
