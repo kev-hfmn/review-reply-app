@@ -86,7 +86,7 @@ interface BillingInfo {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, selectedBusinessId } = useAuth();
 
   // Initialize active tab from URL parameter
   const getInitialTab = () => {
@@ -103,7 +103,6 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(getInitialTab());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(null);
 
   // Check if values are already on 1-5 scale or need conversion from 1-10 scale
   const convertToNewScale = (oldValue: number): number => {
@@ -245,20 +244,24 @@ export default function SettingsPage() {
       try {
         console.log('Loading settings for user:', user.id);
 
-        // First, get the user's business (without Google fields due to RLS)
-        const { data: businesses, error: businessError } = await supabase
+        // Use the selected business from AuthContext
+        if (!selectedBusinessId) {
+          console.log('No selected business ID available');
+          return;
+        }
+
+        // Get the selected business data
+        const { data: business, error: businessError } = await supabase
           .from('businesses')
           .select('id, name, location, industry, google_business_id, customer_support_email, customer_support_phone, user_id, created_at, updated_at, last_review_sync')
-          .eq('user_id', user.id)
-          .limit(1);
+          .eq('id', selectedBusinessId)
+          .single();
 
-        console.log('Businesses query result:', { businesses, businessError });
+        console.log('Business query result:', { business, businessError });
 
         if (businessError) throw businessError;
 
-        if (businesses && businesses.length > 0 && mounted) {
-          const business = businesses[0];
-          setCurrentBusinessId(business.id);
+        if (business && mounted) {
 
           setBusinessProfile({
             name: business.name,
@@ -273,7 +276,7 @@ export default function SettingsPage() {
           const { data: settings, error: settingsError } = await supabase
             .from('business_settings')
             .select('*, auto_sync_enabled, auto_sync_slot, auto_reply_enabled, auto_post_enabled, email_notifications_enabled, last_automation_run')
-            .eq('business_id', business.id)
+            .eq('business_id', selectedBusinessId)
             .single();
 
           if (settingsError && settingsError.code === 'PGRST116') {
@@ -281,7 +284,7 @@ export default function SettingsPage() {
             const { error: createError } = await supabase
               .from('business_settings')
               .insert({
-                business_id: business.id,
+                business_id: selectedBusinessId,
                 brand_voice_preset: 'friendly',
                 formality_level: 3,
                 warmth_level: 3,
@@ -364,7 +367,7 @@ export default function SettingsPage() {
       }
     };
 
-    if (user && user.id) {
+    if (user && user.id && selectedBusinessId) {
       loadSettings();
     }
 
@@ -372,7 +375,7 @@ export default function SettingsPage() {
     return () => {
       mounted = false;
     };
-  }, [user]); // Depend on entire user object for stability
+  }, [user, selectedBusinessId]); // Depend on user and selectedBusinessId for reactive updates
 
   // Handle OAuth callback feedback
   useEffect(() => {
@@ -415,7 +418,7 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     // Business records are created only during Google Business Profile connection
-    if (!currentBusinessId) {
+    if (!selectedBusinessId) {
       showToast({
         type: 'error',
         title: 'No business connected',
@@ -426,7 +429,6 @@ export default function SettingsPage() {
 
     setIsSaving(true);
     try {
-      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('businesses')
         .update({
@@ -437,7 +439,7 @@ export default function SettingsPage() {
           customer_support_phone: businessProfile.customerSupportPhone || null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', businessIdToUse);
+        .eq('id', selectedBusinessId);
 
       if (error) throw error;
 
@@ -460,7 +462,7 @@ export default function SettingsPage() {
 
   const handleSaveBrandVoice = async () => {
     // Business records are created only during Google Business Profile connection
-    if (!currentBusinessId) {
+    if (!selectedBusinessId) {
       showToast({
         type: 'error',
         title: 'No business connected',
@@ -471,7 +473,6 @@ export default function SettingsPage() {
 
     setIsSaving(true);
     try {
-      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('business_settings')
         .update({
@@ -482,7 +483,7 @@ export default function SettingsPage() {
           custom_instruction: brandVoice.customInstruction || null,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', businessIdToUse);
+        .eq('business_id', selectedBusinessId);
 
       if (error) throw error;
 
@@ -505,7 +506,7 @@ export default function SettingsPage() {
 
   const handleSaveApproval = async () => {
     // Business records are created only during Google Business Profile connection
-    if (!currentBusinessId) {
+    if (!selectedBusinessId) {
       showToast({
         type: 'error',
         title: 'No business connected',
@@ -516,14 +517,13 @@ export default function SettingsPage() {
 
     setIsSaving(true);
     try {
-      const businessIdToUse = currentBusinessId;
       const { error } = await supabase
         .from('business_settings')
         .update({
           approval_mode: approvalSettings.mode,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', businessIdToUse);
+        .eq('business_id', selectedBusinessId);
 
       if (error) throw error;
 
@@ -545,7 +545,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveAutoSync = async () => {
-    if (!currentBusinessId) return;
+    if (!selectedBusinessId) return;
 
     setIsSaving(true);
     try {
@@ -556,7 +556,7 @@ export default function SettingsPage() {
           auto_sync_slot: autoSyncSettings.slot,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', currentBusinessId);
+        .eq('business_id', selectedBusinessId);
 
       if (error) throw error;
 
@@ -581,7 +581,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveAutomation = async () => {
-    if (!currentBusinessId) return;
+    if (!selectedBusinessId) return;
 
     setIsSaving(true);
     try {
@@ -593,7 +593,7 @@ export default function SettingsPage() {
           email_notifications_enabled: automationSettings.emailNotificationsEnabled,
           updated_at: new Date().toISOString()
         })
-        .eq('business_id', currentBusinessId);
+        .eq('business_id', selectedBusinessId);
 
       if (error) throw error;
 
@@ -840,7 +840,7 @@ export default function SettingsPage() {
                     max="5"
                     value={brandVoice.formality}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Very Casual</span>
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                     max="5"
                     value={brandVoice.warmth}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Minimal</span>
@@ -882,7 +882,7 @@ export default function SettingsPage() {
                     max="5"
                     value={brandVoice.brevity}
                     onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>Very Detailed</span>
@@ -1186,7 +1186,7 @@ export default function SettingsPage() {
 
             {/* New Platform OAuth Integration */}
             <GoogleBusinessProfileIntegration
-              businessId={currentBusinessId || null}
+              businessId={selectedBusinessId || null}
               onShowToast={showToast}
             />
 

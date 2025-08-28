@@ -13,6 +13,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import type { ReviewTableProps } from '@/types/reviews';
 import type { Review } from '@/types/dashboard';
 import { Button } from '@/components/ui/button';
@@ -250,9 +251,7 @@ export default function ReviewsTable({
                 <div className="bg-muted-foreground/5 border border-muted-foreground/50 rounded-lg p-5 mb-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <div className="p-1.5 bg-muted-foreground/90 rounded-lg">
-                        <MessageSquare className="h-3 w-3 text-white" />
-                      </div>
+                      <UserAvatar size="sm" />
                       <span className="text-sm text-foreground/80 font-medium">
                         Your Reply
                       </span>

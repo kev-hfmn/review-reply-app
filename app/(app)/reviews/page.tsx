@@ -55,7 +55,7 @@ export default function ReviewsPage() {
 
   // Review drawer state
   const [drawerData, setDrawerData] = useState<ReviewDrawerData>({
-    review: null,
+    reviewId: null,
     isOpen: false,
     isLoading: false,
     availableTones: [...REPLY_TONES]
@@ -64,7 +64,7 @@ export default function ReviewsPage() {
   // Handle review click (open drawer)
   const handleReviewClick = useCallback((review: Review) => {
     setDrawerData({
-      review,
+      reviewId: review.id,
       isOpen: true,
       isLoading: false,
       availableTones: [...REPLY_TONES]
@@ -73,7 +73,7 @@ export default function ReviewsPage() {
 
   // Handle drawer close
   const handleDrawerClose = useCallback(() => {
-    setDrawerData(prev => ({ ...prev, isOpen: false, review: null }));
+    setDrawerData(prev => ({ ...prev, isOpen: false, reviewId: null }));
   }, []);
 
   // Handle drawer save
@@ -81,12 +81,8 @@ export default function ReviewsPage() {
     setDrawerData(prev => ({ ...prev, isLoading: true }));
     try {
       await reviewActions.updateReply(reviewId, reply);
-      // Update the drawer data with the new reply
-      setDrawerData(prev => ({
-        ...prev,
-        review: prev.review ? { ...prev.review, ai_reply: reply, reply_tone: tone } : null,
-        isLoading: false
-      }));
+      // No need to manually update drawer state - allReviews will be updated automatically
+      setDrawerData(prev => ({ ...prev, isLoading: false }));
     } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
@@ -117,25 +113,12 @@ export default function ReviewsPage() {
     setDrawerData(prev => ({ ...prev, isLoading: true }));
     try {
       await reviewActions.regenerateReply(reviewId, tone);
-
-      // Add a small delay to ensure state is updated
-      setTimeout(() => {
-        const updatedReview = allReviews.find(r => r.id === reviewId);
-
-        if (updatedReview) {
-          setDrawerData(prev => ({
-            ...prev,
-            review: { ...updatedReview }, // Force new object reference
-            isLoading: false
-          }));
-        } else {
-          setDrawerData(prev => ({ ...prev, isLoading: false }));
-        }
-      }, 100);
+      // No need for setTimeout or manual state sync - allReviews will be updated automatically
+      setDrawerData(prev => ({ ...prev, isLoading: false }));
     } catch {
       setDrawerData(prev => ({ ...prev, isLoading: false }));
     }
-  }, [reviewActions, allReviews]);
+  }, [reviewActions]);
 
   // Handle inline editing
   const handleInlineEdit = useCallback(async (reviewId: string, reply: string) => {
@@ -467,6 +450,7 @@ export default function ReviewsPage() {
       {/* Review Drawer */}
       <ReviewDrawer
         data={drawerData}
+        allReviews={allReviews}
         onClose={handleDrawerClose}
         onSave={handleDrawerSave}
         onApprove={handleDrawerApprove}

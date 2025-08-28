@@ -7,6 +7,7 @@ import {
   User,
   SupabaseClient
 } from '@supabase/supabase-js';
+import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
 
 interface AuthContextType {
   user: User | null;
@@ -27,6 +28,7 @@ interface AuthContextType {
   updateEmail: (newEmail: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   isSubscriber: boolean;
+  userAvatarUrl: string | null;
   businesses: { id: string; name: string; industry?: string }[];
   selectedBusinessId: string | null;
   setSelectedBusinessId: (businessId: string | null) => void;
@@ -48,38 +50,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
 
-  const checkSubscription = useCallback(async (userId: string) => {
-    try {
-      // Call our subscription check API instead of using server-side utility directly
-      const response = await fetch('/api/subscription/check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
+  // NEW: Use centralized subscription query
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null)
+
+  // NEW: Sync centralized cache with local state
+  useEffect(() => {
+    if (subscriptionQuery.data) {
+      setIsSubscriber(subscriptionQuery.data.isSubscriber)
+      
+      // Log subscription details for debugging (preserved)
+      console.log(`User ${user?.id} subscription status:`, {
+        plan: subscriptionQuery.data.planId,
+        status: subscriptionQuery.data.status,
+        isSubscriber: subscriptionQuery.data.isSubscriber
       });
-
-      if (!response.ok) {
-        console.error('Subscription API error:', response.status);
-        setIsSubscriber(false);
-        return;
-      }
-
-      const subscriptionStatus = await response.json();
-
-      setIsSubscriber(subscriptionStatus.isSubscriber);
-
-      // Log subscription details for debugging
-      console.log(`User ${userId} subscription status:`, {
-        plan: subscriptionStatus.planId,
-        status: subscriptionStatus.status,
-        isSubscriber: subscriptionStatus.isSubscriber
-      });
-    } catch (error) {
-      console.error('Subscription check error:', error);
+    } else if (subscriptionQuery.error) {
+      console.error('Subscription check error:', subscriptionQuery.error);
       setIsSubscriber(false);
     }
-  }, []);
+  }, [subscriptionQuery.data, subscriptionQuery.error, user?.id])
 
   const loadBusinessInfo = useCallback(async (userId: string) => {
     try {
@@ -195,10 +184,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (currentUser && mounted) {
             // Wait for user data loading to complete before setting loading to false
             try {
-              await Promise.all([
-                checkSubscription(currentUser.id),
-                loadBusinessInfo(currentUser.id)
-              ]);
+              // Only load business info - subscription handled by centralized cache
+              await loadBusinessInfo(currentUser.id);
             } catch (error) {
               console.error('Error loading user data:', error);
               // Don't throw - allow app to continue with basic auth
@@ -216,12 +203,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(newUser);
 
               if (newUser) {
-                // Run these in background for auth state changes
-                Promise.all([
-                  checkSubscription(newUser.id),
-                  loadBusinessInfo(newUser.id)
-                ]).catch(error => {
-                  console.error('Error loading user data in background:', error);
+                // Run business info loading in background - subscription handled by cache
+                loadBusinessInfo(newUser.id).catch(error => {
+                  console.error('Error loading business data in background:', error);
                 });
               } else {
                 setIsSubscriber(false);
@@ -382,6 +366,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
     },
     isSubscriber,
+    userAvatarUrl: user?.user_metadata?.avatar_url || null,
     businesses,
     selectedBusinessId,
     setSelectedBusinessId: handleBusinessSelection,
