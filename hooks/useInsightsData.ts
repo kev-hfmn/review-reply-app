@@ -77,8 +77,10 @@ export function useInsightsData(businessId?: string, initialPeriod?: Date, initi
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate insights';
       setError(errorMessage);
       
-      // Set fallback insights for better UX
-      setInsights(generateFallbackInsights(businessId, selectedPeriod));
+      // Don't set fallback insights for subscription errors - let the error show
+      if (!errorMessage.includes('Pro plan') && !errorMessage.includes('subscription')) {
+        setInsights(generateFallbackInsights(businessId, selectedPeriod));
+      }
       
     } finally {
       setIsGenerating(false);

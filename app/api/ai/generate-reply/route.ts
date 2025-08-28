@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkUserSubscription } from '@/lib/utils/subscription';
+import { checkUserSubscription, hasFeature } from '@/lib/utils/subscription';
 import { generateAIReply } from '@/lib/services/openaiService';
 import type { BrandVoiceSettings, BusinessInfo, ReviewData } from '@/lib/types/aiTypes';
 
@@ -26,12 +26,14 @@ export async function POST(request: Request) {
     // Check subscription status using centralized utility
     const subscriptionStatus = await checkUserSubscription(userId);
 
-    if (!subscriptionStatus.isSubscriber) {
+    // Check if user has AI replies feature
+    if (!hasFeature(subscriptionStatus.planId, 'aiReplies')) {
       return NextResponse.json(
         {
-          error: 'Subscription required',
-          message: 'AI reply generation requires an active subscription. Please upgrade your plan.',
-          code: 'SUBSCRIPTION_REQUIRED'
+          error: 'AI replies not available on Basic plan',
+          message: 'AI reply generation requires a Starter plan or higher.',
+          requiredPlan: 'starter',
+          code: 'FEATURE_NOT_AVAILABLE'
         },
         { status: 403 }
       );

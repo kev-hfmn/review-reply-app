@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/utils/supabase-admin';
+import { PLAN_CONFIGS, PlanId } from '@/lib/config/plans';
 
 export interface SubscriptionStatus {
   isSubscriber: boolean;
@@ -108,5 +109,43 @@ export function hasFeatureAccess(subscriptionStatus: SubscriptionStatus, feature
     return subscriptionStatus.isSubscriber;
   }
 
+  return false;
+}
+
+// NEW FUNCTIONS FOR PLAN RESTRICTIONS
+
+/**
+ * Get plan configuration based on plan ID
+ */
+export function getPlanConfig(planId: string) {
+  const plan = planId?.toLowerCase().replace('_', '-') || 'basic';
+  return PLAN_CONFIGS[plan as PlanId] || PLAN_CONFIGS.basic;
+}
+
+/**
+ * Check if a specific feature is allowed for a plan
+ */
+export function hasFeature(planId: string, feature: keyof typeof PLAN_CONFIGS.basic.features): boolean {
+  const config = getPlanConfig(planId);
+  return config.features[feature] === true;
+}
+
+/**
+ * Get a specific limit value for a plan
+ */
+export function getPlanLimit(planId: string, limit: keyof typeof PLAN_CONFIGS.basic.limits): number | string {
+  const config = getPlanConfig(planId);
+  return config.limits[limit];
+}
+
+/**
+ * Check if current usage is within plan limits
+ */
+export function isWithinLimit(current: number, planId: string, limit: keyof typeof PLAN_CONFIGS.basic.limits): boolean {
+  const maxLimit = getPlanLimit(planId, limit);
+  if (maxLimit === -1) return true; // Unlimited
+  if (typeof maxLimit === 'number') {
+    return current < maxLimit;
+  }
   return false;
 }

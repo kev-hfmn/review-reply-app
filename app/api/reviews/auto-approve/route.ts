@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/utils/supabase';
 import { AutoApprovalService, type ApprovalMode } from '@/lib/services/autoApprovalService';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
+import { checkUserSubscription, hasFeature } from '@/lib/utils/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Check subscription status for auto-approval feature
+    const subscriptionStatus = await checkUserSubscription(userId);
+    if (!hasFeature(subscriptionStatus.planId, 'autoApproval')) {
+      return NextResponse.json(
+        {
+          error: 'Auto-approval not available',
+          message: 'Auto-approval requires a Pro plan or higher.',
+          requiredPlan: 'pro',
+          code: 'FEATURE_NOT_AVAILABLE'
+        },
+        { status: 403 }
       );
     }
 
@@ -226,6 +241,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Check subscription status for auto-approval feature
+    const subscriptionStatus = await checkUserSubscription(userId);
+    if (!hasFeature(subscriptionStatus.planId, 'autoApproval')) {
+      return NextResponse.json(
+        {
+          error: 'Auto-approval not available',
+          message: 'Auto-approval requires a Pro plan or higher.',
+          requiredPlan: 'pro',
+          code: 'FEATURE_NOT_AVAILABLE'
+        },
+        { status: 403 }
       );
     }
 

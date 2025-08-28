@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/utils/supabase-admin';
 import { batchGenerateReplies } from '@/lib/services/aiReplyService';
 import type { ReviewData, BatchGenerateResult } from '@/lib/types/aiTypes';
 import { errorRecoveryService } from '@/lib/services/errorRecoveryService';
-import { checkUserSubscription } from '@/lib/utils/subscription';
+import { checkUserSubscription, hasFeature, getPlanLimit } from '@/lib/utils/subscription';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,12 +43,30 @@ export async function POST(request: NextRequest) {
     if (userId) {
       // Check subscription for batch AI generation first
       const subscriptionStatus = await checkUserSubscription(userId);
-      if (!subscriptionStatus.isSubscriber) {
+      
+      // Check if user has bulk operations feature
+      if (!hasFeature(subscriptionStatus.planId, 'bulkOperations')) {
         return NextResponse.json(
           {
-            error: 'Subscription required',
-            message: 'Batch AI reply generation requires an active subscription.',
-            code: 'SUBSCRIPTION_REQUIRED'
+            error: 'Bulk operations not available',
+            message: 'Bulk AI reply generation requires a Pro plan or higher.',
+            requiredPlan: 'pro',
+            code: 'FEATURE_NOT_AVAILABLE'
+          },
+          { status: 403 }
+        );
+      }
+      
+      // Check max bulk actions limit
+      const maxBulkActions = getPlanLimit(subscriptionStatus.planId, 'maxBulkActions');
+      if (maxBulkActions !== -1 && typeof maxBulkActions === 'number' && reviews.length > maxBulkActions) {
+        return NextResponse.json(
+          {
+            error: 'Bulk action limit exceeded',
+            message: `Your plan allows a maximum of ${maxBulkActions} reviews per bulk operation. You attempted ${reviews.length}.`,
+            limit: maxBulkActions,
+            requestedCount: reviews.length,
+            code: 'LIMIT_EXCEEDED'
           },
           { status: 403 }
         );

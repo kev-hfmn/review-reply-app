@@ -8,6 +8,7 @@ export interface PricingTier {
   description: string;
   iconName?: string;
   features: string[];
+  excludedFeatures?: string[];
   cta: string;
   popular: boolean;
   color?: string;
@@ -26,11 +27,15 @@ export const pricingTiers: PricingTier[] = [
     features: [
       "Fetch and manage up to 200 existing reviews when connecting",
       "Manually fetch new reviews at any time",
-      "Automatically generate replies for newly fetched reviews",
-      "Standard tone presets only (friendly, professional, casual, etc.)",
-      "Manual approval of all replies",
-      "Email notifications when new reviews and replies are ready",
-      "Basic review dashboard showing review and reply counts"
+      "Batch-generate replies for reviews",
+      "Standard tone presets only (friendly, professional, casual)",
+      "Manual approval & posting of replies only",
+    ],
+    excludedFeatures: [
+      "Automatic daily sync of new reviews",
+      "Custom brand instructions & tone customization",
+      "Auto-approve rules for certain star ratings",
+      "Advanced insights & sentiment analysis"
     ],
     cta: "Get Started",
     popular: false,
