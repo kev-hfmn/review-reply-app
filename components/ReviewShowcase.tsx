@@ -64,7 +64,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
       <div className="relative mx-auto max-w-6xl">
         {/* Toggle Section */}
         <div className="relative text-center mb-5">
-          <div className="inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
+          <div className="!z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setShowReplies(false)}
               className={`px-3 md:px-6 py-1 md:py-3  rounded-full text-sm font-medium transition-all duration-200 ${
@@ -88,7 +88,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
           </div>
 
           {/* Arrow pointing to toggle */}
-          <div className="absolute z-20 -bottom-16 right-0 md:right-auto md:-top-40 md:left-1/2 transform md:translate-x-36 flex flex-col items-center">
+          <div className="absolute -z-10 -bottom-16 right-0 md:right-auto md:-top-40 md:left-1/2 transform md:translate-x-36 flex flex-col items-center">
             <div className="translate-y-20">
               <p className="md:text-xl text-md text-slate-600 dark:text-slate-200 md:translate-x-16 font-medium max-w-[200px] text-center leading-tight font-indie-flower">
                 See the difference replies make to your reputation
@@ -159,7 +159,8 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
             style={{
               scrollSnapType: 'x mandatory',
               scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x pan-y'
             }}
           >
             <div className="flex space-x-4" style={{ width: 'max-content' }}>
