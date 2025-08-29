@@ -5,24 +5,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const currentDate = new Date();
 
   return [
+    // Main landing page - highest priority
     {
       url: baseUrl,
       lastModified: currentDate,
       changeFrequency: 'weekly',
       priority: 1,
     },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
+    // Public contact page - good for SEO
     {
       url: `${baseUrl}/contact`,
       lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    // Legal/compliance pages - good for trust and compliance
     {
       url: `${baseUrl}/privacy`,
       lastModified: currentDate,
@@ -41,23 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.4,
     },
-    {
-      url: `${baseUrl}/reset-password`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/verify-email`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/pay`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
+    // Note: Removed auth pages (/login, /reset-password, /verify-email) and payment pages (/pay)
+    // These should not be indexed by search engines as they're private/functional pages
   ];
 }
