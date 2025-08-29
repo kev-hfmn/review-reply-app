@@ -9,6 +9,7 @@ interface AnimatedSectionProps {
   delay?: number
   direction?: 'up' | 'down' | 'left' | 'right' | 'scale'
   duration?: number
+  style?: React.CSSProperties
   viewport?: {
     once?: boolean
     amount?: number
@@ -21,6 +22,7 @@ export default function AnimatedSection({
   delay = 0,
   direction = 'up',
   duration = 0.6,
+  style,
   viewport = { once: true, amount: 0.1 }
 }: AnimatedSectionProps) {
   const getInitialState = () => {
@@ -64,6 +66,7 @@ export default function AnimatedSection({
       viewport={viewport}
       transition={{ duration, delay }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>

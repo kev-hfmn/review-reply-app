@@ -84,7 +84,7 @@ function StepNumber({ number }: { number: number }) {
 // How It Works Steps Component
 export function HowItWorksSteps() {
   return (
-    <div className="space-y-16 lg:space-y-24">
+    <div className="space-y-10 lg:space-y-24">
       {stepsData.map((step, index) => {
         const isEven = step.id % 2 === 0;
 
@@ -99,11 +99,11 @@ export function HowItWorksSteps() {
               duration: 0.8,
               ease: "easeOut"
             }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-16 items-center"
           >
             {/* Content Section */}
             <div className={`${isEven ? 'lg:order-2' : 'lg:order-1'}`}>
-              <div className="flex items-start space-x-4 mb-6 lg:mb-0">
+              <div className="flex items-start space-x-4 ">
                 <StepNumber number={step.id} />
 
                 <div className="flex-1">
@@ -111,7 +111,7 @@ export function HowItWorksSteps() {
                     {step.title}
                   </h4>
 
-                  <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+                  <p className="text-md lg:text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
                     {step.description}
                   </p>
 

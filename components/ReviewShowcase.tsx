@@ -67,17 +67,17 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
           <div className="inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setShowReplies(false)}
-              className={`px-6 py-3  rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`px-3 md:px-6 py-1 md:py-3  rounded-full text-sm font-medium transition-all duration-200 ${
                 !showReplies
                   ? 'bg-slate-100  text-muted-foreground dark:text-slate-300 border border-slate-200 dark:bg-slate-700'
                   : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Without Replies
+              Without
             </button>
             <button
               onClick={() => setShowReplies(true)}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`px-3 md:px-6 py-1 md:py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                 showReplies
                   ? 'bg-accent/80 border border-accent dark:text-background text-foreground'
                   : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -88,9 +88,9 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
           </div>
 
           {/* Arrow pointing to toggle */}
-          <div className="absolute -top-40 left-1/2 transform translate-x-36 flex flex-col items-center">
-            <div className="translate-y-16">
-              <p className="text-xl text-slate-600 dark:text-slate-200 translate-x-16 font-medium max-w-[200px] text-center leading-tight font-indie-flower">
+          <div className="absolute z-20 -bottom-16 right-0 md:right-auto md:-top-40 md:left-1/2 transform md:translate-x-36 flex flex-col items-center">
+            <div className="translate-y-20">
+              <p className="md:text-xl text-md text-slate-600 dark:text-slate-200 md:translate-x-16 font-medium max-w-[200px] text-center leading-tight font-indie-flower">
                 See the difference replies make to your reputation
               </p>
             </div>
@@ -111,21 +111,22 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
                 alt="Click to toggle"
                 width={190}
                 height={190}
-                className="transform rotate-[25deg] filter drop-shadow-lg block dark:hidden"
+                className="transform  translate-x-16 md:translate-x-0 scale-50 sm:scale-75 md:scale-100 rotate-[20deg] md:rotate-[25deg] filter drop-shadow-lg block dark:hidden"
               />
               <Image
                 src="/arrow.png"
                 alt="Click to toggle"
                 width={190}
                 height={190}
-                className="transform rotate-[25deg] filter drop-shadow-lg hidden dark:block"
+                className="transform translate-x-10 md:translate-x-0 scale-50 sm:scale-75 md:scale-100 rotate-[20deg] md:rotate-[25deg] filter drop-shadow-lg hidden dark:block"
               />
             </motion.div>
           </div>
         </div>
 
         {/* Review Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Desktop: Grid layout */}
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6">
           {sampleReviews.map((review, index) => (
             <motion.div
               key={review.userName}
@@ -149,6 +150,46 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
               />
             </motion.div>
           ))}
+        </div>
+
+        {/* Mobile: Horizontal scroll */}
+        <div className="block md:hidden">
+          <div
+            className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+            style={{
+              scrollSnapType: 'x mandatory',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            <div className="flex space-x-4" style={{ width: 'max-content' }}>
+              {sampleReviews.map((review, index) => (
+                <motion.div
+                  key={review.userName}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={heroInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+                  className="flex-shrink-0 w-[300px] scroll-snap-align-center"
+                  style={{ scrollSnapAlign: 'center' }}
+                >
+                  <GoogleReviewCard
+                    userName={review.userName}
+                    userRole={review.userRole}
+                    userReviewCount={review.userReviewCount}
+                    userPhotoCount={review.userPhotoCount}
+                    userAvatar={review.userAvatar}
+                    rating={review.rating}
+                    reviewText={review.reviewText}
+                    reviewDate={review.reviewDate}
+                    showReply={showReplies}
+                    replyText={review.replyText}
+                    replyDate={review.replyDate}
+                    className="h-full"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Impact Note */}
