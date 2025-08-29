@@ -106,6 +106,41 @@ body {
   scrollbar-width: none;
 }
 
+/* Mobile scroll container styles */
+.mobile-scroll-container {
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.mobile-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-scroll-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-snap-align-center {
+  scroll-snap-align: center;
+}
+
+.scroll-snap-align-start {
+  scroll-snap-align: start;
+}
+
+/* Hide scrollbar but keep scrolling functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   :root {
     --background: 210.0000 40.0000% 98.0392%;

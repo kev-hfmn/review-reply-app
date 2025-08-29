@@ -187,7 +187,7 @@ className="text-primary-foreground dark:border-primary-foreground hover:bg-prima
             transition={{ duration: 0.5, delay: 0.5 }}
             className="flex flex-col lg:flex-row justify-center items-center space-y-4 lg:space-y-0"
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col md:flex-row items-center space-x-4">
               <p className="text-sm text-primary-foreground">
                 © {currentYear} Soulrise LLC. All rights reserved.
               </p>

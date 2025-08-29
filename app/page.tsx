@@ -171,78 +171,154 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="py-24 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
+          <AnimatedSection className="text-center mb-10 lg:mb-16">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
               ⚡ Key Features
             </AnimatedSection>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Too busy to respond to every review?
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               We get it. You are juggling customers, staff, suppliers, and a hundred daily tasks. Review replies often fall to the bottom of the list or get forgotten entirely. That can cost you trust, repeat business, and even your search ranking.
             </p>
           </AnimatedSection>
 
-          <AnimatedGrid
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            staggerDelay={0.1}
-          >
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="relative p-8 bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:border-blue-300 dark:hover:border-blue-600 group h-full"
-              >
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  {feature.icon}
+          {/* Desktop: AnimatedGrid */}
+          <div className="hidden md:block">
+            <AnimatedGrid
+              className="grid grid-cols-2 lg:grid-cols-3 gap-6"
+              staggerDelay={0.1}
+            >
+              {features.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="relative p-8 bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:border-blue-300 dark:hover:border-blue-600 group h-full"
+                >
+                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {feature.description}
-                </p>
+              ))}
+            </AnimatedGrid>
+          </div>
+
+          {/* Mobile: Horizontal scroll */}
+          <div className="block md:hidden">
+            <div
+              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              style={{
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="flex space-x-4" style={{ width: 'max-content' }}>
+                {features.map((feature, index) => (
+                  <AnimatedSection
+                    key={feature.title}
+                    delay={0.1 + index * 0.1}
+                    className="flex-shrink-0 w-[280px] scroll-snap-align-center"
+                    style={{ scrollSnapAlign: 'center' }}
+                  >
+                    <div className="relative p-6 bg-card rounded-2xl shadow-lg transition-all duration-300 border border-border group h-full">
+                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </AnimatedSection>
+                ))}
               </div>
-            ))}
-          </AnimatedGrid>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Benefits Section */}
       <section id="benefits" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
+          <AnimatedSection className="text-center mb-10 lg:mb-16">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
               💬 Customer Engagement
             </AnimatedSection>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Why replying to Google reviews matters
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               Every Google review is a chance to boost your online reputation and connect with customers. When you reply consistently and thoughtfully, you show customers you care, build trust, improve local SEO, and turn first-time buyers into loyal fans.
             </p>
           </AnimatedSection>
 
           {/* Why Reviews Matter Cards */}
-          <AnimatedGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20" staggerDelay={0.1}>
-            {reviewMatters.map((item) => (
-              <div key={item.title} className="h-full relative p-6 bg-card rounded-2xl shadow-lg border border-border  hover:border-blue-500/50 transition-all duration-300 group">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                  {item.icon}
+          {/* Desktop: AnimatedGrid */}
+          <div className="hidden md:block mb-10 lg:mb-20">
+            <AnimatedGrid className="grid grid-cols-2 lg:grid-cols-4 gap-6" staggerDelay={0.1}>
+              {reviewMatters.map((item) => (
+                <div key={item.title} className="h-full relative p-6 bg-card rounded-2xl shadow-lg border border-border  hover:border-blue-500/50 transition-all duration-300 group">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                    {item.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-md text-slate-600 dark:text-slate-400">
+                    {item.description}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-md text-slate-600 dark:text-slate-400">
-                  {item.description}
-                </p>
+              ))}
+            </AnimatedGrid>
+          </div>
+
+          {/* Mobile: Horizontal scroll */}
+          <div className="block md:hidden mb-10 lg:mb-20">
+            <div
+              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              style={{
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="flex space-x-4" style={{ width: 'max-content' }}>
+                {reviewMatters.map((item, index) => (
+                  <AnimatedSection
+                    key={item.title}
+                    delay={0.1 + index * 0.1}
+                    className="flex-shrink-0 w-[260px] scroll-snap-align-center"
+                    style={{ scrollSnapAlign: 'center' }}
+                  >
+                    <div className="h-full relative p-5 bg-card rounded-2xl shadow-lg border border-border transition-all duration-300 group">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                        {item.icon}
+                      </div>
+                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {item.description}
+                      </p>
+                    </div>
+                  </AnimatedSection>
+                ))}
               </div>
-            ))}
-          </AnimatedGrid>
+            </div>
+          </div>
 
           {/* Statistics Section */}
-          <AnimatedGrid className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto" staggerDelay={0.1}>
+          <AnimatedGrid className="mt-10 lg:mt-12 grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6 max-w-4xl mx-auto" staggerDelay={0.1}>
             <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-primary/10 dark:to-primary/20 rounded-2xl border border-blue-200 dark:border-primary/50">
-              <div className="text-3xl font-bold text-blue-600 dark:text-primary mb-2">89%</div>
+              <div className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-primary mb-2">89%</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 of consumers are highly likely to use a business that responds to all its online reviews
               </div>
@@ -252,7 +328,7 @@ export default function LandingPage() {
             </div>
 
             <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-accent/10 dark:to-accent/20 rounded-2xl border border-green-200 dark:border-accent/50">
-              <div className="text-3xl font-bold text-green-600 dark:text-accent mb-2">Better</div>
+              <div className="text-2xl lg:text-3xl font-bold text-green-600 dark:text-accent mb-2">Better</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 ratings over time when businesses actively respond to reviews
               </div>
@@ -262,7 +338,7 @@ export default function LandingPage() {
             </div>
 
             <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-600/10 dark:to-purple-400/10 rounded-2xl border border-purple-200 dark:border-purple-700/50">
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-600 mb-2">Higher</div>
+              <div className="text-2xl lg:text-3xl font-bold text-purple-600 dark:text-purple-600 mb-2">Higher</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 local search rankings for businesses that respond to reviews
               </div>
@@ -273,13 +349,13 @@ export default function LandingPage() {
           </AnimatedGrid>
 
           {/* Testimonial */}
-          <AnimatedSection className="mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-8 lg:p-12 text-center max-w-4xl mx-auto">
+          <AnimatedSection className="mt-10 lg:mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-4 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-xl">
             <div className="flex justify-center mb-6">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
               ))}
             </div>
-            <blockquote className="text-xl lg:text-xl font-light text-slate-900 dark:text-white mb-6">
+            <blockquote className="text-lg lg:text-xl font-light text-slate-900 dark:text-white mb-6">
               &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
             </blockquote>
             <div className="flex items-center justify-center space-x-2">
@@ -305,7 +381,7 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
               How it works
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
               Getting started with RepliFast is easy. We guide you through everything and handle the approval process so you can focus on running your business.
             </p>
           </AnimatedSection>
@@ -319,14 +395,14 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-slate-50 dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
+          <AnimatedSection className="text-center md:mb-10">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
               💳 Pricing Plans
             </AnimatedSection>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
               Choose the plan that fits your business.
             </p>
           </AnimatedSection>
@@ -336,32 +412,32 @@ export default function LandingPage() {
           {/* USP Section */}
           <AnimatedSection
             delay={0.3}
-            className="mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-8 lg:p-12 text-center border border-slate-200/50 dark:border-slate-700/30"
+            className="mt-12 lg:mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-4 md:p-8 lg:p-12 text-center border border-slate-200/50 dark:border-slate-700/30"
           >
             <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white mb-6">
               Why RepliFast is different
             </h3>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-relaxed">
+            <p className="md:text-lg text-left md:text-center text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-snug lg:leading-relaxed">
               Most other review tools come as part of big, expensive packages filled with features many small businesses never use.
-              RepliFast does one thing well: replying to reviews.
+              RepliFast does one thing well: replying to reviews.<br />
               That means it&apos;s simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-slate-700 dark:text-slate-300">
+            <div className="flex flex-col sm:flex-row items-start justify-start md:items-center text-left md:text-center md:justify-center gap-3 lg:gap-6 text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium">No bloated feature packs you don&apos;t need</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium">Focused only on review replies</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium">Priced for small businesses</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                 <span className="text-sm font-medium">Optional auto‑approve for 4–5★ review replies</span>
               </div>
             </div>
@@ -371,8 +447,8 @@ export default function LandingPage() {
 
       <section id="why-replifast" className="py-24 bg-slate-100 dark:bg-[#0B1120]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection delay={0.1} className="text-center mb-16">
-            <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+          <AnimatedSection delay={0.1} className="text-center mb-10 lg:mb-16">
+            <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               Why businesses choose RepliFast
             </h3>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
@@ -380,21 +456,59 @@ export default function LandingPage() {
             </p>
           </AnimatedSection>
 
-          <AnimatedGrid className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8" staggerDelay={0.1}>
-            {benefits.map((benefit) => (
-              <div key={benefit.title} className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
-                  {benefit.icon}
+          {/* Desktop: AnimatedGrid */}
+          <div className="hidden md:block">
+            <AnimatedGrid className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8" staggerDelay={0.1}>
+              {benefits.map((benefit) => (
+                <div key={benefit.title} className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                    {benefit.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-md text-slate-600 dark:text-slate-400">
+                    {benefit.description}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                  {benefit.title}
-                </h3>
-                <p className="text-md text-slate-600 dark:text-slate-400">
-                  {benefit.description}
-                </p>
+              ))}
+            </AnimatedGrid>
+          </div>
+
+          {/* Mobile: Horizontal scroll */}
+          <div className="block md:hidden">
+            <div
+              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              style={{
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="flex space-x-4" style={{ width: 'max-content' }}>
+                {benefits.map((benefit, index) => (
+                  <AnimatedSection
+                    key={benefit.title}
+                    delay={0.1 + index * 0.1}
+                    className="flex-shrink-0 w-[260px] scroll-snap-align-center"
+                    style={{ scrollSnapAlign: 'center' }}
+                  >
+                    <div className="relative p-5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 transition-all duration-300 group h-full">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                        {benefit.icon}
+                      </div>
+                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </AnimatedSection>
+                ))}
               </div>
-            ))}
-          </AnimatedGrid>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -457,7 +571,7 @@ export default function LandingPage() {
       {/* FAQ Section */}
       <section className="py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+          <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-16">
             {/* Left Sidebar */}
             <div className="lg:col-span-1 h-full relative">
               <div className="sticky top-32">
@@ -479,14 +593,14 @@ export default function LandingPage() {
 
             {/* Right Content */}
             <AnimatedSection direction="right" delay={0.2} className="lg:col-span-2">
-              <Accordion type="single" collapsible className="w-full space-y-4">
+              <Accordion type="single" collapsible className="w-full space-y-2 lg:space-y-4">
                 {faqItems.map((item, index) => (
                   <AccordionItem
                     key={index}
                     value={`item-${index + 1}`}
                     className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 rounded-lg px-6 hover:scale-[1.01] transition-all duration-200"
                   >
-                    <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent py-4 text-lg font-normal">
+                    <AccordionTrigger className="text-left text-slate-900 dark:text-white hover:text-accent dark:hover:text-accent py-4 md:text-lg font-normal">
                       {item.question}
                     </AccordionTrigger>
                     <AccordionContent className="text-slate-600 dark:text-slate-300 pb-6 text-base leading-relaxed">
