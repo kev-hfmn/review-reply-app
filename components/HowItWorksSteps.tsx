@@ -84,7 +84,7 @@ function StepNumber({ number }: { number: number }) {
 // How It Works Steps Component
 export function HowItWorksSteps() {
   return (
-    <div className="space-y-10 lg:space-y-24">
+    <div className="space-y-16 lg:space-y-24">
       {stepsData.map((step, index) => {
         const isEven = step.id % 2 === 0;
 
@@ -111,7 +111,7 @@ export function HowItWorksSteps() {
                     {step.title}
                   </h4>
 
-                  <p className="text-md lg:text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+                  <p className="text-md lg:text-lg text-slate-600 dark:text-slate-300 leading-normal mb-6">
                     {step.description}
                   </p>
 

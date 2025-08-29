@@ -242,7 +242,7 @@ export function GoogleReviewCard({
         <div className="border-t border-gray-100 py-4">
           <div className="flex items-start space-x-3">
             {/* Business Avatar */}
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center">
               <div className="w-6 h-6 bg-blue-600/50 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-normal">
                   {businessName.charAt(0)}

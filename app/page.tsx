@@ -211,7 +211,7 @@ export default function LandingPage() {
           {/* Mobile: Horizontal scroll */}
           <div className="block md:hidden">
             <div
-              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              className="mobile-scroll-container overflow-x-auto overflow-y-visible scrollbar-hide pb-4 -mx-4 px-4"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
@@ -219,12 +219,12 @@ export default function LandingPage() {
                 touchAction: 'pan-x pan-y'
               }}
             >
-              <div className="flex space-x-4" style={{ width: 'max-content' }}>
+              <div className="flex space-x-4 overflow-y-visible" style={{ width: 'max-content' }}>
                 {features.map((feature, index) => (
                   <AnimatedSection
                     key={feature.title}
                     delay={0.1 + index * 0.1}
-                    className="flex-shrink-0 w-[280px] scroll-snap-align-center"
+                    className="flex-shrink-0 w-[280px] scroll-snap-align-center overflow-y-visible"
                     style={{ scrollSnapAlign: 'center' }}
                   >
                     <div className="relative p-6 bg-card rounded-2xl shadow-lg transition-all duration-300 border border-border group h-full">
@@ -351,13 +351,13 @@ export default function LandingPage() {
           </AnimatedGrid>
 
           {/* Testimonial */}
-          <AnimatedSection className="mt-10 lg:mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-4 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-xl">
-            <div className="flex justify-center mb-6">
+          <AnimatedSection className="mt-16 lg:mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-6 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-xl">
+            <div className="flex justify-center md:mb-6 mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
               ))}
             </div>
-            <blockquote className="text-lg lg:text-xl font-light text-slate-900 dark:text-white mb-6">
+            <blockquote className="text-md lg:text-xl font-light text-slate-900 dark:text-white mb-6">
               &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
             </blockquote>
             <div className="flex items-center justify-center space-x-2">

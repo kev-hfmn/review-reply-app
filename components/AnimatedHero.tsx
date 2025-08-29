@@ -62,7 +62,7 @@ export default function AnimatedHero() {
                 <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white !leading-[1.2]">
                   Automatic Replies for Your Google Reviews
                 </h1>
-                <p className="mt-4 lg:mt-8 text-lg lg:text-[1.375rem] text-foreground/80">
+                <p className="mt-4 lg:mt-6 text-lg lg:text-[1.375rem] lg:leading-normal text-foreground/80">
                   RepliFast responds to every review in your tone of voice, helping you save time, build trust with customers, and keep your reputation strong.
                 </p>
               </div>
@@ -72,7 +72,7 @@ export default function AnimatedHero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={heroInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="mt-6 lg:mt-12 flex flex-col sm:flex-row gap-4 justify-center"
+                className="mt-6 lg:mt-10 flex flex-col sm:flex-row gap-4 justify-center"
               >
                 <div className="flex flex-col items-center">
                   <Button
