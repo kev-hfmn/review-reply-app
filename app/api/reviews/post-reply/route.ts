@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { postReplyToGoogle } from '@/lib/services/googleBusinessService';
+import { checkUserSubscription, checkReplyLimit, incrementReplyCount } from '@/lib/utils/subscription';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -81,25 +82,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check subscription status for access control
-    const { data: subscription, error: subError } = await supabaseAdmin
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .maybeSingle();
-
-    const isSubscriber = subscription && 
-      subscription.status === 'active' && 
-      new Date(subscription.current_period_end) > new Date();
-
-    if (!isSubscriber) {
+    // Check subscription status and reply limits
+    const subscriptionStatus = await checkUserSubscription(userId);
+    
+    if (!subscriptionStatus.isSubscriber) {
       return NextResponse.json(
         { 
           error: 'Subscription required',
           message: 'Posting replies requires an active subscription. Please upgrade your plan.',
           code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check reply posting limits for current billing period
+    const replyLimitCheck = await checkReplyLimit(userId, review.business_id, subscriptionStatus.planId);
+    
+    if (!replyLimitCheck.canPost) {
+      return NextResponse.json(
+        { 
+          error: 'Reply limit exceeded',
+          message: replyLimitCheck.message || 'You have reached your monthly reply limit.',
+          code: 'REPLY_LIMIT_EXCEEDED',
+          currentUsage: replyLimitCheck.currentUsage,
+          limit: replyLimitCheck.limit
         },
         { status: 403 }
       );
@@ -123,6 +130,13 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Increment usage counter BEFORE updating database
+    const usageIncremented = await incrementReplyCount(userId, review.business_id);
+    if (!usageIncremented) {
+      console.error('Failed to increment reply count after successful Google posting');
+      // Continue with database update but log the issue
     }
 
     // Only update database AFTER successful Google posting - EXACT same pattern as other operations

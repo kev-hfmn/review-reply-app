@@ -39,6 +39,7 @@ export default function ReviewDrawer({
   const [selectedTone, setSelectedTone] = useState('friendly');
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   // Derive current review from allReviews
   const review = data.reviewId ? allReviews.find(r => r.id === data.reviewId) : null;
@@ -130,11 +131,14 @@ export default function ReviewDrawer({
       return;
     }
 
+    setIsPosting(true);
     try {
       await onPost(review.id);
     } catch (error) {
       console.error('Error posting review:', error);
       // Error handling is done in the parent component
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -332,7 +336,7 @@ export default function ReviewDrawer({
               {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                 <Button
                   onClick={handlePost}
-                  disabled={data.isLoading}
+                  disabled={data.isLoading || isPosting}
                   variant={isSubscriber ? "outlineGreen" : "outline"}
                   className={`${
                     isSubscriber
@@ -341,8 +345,12 @@ export default function ReviewDrawer({
                   }`}
                   title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
                 >
-                  <Send className="h-4 w-4" />
-                  <span>{isSubscriber ? "Post Reply" : "Post (Upgrade)"}</span>
+                  {isPosting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  <span>{isPosting ? "Posting..." : isSubscriber ? "Post Reply" : "Post (Upgrade)"}</span>
                 </Button>
               )}
 

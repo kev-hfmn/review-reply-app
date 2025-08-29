@@ -16,7 +16,7 @@ const stepsData = [
   },
   {
     id: 2,
-    title: "Fetch all your existing reviews",
+    title: "Sync all your existing reviews",
     description: "Instantly import past reviews from your Google Business Profile so you can reply and catch up in minutes.",
     screenshot: "step2.png",
     screenshotAlt: "RepliFast tone and brand voice settings page showing customization options",
@@ -32,8 +32,8 @@ const stepsData = [
   },
   {
     id: 4,
-    title: "Automate and stay on top of new reviews",
-    description: "Enable daily sync and auto-approval rules for certain star ratings, or approve replies manually. RepliFast keeps you covered so you never miss a review.",
+    title: "Post review replies directly to Google",
+    description: "Approve or edit your reply, then publish it instantly to your Google Maps listing with one click. No need to leave RepliFast, manage everything in one place.",
     screenshot: "step4.png",
     screenshotAlt: "RepliFast dashboard showing new review notifications and auto-generated replies",
     hasExpandable: false
@@ -146,7 +146,7 @@ export function HowItWorksSteps() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
-                className="relative aspect-[3/2] rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-800"
+                className="relative aspect-auto rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-800"
               >
 
                 <Image

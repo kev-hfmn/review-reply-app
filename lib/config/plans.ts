@@ -11,9 +11,9 @@ export const PLAN_CONFIGS = {
       autoSync: false
     },
     limits: {
-      maxReviewsPerSync: 0,
+      maxReviewsPerSync: -1, // Unlimited sync for all plans
       maxBusinesses: 1,
-      maxReviewsPerMonth: 0,
+      maxRepliesPerMonth: 0, // No replies allowed
       syncFrequency: 'never' as const,
       maxBulkActions: 0
     },
@@ -33,9 +33,9 @@ export const PLAN_CONFIGS = {
       autoSync: false // Manual sync only
     },
     limits: {
-      maxReviewsPerSync: 200,
+      maxReviewsPerSync: -1, // Unlimited sync for all plans
       maxBusinesses: 1,
-      maxReviewsPerMonth: 200,
+      maxRepliesPerMonth: 200, // 200 replies per month
       syncFrequency: 'manual' as const,
       maxBulkActions: 10
     },
@@ -55,9 +55,9 @@ export const PLAN_CONFIGS = {
       autoSync: true
     },
     limits: {
-      maxReviewsPerSync: -1, // Unlimited
+      maxReviewsPerSync: -1, // Unlimited sync for all plans
       maxBusinesses: 1,
-      maxReviewsPerMonth: -1, // Unlimited
+      maxRepliesPerMonth: -1, // Unlimited replies
       syncFrequency: 'daily' as const,
       maxBulkActions: -1 // Unlimited
     },
@@ -77,9 +77,9 @@ export const PLAN_CONFIGS = {
       autoSync: true
     },
     limits: {
-      maxReviewsPerSync: -1,
+      maxReviewsPerSync: -1, // Unlimited sync for all plans
       maxBusinesses: -1, // Unlimited locations
-      maxReviewsPerMonth: -1,
+      maxRepliesPerMonth: -1, // Unlimited replies
       syncFrequency: 'daily' as const,
       maxBulkActions: -1
     },
