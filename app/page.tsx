@@ -26,8 +26,8 @@ import { faqItems } from '@/lib/faq'
 import Script from 'next/script'
 import { Footer } from '@/components/Footer'
 import { HowItWorksSteps } from '@/components/HowItWorksSteps'
-import ClientPageWrapper from '@/components/ClientPageWrapper'
-import AnimatedHero from '@/components/AnimatedHero'
+import NavigationWrapper from '@/components/NavigationWrapper'
+import HeroContent from '@/components/HeroContent'
 import ReviewShowcase from '@/components/ReviewShowcase'
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection'
 import { Button } from '@/components/ui/button'
@@ -151,16 +151,15 @@ const navigationSections = [
 
 export default function LandingPage() {
   return (
-    <ClientPageWrapper navigationSections={navigationSections}>
+    <NavigationWrapper navigationSections={navigationSections}>
       {/* Hero Section with Extended Particles Background */}
       <section id="home" className="relative overflow-hidden bg-foreground/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/20 to-foreground/50 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
         {/* Darker overlay for light mode */}
 
-
         <div className="relative z-10">
-          <AnimatedHero />
+          <HeroContent />
           {/* Review showcase with extended particles background */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pb-24">
             <ReviewShowcase heroInView={true} />
@@ -619,6 +618,6 @@ export default function LandingPage() {
 
       {/* Footer */}
       <Footer />
-    </ClientPageWrapper>
+    </NavigationWrapper>
   )
 }

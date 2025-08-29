@@ -86,10 +86,7 @@ export default function RootLayout({
             {/* <PostHogErrorBoundary>
               <PostHogProvider> */}
                 <AuthProvider>
-                    <ProtectedRoute>
-
-                      <main>{children}</main>
-                    </ProtectedRoute>
+                  <main>{children}</main>
                 </AuthProvider>
               {/* </PostHogProvider>
             </PostHogErrorBoundary> */}

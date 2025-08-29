@@ -11,19 +11,19 @@ type CookieConsentAPI = {
 export const cookieConsentConfig = {
   // Auto-show the consent modal if consent is not valid
   autoShow: true,
-  
+
   // GDPR compliant mode - scripts only run after user consent
   mode: 'opt-in' as const,
-  
+
   // Hide from bots to prevent indexing modal content
   hideFromBots: true,
-  
+
   // Manage script tags with data-category attribute
   manageScriptTags: true,
-  
+
   // Auto clear cookies when categories are rejected
   autoClearCookies: true,
-  
+
   // Cookie settings
   cookie: {
     name: 'replifast_cookie_consent',
@@ -37,8 +37,8 @@ export const cookieConsentConfig = {
   // GUI styling options to match RepliFast design
   guiOptions: {
     consentModal: {
-      layout: 'cloud inline' as const,
-      position: 'bottom center' as const,
+      layout: 'box inline' as const,
+      position: 'bottom right' as const,
       equalWeightButtons: true,
       flipButtons: false
     },
@@ -109,8 +109,8 @@ export const cookieConsentConfig = {
           acceptNecessaryBtn: 'Accept necessary only',
           showPreferencesBtn: 'Customize settings',
           footer: `
-            <a href="/privacy" class="cc-link">Privacy Policy</a> | 
-            <a href="/cookies" class="cc-link">Cookie Policy</a> | 
+            <a href="/privacy" class="cc-link">Privacy Policy</a>
+            <a href="/cookies" class="cc-link">Cookie Policy</a>
             <a href="/terms" class="cc-link">Terms of Service</a>
           `
         },
@@ -204,7 +204,7 @@ export const cookieConsentConfig = {
     // Update Google Analytics consent when user changes preferences
     const isAnalyticsAccepted = CookieConsent.acceptedCategory('analytics');
     const isFunctionalAccepted = CookieConsent.acceptedCategory('functional');
-    
+
     updateGoogleConsent({
       'analytics_storage': isAnalyticsAccepted ? 'granted' : 'denied',
       'functionality_storage': isFunctionalAccepted ? 'granted' : 'denied',
