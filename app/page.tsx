@@ -310,7 +310,7 @@ export default function LandingPage() {
             </p>
           </AnimatedSection>
 
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <HowItWorksSteps />
           </div>
         </div>

@@ -36,6 +36,7 @@ export default function ReviewsTable({
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
   const [generatingReviewId, setGeneratingReviewId] = useState<string | null>(null);
+  const [postingReviewId, setPostingReviewId] = useState<string | null>(null);
 
   // Generate star display
   const renderStars = useCallback((rating: number) => {
@@ -115,6 +116,16 @@ export default function ReviewsTable({
       setGeneratingReviewId(null);
     }
   }, [onGenerateReply]);
+
+  // Handle post reply with loading state
+  const handlePostReply = useCallback(async (reviewId: string) => {
+    setPostingReviewId(reviewId);
+    try {
+      await onQuickAction(reviewId, 'post');
+    } finally {
+      setPostingReviewId(null);
+    }
+  }, [onQuickAction]);
 
   if (isLoading) {
     return (
@@ -298,19 +309,19 @@ export default function ReviewsTable({
                         value={editingText}
                         onChange={(e) => setEditingText(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="resize-none text-sm"
+                        className="resize-none text-md"
                         rows={3}
                         autoFocus
                       />
-                      <div className="flex items-center justify-end space-x-2">
+                      <div className="flex items-center justify-end !mt-5 space-x-2">
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             cancelEdit();
                           }}
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                          className=""
                         >
                           Cancel
                         </Button>
@@ -321,7 +332,7 @@ export default function ReviewsTable({
                           }}
                           size="sm"
                         >
-                          Save
+                          Save Changes
                         </Button>
                       </div>
                     </div>
@@ -414,7 +425,7 @@ export default function ReviewsTable({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isSubscriber) {
-                          onQuickAction(review.id, 'post');
+                          handlePostReply(review.id);
                         } else {
                           onUpgradeRequired?.();
                         }
@@ -423,9 +434,16 @@ export default function ReviewsTable({
                       variant={isSubscriber ? "outlineGreen" : "outline"}
                       title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
                       className={isSubscriber ? "" : "text-gray-500"}
+                      disabled={postingReviewId === review.id}
                     >
-                      <Send className="h-4 w-4" />
-                      <span>{isSubscriber ? "Post" : "Post (Upgrade)"}</span>
+                      {postingReviewId === review.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      <span>
+                        {postingReviewId === review.id ? "Posting..." : isSubscriber ? "Post" : "Post (Upgrade)"}
+                      </span>
                     </Button>
                   )}
 
