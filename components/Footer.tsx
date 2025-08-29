@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Heart, Sun, Moon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useThemeSafe } from '@/hooks/useThemeSafe';
 import Image from 'next/image';
 import { showCookiePreferences } from '@/lib/cookieConsent';
 import { Button } from '@/components/ui/button';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useThemeSafe();
 
   const footerLinks = {
     product: [

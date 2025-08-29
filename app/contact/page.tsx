@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PublicNavigation } from '@/components/PublicNavigation';
 import { Footer } from '@/components/Footer';
 import { Mail, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
-import Head from 'next/head';
 
 interface ContactFormData {
   businessName: string;
@@ -79,19 +78,7 @@ export default function ContactPage() {
   const isFormValid = formData.businessName.trim() && formData.email.trim() && formData.message.trim();
 
   return (
-    <>
-      <Head>
-        <title>Contact Us - RepliFast | Get in Touch</title>
-        <meta name="description" content="Get in touch with RepliFast. Contact our team for support, questions, or to learn more about our AI-powered Google review management platform." />
-        <meta name="keywords" content="contact, support, RepliFast, customer service, help" />
-        <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="Contact RepliFast - Get Support & Answers" />
-        <meta property="og:description" content="Contact our team for support with RepliFast's AI review management platform. We're here to help." />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://flowrise-reviews.com/contact" />
-      </Head>
-
-      <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
+    <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
         {/* Navigation */}
         <PublicNavigation
           navigationSections={navigationSections}
@@ -329,10 +316,9 @@ export default function ContactPage() {
             </motion.div>
           </div>
         </section>
-      </div>
 
-      {/* Footer */}
-      <Footer />
-    </>
+        {/* Footer */}
+        <Footer />
+      </div>
   );
 }
