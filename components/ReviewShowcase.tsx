@@ -59,12 +59,12 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
       initial={{ opacity: 0, y: 40 }}
       animate={heroInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.8, delay: 0.4 }}
-      className="relative"
+      className=""
     >
-      <div className="relative mx-auto max-w-6xl">
+      <div className=" mx-auto max-w-6xl">
         {/* Toggle Section */}
-        <div className="relative text-center mb-5">
-          <div className="!z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="relative text-center mb-5 w-[250px] md:w-[350px] mx-auto">
+          <div className="relative !z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setShowReplies(false)}
               className={`px-3 md:px-6 py-1 md:py-3  rounded-full text-sm font-medium transition-all duration-200 ${
@@ -88,12 +88,14 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
           </div>
 
           {/* Arrow pointing to toggle */}
-          <div className="absolute -z-10 -bottom-16 right-0 md:right-auto md:-top-40 md:left-1/2 transform md:translate-x-36 flex flex-col items-center">
-            <div className="translate-y-20">
-              <p className="md:text-xl text-md text-slate-600 dark:text-slate-200 md:translate-x-16 font-medium max-w-[200px] text-center leading-tight font-indie-flower">
+          <div className="absolute -top-4 -translate-y-full left-0 sm:left-auto right-0 sm:translate-x-full flex flex-col items-center">
+
+              <p className="sm:text-xl text-md text-slate-600 dark:text-slate-200 w-[200px] font-medium  text-center !leading-none font-indie-flower">
                 See the difference replies make to your reputation
               </p>
+
             </div>
+            <div className="absolute scale-75 md:scale-100 top-2 -translate-y-1/2 md:translate-x-20 md:right-0 translate-x-3/4 ">
             <motion.div
               animate={{
                 x: [0, -8, 0],
@@ -109,19 +111,20 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
               <Image
                 src="/arrow.png"
                 alt="Click to toggle"
-                width={190}
-                height={190}
-                className="transform  translate-x-16 md:translate-x-0 scale-50 sm:scale-75 md:scale-100 rotate-[20deg] md:rotate-[25deg] filter drop-shadow-lg block dark:hidden"
+                width={180}
+                height={180}
+                className="transform  translate-x-16   rotate-[20deg]  filter drop-shadow-lg block dark:hidden"
               />
               <Image
                 src="/arrow.png"
                 alt="Click to toggle"
-                width={190}
-                height={190}
-                className="transform translate-x-10 md:translate-x-0 scale-50 sm:scale-75 md:scale-100 rotate-[20deg] md:rotate-[25deg] filter drop-shadow-lg hidden dark:block"
+                width={180}
+                height={180}
+                className="transform translate-x-16  rotate-[20deg]  filter drop-shadow-lg hidden dark:block"
               />
             </motion.div>
-          </div>
+            </div>
+
         </div>
 
         {/* Review Cards Grid */}
@@ -170,7 +173,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
                   initial={{ opacity: 0, x: 20 }}
                   animate={heroInView ? { opacity: 1, x: 0 } : {}}
                   transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
-                  className="flex-shrink-0 w-[300px] scroll-snap-align-center"
+                  className="flex-shrink-0 w-[310px] scroll-snap-align-center"
                   style={{ scrollSnapAlign: 'center' }}
                 >
                   <GoogleReviewCard
