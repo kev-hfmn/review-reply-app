@@ -22,7 +22,7 @@ export function PricingSection() {
   return (
     <>
       {/* Desktop: Grid layout */}
-      <div className="hidden md:grid grid-cols-3 gap-8 mt-12 items-start">
+      <div className="hidden lg:grid lg:grid-cols-3 gap-4 lg:gap-6 mt-12 items-start">
         {pricingTiers.map((tier, i) => (
           <motion.div
             key={tier.name}
@@ -30,9 +30,9 @@ export function PricingSection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             onClick={() => handleTierClick(tier.id)}
-            className={`relative group rounded-2xl p-8 shadow-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:shadow-sm dark:hover:border-primary/50 cursor-pointer transition-all duration-300 h-fit ${
+            className={`relative group rounded-2xl p-8 shadow-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:shadow-sm dark:hover:border-primary/50  cursor-pointer transition-all  duration-300 h-fit ${
               selectedTier === tier.id
-                ? 'bg-white dark:bg-primary/10 ring-2 ring-primary transform scale-105'
+                ? 'bg-white dark:bg-primary/10 ring-2 ring-primary transform '
                 : 'bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-primary/50'
             }`}
           >
@@ -79,7 +79,7 @@ export function PricingSection() {
       </div>
 
       {/* Mobile: Horizontal scroll */}
-      <div className="block md:hidden mt-6">
+      <div className="block lg:hidden mt-6">
         <div
           className="mobile-scroll-container py-5 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
           style={{

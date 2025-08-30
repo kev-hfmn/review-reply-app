@@ -26,11 +26,13 @@ import { faqItems } from '@/lib/faq'
 import Script from 'next/script'
 import { Footer } from '@/components/Footer'
 import { HowItWorksSteps } from '@/components/HowItWorksSteps'
-import NavigationWrapper from '@/components/NavigationWrapper'
+import NavigationWrapper from '@/components/NavigationWrapper';
+import { publicNavigationSections } from '@/config/navigation';
 import HeroContent from '@/components/HeroContent'
 import ReviewShowcase from '@/components/ReviewShowcase'
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection'
 import { Button } from '@/components/ui/button'
+import { PromoCodeBanner } from '@/components/PromoCodeBanner'
 
 const toPlain = (s: string) =>
   s
@@ -140,18 +142,10 @@ const benefits = [
   }
 ]
 
-// Navigation sections
-const navigationSections = [
-  { id: "home", title: "Home" },
-  { id: "features", title: "Features" },
-  { id: "benefits", title: "Benefits" },
-  { id: "pricing", title: "Pricing" },
-  { id: "contact", title: "Contact" }
-]
 
 export default function LandingPage() {
   return (
-    <NavigationWrapper navigationSections={navigationSections}>
+    <NavigationWrapper navigationSections={publicNavigationSections}>
       {/* Hero Section with Extended Particles Background */}
       <section id="home" className="relative overflow-hidden bg-foreground/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/20 to-foreground/50 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
@@ -185,13 +179,13 @@ export default function LandingPage() {
           {/* Desktop: AnimatedGrid */}
           <div className="hidden md:block">
             <AnimatedGrid
-              className="grid grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
               staggerDelay={0.1}
             >
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="relative p-8 bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:border-blue-300 dark:hover:border-blue-600 group h-full"
+                  className="card"
                 >
                   <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     {feature.icon}
@@ -210,30 +204,30 @@ export default function LandingPage() {
           {/* Mobile: Horizontal scroll */}
           <div className="block md:hidden">
             <div
-              className="mobile-scroll-container overflow-x-auto overflow-y-visible scrollbar-hide pb-4 -mx-4 px-4"
+              className="mobile-scroll-container overflow-x-auto overflow-y-hidden scrollbar-hide pb-4 -mx-4 h-full px-4"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x pan-y'
+                touchAction: 'pan-x'
               }}
             >
-              <div className="flex space-x-4 overflow-y-visible" style={{ width: 'max-content' }}>
+              <div className="flex space-x-4 overflow-y-hidden" style={{ width: 'max-content' }}>
                 {features.map((feature, index) => (
                   <AnimatedSection
                     key={feature.title}
                     delay={0.1 + index * 0.1}
-                    className="flex-shrink-0 w-[280px] scroll-snap-align-center overflow-y-visible"
+                    className="flex-shrink-0 w-[280px] h-full scroll-snap-align-center"
                     style={{ scrollSnapAlign: 'center' }}
                   >
                     <div className="relative p-6 bg-card rounded-2xl shadow-lg transition-all duration-300 border border-border group h-full">
-                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={`pointer-events-none inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.bgGradient} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                         {feature.icon}
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                      <h3 className="pointer-events-none text-lg font-semibold text-slate-900 dark:text-white mb-3">
                         {feature.title}
                       </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                      <p className="pointer-events-none text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                         {feature.description}
                       </p>
                     </div>
@@ -246,7 +240,7 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-24 bg-background">
+      <section id="benefits" className="py-24 bg-muted/25">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-10 lg:mb-16">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
@@ -263,9 +257,9 @@ export default function LandingPage() {
           {/* Why Reviews Matter Cards */}
           {/* Desktop: AnimatedGrid */}
           <div className="hidden md:block mb-10 lg:mb-20">
-            <AnimatedGrid className="grid grid-cols-2 lg:grid-cols-4 gap-6" staggerDelay={0.1}>
+            <AnimatedGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6" staggerDelay={0.1}>
               {reviewMatters.map((item) => (
-                <div key={item.title} className="h-full relative p-6 bg-card rounded-2xl shadow-lg border border-border  hover:border-blue-500/50 transition-all duration-300 group">
+                <div key={item.title} className="card">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
                     {item.icon}
                   </div>
@@ -283,12 +277,12 @@ export default function LandingPage() {
           {/* Mobile: Horizontal scroll */}
           <div className="block md:hidden mb-10 lg:mb-20">
             <div
-              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              className="mobile-scroll-container overflow-x-auto scrollbar-hide py-2 pb-4 -mx-4 px-4"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x pan-y'
+                touchAction: 'pan-x'
               }}
             >
               <div className="flex space-x-4" style={{ width: 'max-content' }}>
@@ -300,13 +294,13 @@ export default function LandingPage() {
                     style={{ scrollSnapAlign: 'center' }}
                   >
                     <div className="h-full relative p-5 bg-card rounded-2xl shadow-lg border border-border transition-all duration-300 group">
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                      <div className="pointer-events-none inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
                         {item.icon}
                       </div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+                      <h3 className="pointer-events-none text-base font-semibold text-slate-900 dark:text-white mb-2">
                         {item.title}
                       </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                      <p className="pointer-events-none text-sm text-slate-600 dark:text-slate-400">
                         {item.description}
                       </p>
                     </div>
@@ -317,8 +311,8 @@ export default function LandingPage() {
           </div>
 
           {/* Statistics Section */}
-          <AnimatedGrid className="mt-10 lg:mt-12 grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-6 max-w-4xl mx-auto" staggerDelay={0.1}>
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-primary/10 dark:to-primary/20 rounded-2xl border border-blue-200 dark:border-primary/50">
+          <AnimatedGrid className="mt-16 lg:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-6 max-w-4xl mx-auto" staggerDelay={0.1}>
+            <div className="text-center h-full p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-primary/10 dark:to-primary/20 rounded-2xl border border-blue-200 dark:border-primary/50 hover:scale-105 hover:rotate-3 transition-all duration-300">
               <div className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-primary mb-2">89%</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 of consumers are highly likely to use a business that responds to all its online reviews
@@ -328,17 +322,17 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-accent/10 dark:to-accent/20 rounded-2xl border border-green-200 dark:border-accent/50">
+            <div className="text-center h-full p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-accent/10 dark:to-accent/20 rounded-2xl border border-green-200 dark:border-accent/50 hover:scale-105 hover:-rotate-3 transition-all duration-300">
               <div className="text-2xl lg:text-3xl font-bold text-green-600 dark:text-accent mb-2">Better</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 ratings over time when businesses actively respond to reviews
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                — <a href="https://hbr.org/2018/02/study-replying-to-customer-reviews-results-in-better-ratings" target="_blank" rel="noopener noreferrer" className="hover:text-green-600 dark:hover:text-green-400 underline">Harvard Business Review</a>
+                — <a href="https://hbr.org/2018/02/study-replying-to-customer-reviews-results-in-better-ratings" target="_blank" rel="noopener noreferrer" className="hover:text-green-600 dark:hover:text-green-400 underline">Harvard Business Review, 2018</a>
               </div>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-600/10 dark:to-purple-400/10 rounded-2xl border border-purple-200 dark:border-purple-700/50">
+            <div className="text-center h-full p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-600/10 dark:to-purple-400/10 rounded-2xl border border-purple-200 dark:border-purple-700/50 hover:scale-105 hover:rotate-3 transition-all duration-300">
               <div className="text-2xl lg:text-3xl font-bold text-purple-600 dark:text-purple-600 mb-2">Higher</div>
               <div className="text-sm text-slate-700 dark:text-slate-300 font-light">
                 local search rankings for businesses that respond to reviews
@@ -350,7 +344,7 @@ export default function LandingPage() {
           </AnimatedGrid>
 
           {/* Testimonial */}
-          <AnimatedSection className="mt-16 lg:mt-20 bg-gradient-to-r from-primary/20 via-foreground/30 to-primary/20 rounded-2xl p-6 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-xl">
+          <AnimatedSection className="mt-16 lg:mt-20  bg-card rounded-2xl border border-border p-6 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-lg hover:shadow-none hover:bg-background/20 transition-all duration-300">
             <div className="flex justify-center md:mb-6 mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
@@ -373,9 +367,9 @@ export default function LandingPage() {
       </section>
 
       {/* How it works Section */}
-      <section id="how-it-works" className="py-24 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-[#0B1120] dark:via-slate-900/80 dark:to-slate-800/40">
+      <section id="how-it-works" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
+          <AnimatedSection className="text-center mb-10 lg:mb-16">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
               ✨ Simple Setup Process
             </AnimatedSection>
@@ -394,7 +388,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-slate-50 dark:bg-background">
+      <section id="pricing" className="py-24 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center md:mb-10">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
@@ -408,17 +402,25 @@ export default function LandingPage() {
             </p>
           </AnimatedSection>
 
+          {/* Launch Discount Banner */}
+          <AnimatedSection
+            delay={0.2}
+            className="mb-8 md:mb-12 max-w-4xl mx-auto"
+          >
+            <PromoCodeBanner />
+          </AnimatedSection>
+
           <PricingSection />
 
           {/* USP Section */}
           <AnimatedSection
             delay={0.3}
-            className="mt-12 lg:mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-4 md:p-8 lg:p-12 text-center border border-slate-200/50 dark:border-slate-700/30"
+            className="mt-12 lg:mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-6 md:p-8 lg:p-12 text-center border border-accent/25"
           >
             <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white mb-6">
-              Why RepliFast is different
+              What makes RepliFast different?
             </h3>
-            <p className="md:text-lg text-left md:text-center text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-snug lg:leading-relaxed">
+            <p className="md:text-lg text-left font-light md:text-center text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-snug lg:leading-snug">
               Most other review tools come as part of big, expensive packages filled with features many small businesses never use.
               RepliFast does one thing well: replying to reviews.<br />
               That means it&apos;s simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
@@ -427,26 +429,26 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-start justify-start md:items-center text-left md:text-center md:justify-center gap-3 lg:gap-6 text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium">No bloated feature packs you don&apos;t need</span>
+                <span className="text-sm font-normal text-left">No bloated feature packs you don&apos;t need</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium">Focused only on review replies</span>
+                <span className="text-sm font-normal text-left">Focused only on review replies</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium">Priced for small businesses</span>
+                <span className="text-sm font-normal text-left">Priced for small businesses</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium">Optional auto‑approve for 4–5★ review replies</span>
+                <span className="text-sm font-normal text-left">Never miss a review again</span>
               </div>
             </div>
           </AnimatedSection>
         </div>
       </section>
 
-      <section id="why-replifast" className="py-24 bg-slate-100 dark:bg-[#0B1120]">
+      <section id="why-replifast" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection delay={0.1} className="text-center mb-10 lg:mb-16">
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
@@ -459,9 +461,9 @@ export default function LandingPage() {
 
           {/* Desktop: AnimatedGrid */}
           <div className="hidden md:block">
-            <AnimatedGrid className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8" staggerDelay={0.1}>
+            <AnimatedGrid className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6" staggerDelay={0.1}>
               {benefits.map((benefit) => (
-                <div key={benefit.title} className="relative p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group">
+                <div key={benefit.title} className="card">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
                     {benefit.icon}
                   </div>
@@ -479,12 +481,12 @@ export default function LandingPage() {
           {/* Mobile: Horizontal scroll */}
           <div className="block md:hidden">
             <div
-              className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+              className="mobile-scroll-container overflow-x-auto overflow-y-hidden scrollbar-hide py-2 pb-4 -mx-4 px-4"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
                 WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x pan-y'
+                touchAction: 'pan-x'
               }}
             >
               <div className="flex space-x-4" style={{ width: 'max-content' }}>
@@ -496,13 +498,13 @@ export default function LandingPage() {
                     style={{ scrollSnapAlign: 'center' }}
                   >
                     <div className="relative p-5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700/50 transition-all duration-300 group h-full">
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
+                      <div className="pointer-events-none inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/20 mb-4 group-hover:bg-blue-500/30 transition-all duration-300">
                         {benefit.icon}
                       </div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+                      <h3 className="pointer-events-none text-base font-semibold text-slate-900 dark:text-white mb-2">
                         {benefit.title}
                       </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                      <p className="pointer-events-none text-sm text-slate-600 dark:text-slate-400">
                         {benefit.description}
                       </p>
                     </div>
@@ -571,7 +573,7 @@ export default function LandingPage() {
       />
 
       {/* FAQ Section */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-900">
+      <section id="faq" className="py-24 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-16">
             {/* Left Sidebar */}

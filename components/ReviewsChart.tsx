@@ -93,7 +93,7 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
       <CardContent>
 
 
-      <div className="h-64 flex items-end justify-between space-x-1 px-2">
+      <div className="h-64 flex items-end justify-between space-x-0 px-1">
         {data.map((point, index) => {
           // Calculate height - ensure minimum height for visibility when there are reviews
           const height = hasAnyData
@@ -137,14 +137,14 @@ export default function ReviewsChart({ data, isLoading }: ReviewsChartProps) {
 
                 {/* Review count label */}
                 {point.reviews > 0 && (
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-foreground/75">
                     {point.reviews}
                   </span>
                 )}
               </div>
 
               {/* Date label */}
-              <span className="text-xs text-muted-foreground transform -rotate-45 origin-center whitespace-nowrap">
+              <span className="pt-2 text-xs text-muted-foreground/80 transform -rotate-45 origin-center whitespace-nowrap">
                 {formatDate(point.date)}
               </span>
             </div>
