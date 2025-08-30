@@ -8,6 +8,10 @@ body {
 
 /* Add some cooking-themed utility classes */
 @layer components {
+.card {
+  @apply relative p-6 bg-card md:hover:bg-primary/5 rounded-2xl md:hover:scale-[1.02] shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:border-blue-300 dark:hover:border-blue-600 h-full
+}
+
   .recipe-card {
     @apply bg-white dark:bg-neutral-dark rounded-lg shadow-sm border border-primary/10 dark:border-primary/20 transition-all duration-300 hover:shadow-md;
   }
@@ -74,11 +78,11 @@ body {
   .bg-primary-opacity-5 {
     background-color: hsl(var(--primary) / 0.05);
   }
-  
+
   .bg-primary-opacity-8 {
     background-color: hsl(var(--primary) / 0.08);
   }
-  
+
   .bg-muted-opacity-5 {
     background-color: hsl(var(--muted) / 0.05);
   }
@@ -86,11 +90,11 @@ body {
   .dark .bg-primary-opacity-5 {
     background-color: hsl(var(--primary) / 0.05);
   }
-  
+
   .dark .bg-primary-opacity-8 {
     background-color: hsl(var(--primary) / 0.08);
   }
-  
+
   .dark .bg-muted-opacity-5 {
     background-color: hsl(var(--muted) / 0.05);
   }
@@ -143,7 +147,7 @@ body {
 
 @layer base {
   :root {
-    --background: 210.0000 40.0000% 98.0392%;
+    --background: 0 0% 98.8235%;
     --foreground: 222.2222 47.3684% 11.1765%;
     --card: 0 0% 100%;
     --card-foreground: 222.2222 47.3684% 11.1765%;
@@ -151,16 +155,16 @@ body {
     --popover-foreground: 222.2222 47.3684% 11.1765%;
     --primary: 201.1765 100% 30%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210.0000 40.0000% 96.0784%;
-    --secondary-foreground: 222.2222 47.3684% 11.1765%;
-    --muted: 210.0000 40.0000% 96.0784%;
-    --muted-foreground: 215.3846 16.3180% 46.8627%;
+    --secondary: 219.8658 65.0655% 44.9020%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 216.9231 31.7073% 91.9608%;
+    --muted-foreground: 220.0000 14.7059% 40%;
     --accent: 35.0588 100% 50%;
     --accent-foreground: 35.1563 100% 25.0980%;
     --destructive: 0 84.2365% 60.1961%;
     --destructive-foreground: 0 0% 100%;
     --border: 214.2857 31.8182% 91.3725%;
-    --input: 214.2857 31.8182% 91.3725%;
+    --input: 221.5385 25.4902% 90%;
     --ring: 201.1765 100% 30%;
     --chart-1: 201.1765 100% 30%;
     --chart-2: 35.0588 100% 50%;
@@ -175,6 +179,9 @@ body {
     --sidebar-accent-foreground: 35.1563 100% 25.0980%;
     --sidebar-border: 214.2857 31.8182% 91.3725%;
     --sidebar-ring: 201.1765 100% 30%;
+    --font-sans: Inter, sans-serif;
+    --font-serif: Georgia, serif;
+    --font-mono: JetBrains Mono, monospace;
     --radius: 0.5rem;
     --shadow-2xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.03);
     --shadow-xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.03);
@@ -191,36 +198,39 @@ body {
   .dark {
     --background: 222.2222 47.3684% 11.1765%;
     --foreground: 210.0000 40.0000% 98.0392%;
-    --card: 217.2414 32.5843% 17.4510%;
+    --card: 216.4286 32.5581% 16.8627%;
     --card-foreground: 210.0000 40.0000% 98.0392%;
-    --popover: 217.2414 32.5843% 17.4510%;
+    --popover: 216.4286 32.5581% 16.8627%;
     --popover-foreground: 210.0000 40.0000% 98.0392%;
     --primary: 199.2118 100% 39.8039%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2414 32.5843% 17.4510%;
+    --secondary: 220.3738 59.7765% 35.0980%;
     --secondary-foreground: 210.0000 40.0000% 98.0392%;
-    --muted: 217.2414 32.5843% 17.4510%;
+    --muted: 219.2308 25.4902% 20%;
     --muted-foreground: 215.0000 20.2247% 65.0980%;
-    --accent-foreground: 35.0649 100.0000% 15.0980%;
     --accent: 35.0588 100% 50%;
+    --accent-foreground: 35.0649 100.0000% 15.0980%;
     --destructive: 0 62.8205% 30.5882%;
     --destructive-foreground: 210.0000 40.0000% 98.0392%;
-    --border: 216.3636 29.7297% 21.7647%;
-    --input: 216.3636 29.7297% 21.7647%;
+    --border: 220 24.8120% 26.0784%;
+    --input: 220.7143 25.0000% 21.9608%;
     --ring: 199.2118 100% 39.8039%;
     --chart-1: 199.2118 100% 39.8039%;
     --chart-2: 35.0588 100% 50%;
     --chart-3: 173.4146 80.3922% 40%;
     --chart-4: 24.5815 94.9791% 53.1373%;
     --chart-5: 0 84.2365% 60.1961%;
-    --sidebar: 217.2414 32.5843% 17.4510%;
+    --sidebar: 216.4286 32.5581% 16.8627%;
     --sidebar-foreground: 215.0000 20.2247% 65.0980%;
     --sidebar-primary: 199.2118 100% 39.8039%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 35.0649 100.0000% 15.0980%;
-    --sidebar-accent-foreground: 35.0588 100% 50%;
+    --sidebar-accent: 219.7059 60.7143% 21.9608%;
+    --sidebar-accent-foreground: 220.4348 60.5263% 85.0980%;
     --sidebar-border: 216.3636 29.7297% 21.7647%;
     --sidebar-ring: 199.2118 100% 39.8039%;
+    --font-sans: Inter, sans-serif;
+    --font-serif: Georgia, serif;
+    --font-mono: JetBrains Mono, monospace;
     --radius: 0.5rem;
     --shadow-2xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
@@ -243,5 +253,8 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    scroll-behavior: smooth;
   }
 }

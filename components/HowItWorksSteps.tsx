@@ -75,7 +75,7 @@ function ScreenshotPlaceholder({ alt, isActive }: { alt: string; isActive: boole
 // Step Number Component
 function StepNumber({ number }: { number: number }) {
   return (
-    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-lg">
+    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/80 text-white flex items-center justify-center font-normal text-lg shadow-lg">
       {number}
     </div>
   );
@@ -84,83 +84,162 @@ function StepNumber({ number }: { number: number }) {
 // How It Works Steps Component
 export function HowItWorksSteps() {
   return (
-    <div className="space-y-16 lg:space-y-24">
-      {stepsData.map((step, index) => {
-        const isEven = step.id % 2 === 0;
+    <>
+      {/* Desktop: Vertical Layout */}
+      <div className="hidden lg:block space-y-12 lg:space-y-24">
+        {stepsData.map((step, index) => {
+          const isEven = step.id % 2 === 0;
 
-        return (
-          <motion.div
-            key={step.id}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{
-              delay: index * 0.1,
-              duration: 0.8,
-              ease: "easeOut"
-            }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-16 items-center"
-          >
-            {/* Content Section */}
-            <div className={`${isEven ? 'lg:order-2' : 'lg:order-1'}`}>
-              <div className="flex items-start space-x-4 ">
-                <StepNumber number={step.id} />
+          return (
+            <motion.div
+              key={step.id}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{
+                delay: index * 0.1,
+                duration: 0.8,
+                ease: "easeOut"
+              }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-16 items-center"
+            >
+              {/* Content Section */}
+              <div className={`${isEven ? 'lg:order-2' : 'lg:order-1'}`}>
+                <div className="flex items-start space-x-4 ">
+                  <StepNumber number={step.id} />
 
-                <div className="flex-1">
-                  <h4 className="text-xl lg:text-2xl font-semibold text-slate-900 dark:text-white mb-4">
-                    {step.title}
-                  </h4>
+                  <div className="flex-1">
+                    <h4 className="text-xl lg:text-2xl font-medium text-foreground/90 mb-4">
+                      {step.title}
+                    </h4>
 
-                  <p className="text-md lg:text-lg text-slate-600 dark:text-slate-300 leading-normal mb-6">
-                    {step.description}
-                  </p>
+                    <p className="text-md lg:text-lg text-slate-600 dark:text-slate-300 leading-normal mb-6">
+                      {step.description}
+                    </p>
 
-                  {step.hasExpandable && step.expandableContent && (
-                    <details className="group/details">
-                      <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-2 transition-colors">
-                        <span>Why Google approval is required</span>
-                        <svg
-                          className="w-4 h-4 transition-transform group-open/details:rotate-180"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </summary>
-                      <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                          {step.expandableContent}
-                        </p>
-                      </div>
-                    </details>
-                  )}
+                    {step.hasExpandable && step.expandableContent && (
+                      <details className="group/details">
+                        <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-2 transition-colors">
+                          <span>Why Google approval is required</span>
+                          <svg
+                            className="w-4 h-4 transition-transform group-open/details:rotate-180"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                            {step.expandableContent}
+                          </p>
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Image Section */}
-            <div className={`${isEven ? 'lg:order-1' : 'lg:order-2'}`}>
+              {/* Image Section */}
+              <div className={`${isEven ? 'lg:order-1' : 'lg:order-2'}`}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
+                  className="relative aspect-auto rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-800 "
+                >
+
+                  <Image
+                    src={`/screenshots/${step.screenshot}`}
+                    alt={step.screenshotAlt}
+                    width={1000}
+                    height={1000}
+                    className="w-full h-full object-cover hover:scale-[1.1] transition-all duration-300"
+                  />
+                </motion.div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Mobile: Horizontal Scroll */}
+      <div className="block lg:hidden">
+        <div
+          className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+          style={{
+            scrollSnapType: 'x mandatory',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x'
+          }}
+        >
+          <div className="flex space-x-6" style={{ width: 'max-content' }}>
+            {stepsData.map((step, index) => (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
-                className="relative aspect-auto rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-800"
+                key={step.id}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{
+                  delay: index * 0.1,
+                  duration: 0.8,
+                  ease: "easeOut"
+                }}
+                className="relative flex-shrink-0 w-[calc(100vw-48px)] sm:w-[400px] scroll-snap-align-center bg-card p-5 px-4 rounded-2xl shadow-lg border border-border"
+                style={{ scrollSnapAlign: 'center' }}
               >
 
-                <Image
-                  src={`/screenshots/${step.screenshot}`}
-                  alt={step.screenshotAlt}
-                  width={1000}
-                  height={1000}
-                  className="w-full h-full object-cover"
-                />
+                <div className="mb-6 -mx-4 -mt-5 top-0 left-0 right-0 ">
+                  <Image
+                    src={`/screenshots/${step.screenshot}`}
+                    alt={step.screenshotAlt}
+                    width={800}
+                    height={600}
+                    className="rounded-xl border-2 border-border"
+                  />
+                </div>
+
+                <div className="flex items-start space-x-4 mb-6">
+                  <StepNumber number={step.id} />
+                  <h4 className="flex-1 text-xl font-semibold text-slate-900 dark:text-white">
+                    {step.title}
+                  </h4>
+                </div>
+
+
+
+                <p className="text-slate-600 dark:text-slate-300 leading-normal mb-6">
+                  {step.description}
+                </p>
+
+                {step.hasExpandable && step.expandableContent && (
+                  <details className="group/details">
+                    <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-2 transition-colors">
+                      <span>Why Google approval is required</span>
+                      <svg
+                        className="w-4 h-4 transition-transform group-open/details:rotate-180"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {step.expandableContent}
+                      </p>
+                    </div>
+                  </details>
+                )}
               </motion.div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

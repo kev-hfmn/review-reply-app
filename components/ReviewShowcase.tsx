@@ -67,7 +67,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
           <div className="relative !z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setShowReplies(false)}
-              className={`px-3 md:px-6 py-1 md:py-3  rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`px-3 md:px-6 py-1 md:py-2  rounded-full text-sm font-medium transition-all duration-200 ${
                 !showReplies
                   ? 'bg-slate-100  text-muted-foreground dark:text-slate-300 border border-slate-200 dark:bg-slate-700'
                   : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -77,7 +77,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
             </button>
             <button
               onClick={() => setShowReplies(true)}
-              className={`px-3 md:px-6 py-1 md:py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`px-3 md:px-6 py-1 md:py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 showReplies
                   ? 'bg-accent/80 border border-accent dark:text-background text-foreground'
                   : 'text-slate-600 border dark:border-transparent border-white dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -129,7 +129,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
 
         {/* Review Cards Grid */}
         {/* Desktop: Grid layout */}
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="hidden lg:grid grid-cols-3 lg:grid-cols-3 gap-6">
           {sampleReviews.map((review, index) => (
             <motion.div
               key={review.userName}
@@ -156,7 +156,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
         </div>
 
         {/* Mobile: Horizontal scroll */}
-        <div className="block md:hidden">
+        <div className="block lg:hidden">
           <div
             className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
             style={{
@@ -166,7 +166,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
               touchAction: 'pan-x pan-y'
             }}
           >
-            <div className="flex space-x-4" style={{ width: 'max-content' }}>
+            <div className="flex space-x-3" style={{ width: 'max-content' }}>
               {sampleReviews.map((review, index) => (
                 <motion.div
                   key={review.userName}
