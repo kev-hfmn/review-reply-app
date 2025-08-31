@@ -277,7 +277,7 @@ export default function LandingPage() {
           {/* Mobile: Horizontal scroll */}
           <div className="block md:hidden mb-10 lg:mb-20">
             <div
-              className="mobile-scroll-container overflow-x-auto scrollbar-hide py-2 pb-4 -mx-4 px-4"
+              className="mobile-scroll-container overflow-x-auto overflow-y-hidden scrollbar-hide py-2 pb-4 -mx-4 px-4"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
