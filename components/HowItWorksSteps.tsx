@@ -168,7 +168,7 @@ export function HowItWorksSteps() {
       {/* Mobile: Horizontal Scroll */}
       <div className="block lg:hidden">
         <div
-          className="mobile-scroll-container overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
+          className="mobile-scroll-container overflow-x-auto overflow-y-hidden h-full scrollbar-hide pb-4 -mx-4 px-4"
           style={{
             scrollSnapType: 'x mandatory',
             scrollBehavior: 'smooth',
@@ -188,7 +188,7 @@ export function HowItWorksSteps() {
                   duration: 0.8,
                   ease: "easeOut"
                 }}
-                className="relative flex-shrink-0 w-[calc(100vw-48px)] sm:w-[400px] scroll-snap-align-center bg-card p-5 px-4 rounded-2xl shadow-lg border border-border"
+                className="relative  flex-shrink-0 w-[calc(100vw-48px)] sm:w-[400px] scroll-snap-align-center bg-card p-5 px-4 rounded-2xl shadow-lg border border-border"
                 style={{ scrollSnapAlign: 'center' }}
               >
 
