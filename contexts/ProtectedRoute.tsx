@@ -26,7 +26,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   useEffect(() => {
+    // Add detailed logging for debugging redirect issues
+    console.log('ProtectedRoute: Auth check:', {
+      isLoading,
+      hasUser: !!user,
+      userId: user?.id,
+      pathname,
+      isPublicRoute: PUBLIC_ROUTES.includes(pathname)
+    });
+
     if (!isLoading && !user && !PUBLIC_ROUTES.includes(pathname)) {
+      console.log('ProtectedRoute: Redirecting unauthenticated user to login');
       const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
       window.location.assign(redirectUrl);
     }

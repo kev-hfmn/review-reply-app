@@ -209,12 +209,12 @@ export default function ReviewsPage() {
 
   // Force loading screen to show for at least 500ms to prevent flicker
   const [minLoadingTime, setMinLoadingTime] = useState(true);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinLoadingTime(false);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -273,8 +273,8 @@ export default function ReviewsPage() {
             <Button
               onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
               disabled={isFetchingReviews || isUpdating}
-              variant="outlinePrimary"
-              className="flex items-center space-x-2 px-3 py-2 "
+              variant="primary"
+              className="flex items-center space-x-0 px-3 py-2 "
             >
               <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
               <span>Fetch New Reviews</span>

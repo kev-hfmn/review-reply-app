@@ -120,7 +120,7 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
       <p className="text-muted-foreground mt-0 mb-10">
           Upgrade to a paid plan to unlock all powerful features. A subscription is required to use the app.
         </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {profilePricingTiers.map((tier, i) => (
           <motion.div
             key={tier.id}
