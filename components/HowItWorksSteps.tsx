@@ -173,7 +173,6 @@ export function HowItWorksSteps() {
             scrollSnapType: 'x mandatory',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-x'
           }}
         >
           <div className="flex space-x-6" style={{ width: 'max-content' }}>
