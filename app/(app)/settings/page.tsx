@@ -252,7 +252,9 @@ function SettingsPage() {
 
         // Use the selected business from AuthContext
         if (!selectedBusinessId) {
-          console.log('No selected business ID available');
+          console.log('No selected business ID available - user needs to connect Google Business Profile first');
+          // Set loading to false to show the "Connect Business" UI
+          setIsLoading(false);
           return;
         }
 
@@ -379,7 +381,7 @@ function SettingsPage() {
       }
     };
 
-    if (user && user.id && selectedBusinessId) {
+    if (user && user.id) {
       loadSettings();
     }
 
@@ -672,6 +674,53 @@ function SettingsPage() {
             <p className="text-muted-foreground">Loading settings...</p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show connect business message if user has no business
+  if (!selectedBusinessId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">
+            Settings
+          </h1>
+        </div>
+
+        <Card className="text-center py-12">
+          <CardContent className="space-y-4">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">
+              Connect Your Business First
+            </h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              To access settings, you need to connect your Google Business Profile first. This will create your business profile and unlock all features.
+            </p>
+            <Button 
+              onClick={() => setActiveTab('integrations')}
+              className="mt-4"
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              Connect Google Business Profile
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Still show the integrations tab when requested */}
+        {activeTab === 'integrations' && (
+          <div className="space-y-6">
+            <GoogleBusinessProfileIntegration
+              businessId={null}
+              onShowToast={showToast}
+            />
+          </div>
+        )}
+
+        {/* Toast Notifications */}
+        <ToastNotifications toasts={toasts} onRemove={removeToast} />
       </div>
     );
   }

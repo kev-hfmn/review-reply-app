@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     const businessIds = businessesData?.map(b => b.id) || [];
     console.log('Business IDs found:', businessIds);
 
-    // If no businesses, return empty data
+    // If no businesses, return empty data with onboarding steps for new users
     if (businessIds.length === 0) {
       console.log('No businesses found for userId:', userId);
       const emptyStats: DashboardStats = {
@@ -104,11 +104,59 @@ export async function GET(request: NextRequest) {
         };
       });
 
+      // Generate onboarding steps for users without businesses
+      const newUserOnboardingSteps: OnboardingStep[] = [
+        {
+          id: 'connect-google',
+          title: 'Connect your Google Business Profile',
+          description: 'One-click connection to start syncing your reviews and managing replies automatically.',
+          completed: false,
+          actionText: 'Connect Now',
+          action: () => {
+            // Navigate to settings integrations tab
+            window.location.href = '/settings?tab=integrations';
+          }
+        },
+        {
+          id: 'premium-plan',
+          title: 'Choose a plan to use RepliFast',
+          description: 'Upgrade to a premium plan to unlock features and save time with AI-powered automation.',
+          completed: false,
+          actionText: 'Choose Plan',
+          action: () => {
+            // Navigate to profile page with pricing
+            window.location.href = '/profile';
+          }
+        },
+        {
+          id: 'brand-voice',
+          title: 'Customize your brand voice',
+          description: 'Set the tone and personality for AI-generated replies to match your business style.',
+          completed: false,
+          actionText: 'Set Voice',
+          action: () => {
+            // Navigate to settings voice tab
+            window.location.href = '/settings?tab=voice';
+          }
+        },
+        {
+          id: 'auto-replies',
+          title: 'Enable smart automation',
+          description: 'Let AI automatically generate and post replies to save you time while maintaining quality.',
+          completed: false,
+          actionText: 'Turn On',
+          action: () => {
+            // Navigate to settings approval tab
+            window.location.href = '/settings?tab=automation';
+          }
+        }
+      ];
+
       return NextResponse.json({
         businesses: businessesData || [],
         stats: emptyStats,
         chartData: emptyChartData,
-        onboardingSteps: []
+        onboardingSteps: newUserOnboardingSteps
         // subscription removed - handled by centralized cache
       });
     }

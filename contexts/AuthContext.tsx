@@ -195,19 +195,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Then set up listener for future changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (_event, newSession) => {
+          async (event, newSession) => {
             if (!mounted) return;
+
+            console.log('AuthContext: Auth state change:', event, 'Session user:', newSession?.user?.id);
 
             const newUser = newSession?.user ?? null;
             if (mounted) {
               setUser(newUser);
 
               if (newUser) {
+                console.log('AuthContext: Loading business info for user:', newUser.id);
                 // Run business info loading in background - subscription handled by cache
                 loadBusinessInfo(newUser.id).catch(error => {
                   console.error('Error loading business data in background:', error);
                 });
               } else {
+                console.log('AuthContext: Clearing user data - no session');
                 setIsSubscriber(false);
                 setBusinesses([]);
                 setSelectedBusinessId(null);
