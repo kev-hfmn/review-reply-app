@@ -208,8 +208,7 @@ export default function LandingPage() {
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x'
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               <div className="flex space-x-4 overflow-y-hidden" style={{ width: 'max-content' }}>
@@ -281,8 +280,7 @@ export default function LandingPage() {
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x'
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               <div className="flex space-x-4" style={{ width: 'max-content' }}>
@@ -485,8 +483,7 @@ export default function LandingPage() {
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-x'
+                WebkitOverflowScrolling: 'touch'
               }}
             >
               <div className="flex space-x-4" style={{ width: 'max-content' }}>
