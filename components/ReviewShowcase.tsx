@@ -30,7 +30,7 @@ const sampleReviews = [
     "rating": 3,
     "reviewText": "The staff was friendly and helpful, but my order took much longer than expected and one item wasn't quite right. I appreciate the effort, but I was hoping for a smoother experience.",
     "reviewDate": "2 weeks ago",
-    "replyText": "Karen, thanks for sharing both the good and the not-so-good. I'm glad our staff made you feel welcome, but I'm sorry about the wait and the mistake with your order. That's not the experience we want for anyone. If you give us another chance, we'll work to make it a smoother visit.",
+    "replyText": "Hi Karen. We appreciate you sharing both the positives and what didn’t go quite right. Waiting too long and getting the wrong item isn’t the experience we aim to give. We’ll take this as a reminder to do better, and we hope to welcome you back for a smoother visit.",
     "replyDate": "2 weeks ago"
   },
   {
