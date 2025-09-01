@@ -87,36 +87,76 @@ export async function GET(request: NextRequest) {
         const encryptedTokens = encryptFields(tokenData, [
           'google_access_token',
           'google_refresh_token',
-          'google_account_id',
-          'google_location_id'
+          'google_account_id'
+          // google_location_id removed - stored as plain text for duplicate detection
         ]);
 
-        // Create business record with real Google location data
-        const { data: newBusiness, error: businessError } = await supabaseAdmin
+        // Check for existing business with same user and location ID
+        const { data: existingBusiness } = await supabaseAdmin
           .from('businesses')
-          .insert({
-            user_id: userId,
-            name: location.locationName, // Use Google location name as business name
-            location: location.address || null,
-            ...encryptedTokens,
-            google_account_name: location.accountName,
-            google_business_name: location.businessName,
-            google_location_name: location.locationName,
-            connection_status: 'connected',
-          })
           .select('id, name')
+          .eq('user_id', userId)
+          .eq('google_location_id', location.locationId)
           .single();
 
+        let businessRecord;
+        let businessError;
+
+        if (existingBusiness) {
+          // Update existing business record
+          console.log(`📝 Updating existing business for location: ${location.locationName}`);
+          const { data: updatedBusiness, error: updateError } = await supabaseAdmin
+            .from('businesses')
+            .update({
+              name: location.locationName,
+              location: location.address || null,
+              ...encryptedTokens,
+              google_location_id: location.locationId, // Store as plain text
+              google_account_name: location.accountName,
+              google_business_name: location.businessName,
+              google_location_name: location.locationName,
+              connection_status: 'connected',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingBusiness.id)
+            .select('id, name')
+            .single();
+          
+          businessRecord = updatedBusiness;
+          businessError = updateError;
+        } else {
+          // Create new business record
+          console.log(`📍 Creating new business for location: ${location.locationName}`);
+          const { data: newBusiness, error: insertError } = await supabaseAdmin
+            .from('businesses')
+            .insert({
+              user_id: userId,
+              name: location.locationName,
+              location: location.address || null,
+              ...encryptedTokens,
+              google_location_id: location.locationId, // Store as plain text
+              google_account_name: location.accountName,
+              google_business_name: location.businessName,
+              google_location_name: location.locationName,
+              connection_status: 'connected',
+            })
+            .select('id, name')
+            .single();
+          
+          businessRecord = newBusiness;
+          businessError = insertError;
+        }
+
         if (businessError) {
-          console.error(`Failed to create business for location ${location.locationName}:`, businessError);
+          console.error(`Failed to ${existingBusiness ? 'update' : 'create'} business for location ${location.locationName}:`, businessError);
           continue; // Skip this location but continue with others
         }
 
-        createdBusinesses.push(newBusiness);
+        createdBusinesses.push(businessRecord);
         
         // Prepare activity log entry
         activitiesData.push({
-          business_id: newBusiness.id,
+          business_id: businessRecord.id,
           type: 'settings_updated',
           description: `Google Business Profile connected: ${location.locationName}`,
           metadata: {
@@ -145,7 +185,7 @@ export async function GET(request: NextRequest) {
       }
 
       const businessNames = createdBusinesses.map(b => b.name).join(', ');
-      console.log(`✅ Successfully created ${createdBusinesses.length} business(es):`, businessNames);
+      console.log(`✅ Successfully processed ${createdBusinesses.length} business(es):`, businessNames);
 
       // Redirect to settings with success
       return NextResponse.redirect(

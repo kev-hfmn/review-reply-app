@@ -73,11 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadBusinessInfo = useCallback(async (userId: string) => {
     try {
       // Load ALL user businesses instead of just first one
+      // Order by connection status first (connected first), then by creation date (newest first)
       const { data, error } = await supabase
         .from('businesses')
-        .select('id, name, industry')
+        .select('id, name, industry, connection_status, created_at')
         .eq('user_id', userId)
-        .order('name');
+        .order('connection_status', { ascending: false }) // 'connected' comes before 'disconnected'
+        .order('created_at', { ascending: false }); // newest first
 
       if (error) {
         // Only log error if it's not a "no rows" error (PGRST116)

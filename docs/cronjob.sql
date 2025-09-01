@@ -7,20 +7,20 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- Add automated sync settings to business_settings table
-ALTER TABLE business_settings 
+ALTER TABLE business_settings
 ADD COLUMN IF NOT EXISTS auto_sync_enabled boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS auto_sync_slot text DEFAULT 'slot_1' CHECK (auto_sync_slot IN ('slot_1', 'slot_2'));
 
 -- Add indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_business_settings_auto_sync 
-ON business_settings (auto_sync_enabled) 
+CREATE INDEX IF NOT EXISTS idx_business_settings_auto_sync
+ON business_settings (auto_sync_enabled)
 WHERE auto_sync_enabled = true;
 
 -- For activities table, we'll use existing enum values and cast text to avoid enum issues
 -- The activities will be stored with the enum type but we'll handle sync activities specially
 
 -- Update activities table to allow NULL business_id for system-level activities
-ALTER TABLE activities 
+ALTER TABLE activities
 ALTER COLUMN business_id DROP NOT NULL;
 
 -- Create function to trigger daily review sync via Edge Function
@@ -35,16 +35,16 @@ DECLARE
     service_role_key text;
 BEGIN
     -- Set the Edge Function URL (update with your project reference)
-    edge_function_url := 'https://tanxlkgdefjsdynwqend.supabase.co/functions/v1/daily-review-sync';
-    
+    edge_function_url := 'https://nysjjhupnvnshizudfnn.supabase.co/functions/v1/daily-review-sync';
+
     -- Get service role key from environment (this will be set by Supabase)
     service_role_key := current_setting('app.supabase_service_role_key', true);
-    
+
     -- If service role key is not set, use a placeholder that the Edge Function will handle
     IF service_role_key IS NULL OR service_role_key = '' THEN
         service_role_key := 'CRON_JOB_TRIGGER';
     END IF;
-    
+
     -- Log the sync attempt
     INSERT INTO activities (business_id, type, description, metadata)
     VALUES (
@@ -59,7 +59,7 @@ BEGIN
             'activity_subtype', 'review_sync_scheduled'
         )
     );
-    
+
     -- Make HTTP request to Edge Function using pg_net
     SELECT INTO request_id
         net.http_post(
@@ -74,7 +74,7 @@ BEGIN
                 'slot_id', slot_id
             )
         );
-    
+
     -- Log that the request was sent (response will be handled asynchronously)
     INSERT INTO activities (business_id, type, description, metadata)
     VALUES (
@@ -89,9 +89,9 @@ BEGIN
             'activity_subtype', 'review_sync_request_sent'
         )
     );
-    
+
     RAISE NOTICE 'Daily review sync triggered for % with request ID: %', slot_id, request_id;
-    
+
 EXCEPTION WHEN OTHERS THEN
     -- Log any errors
     INSERT INTO activities (business_id, type, description, metadata)
@@ -108,7 +108,7 @@ EXCEPTION WHEN OTHERS THEN
             'activity_subtype', 'review_sync_error'
         )
     );
-    
+
     RAISE NOTICE 'Error triggering daily review sync for %: %', slot_id, SQLERRM;
 END;
 $$;
@@ -124,7 +124,7 @@ SELECT cron.schedule(
     'SELECT trigger_daily_review_sync(''slot_1'');'
 );
 
--- Slot 2: 12:00 AM UTC (good for Americas/Asia business hours) 
+-- Slot 2: 12:00 AM UTC (good for Americas/Asia business hours)
 SELECT cron.schedule(
     'daily-review-sync-slot-2',
     '0 0 * * *',   -- Every day at 12:00 AM UTC (midnight)
@@ -148,10 +148,10 @@ BEGIN
             'timestamp', NOW()
         );
     END IF;
-    
+
     -- Call the trigger function
     PERFORM trigger_daily_review_sync(slot_id);
-    
+
     -- Return status
     result := jsonb_build_object(
         'success', true,
@@ -160,7 +160,7 @@ BEGIN
         'timestamp', NOW(),
         'note', 'Check activities table for execution details'
     );
-    
+
     RETURN result;
 END;
 $$;
@@ -170,7 +170,7 @@ GRANT EXECUTE ON FUNCTION manual_review_sync_test() TO authenticated, anon;
 
 -- Create a view to monitor scheduled jobs
 CREATE OR REPLACE VIEW scheduled_jobs AS
-SELECT 
+SELECT
     jobname,
     schedule,
     active,
@@ -183,7 +183,7 @@ GRANT SELECT ON scheduled_jobs TO authenticated, anon;
 
 -- Create a view to monitor sync activities
 CREATE OR REPLACE VIEW sync_activities AS
-SELECT 
+SELECT
     id,
     business_id,
     type,
@@ -194,7 +194,7 @@ SELECT
 FROM activities
 WHERE metadata->>'activity_subtype' IN (
     'review_sync_automated',
-    'review_sync_scheduled', 
+    'review_sync_scheduled',
     'review_sync_error',
     'review_sync_request_sent'
 )
@@ -221,7 +221,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         b.id,
         b.name,
         b.user_id,

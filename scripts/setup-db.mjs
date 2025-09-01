@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Supabase configuration
-const supabaseUrl = 'https://tanxlkgdefjsdynwqend.supabase.co'
+const supabaseUrl = 'https://nysjjhupnvnshizudfnn.supabase.co'
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhbnhsa2dkZWZqc2R5bndxZW5kIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDk5MTY4NCwiZXhwIjoyMDcwNTY3Njg0fQ.tpJEojkIUHSM6rRyB6SCnrzkhdLGx-jkXDL-BxF_0Fs'
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -76,7 +76,7 @@ async function setupDatabase() {
   // Enable RLS for businesses
   const businessesRLS = `
     ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
-    
+
     DROP POLICY IF EXISTS "Users can only access their own businesses" ON businesses;
     CREATE POLICY "Users can only access their own businesses" ON businesses
         FOR ALL USING (auth.uid() = user_id);
@@ -114,7 +114,7 @@ async function setupDatabase() {
   // Enable RLS for reviews
   const reviewsRLS = `
     ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
-    
+
     DROP POLICY IF EXISTS "Users can only access reviews for their businesses" ON reviews;
     CREATE POLICY "Users can only access reviews for their businesses" ON reviews
         FOR ALL USING (
@@ -191,7 +191,7 @@ async function setupDatabase() {
     ALTER TABLE business_settings ENABLE ROW LEVEL SECURITY;
     ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
     ALTER TABLE weekly_digests ENABLE ROW LEVEL SECURITY;
-    
+
     DROP POLICY IF EXISTS "Users can only access settings for their businesses" ON business_settings;
     CREATE POLICY "Users can only access settings for their businesses" ON business_settings
         FOR ALL USING (

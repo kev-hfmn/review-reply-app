@@ -5,7 +5,7 @@
 -- Execute this in your Supabase SQL Editor to fix all automation issues
 --
 -- CRITICAL: Read docs/automated-sync-setup.md first for context
--- 
+--
 -- Expected Execution Time: ~2-3 minutes
 -- Risk Level: LOW (uses safe IF NOT EXISTS patterns)
 -- ====================================================================
@@ -26,11 +26,11 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
         RAISE EXCEPTION 'ERROR: pg_cron extension failed to install. Contact Supabase support.';
     END IF;
-    
+
     IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net') THEN
         RAISE EXCEPTION 'ERROR: pg_net extension failed to install. Contact Supabase support.';
     END IF;
-    
+
     RAISE NOTICE '✅ Extensions pg_cron and pg_net are enabled';
 END $$;
 
@@ -42,7 +42,7 @@ END $$;
 DO $$
 BEGIN
     -- Check if automation columns exist, add them if missing
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'auto_sync_enabled') THEN
         ALTER TABLE business_settings ADD COLUMN auto_sync_enabled boolean DEFAULT false;
         RAISE NOTICE '✅ Added auto_sync_enabled column';
@@ -50,7 +50,7 @@ BEGIN
         RAISE NOTICE '⏭️ auto_sync_enabled column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'auto_reply_enabled') THEN
         ALTER TABLE business_settings ADD COLUMN auto_reply_enabled boolean DEFAULT false;
         RAISE NOTICE '✅ Added auto_reply_enabled column';
@@ -58,7 +58,7 @@ BEGIN
         RAISE NOTICE '⏭️ auto_reply_enabled column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'auto_post_enabled') THEN
         ALTER TABLE business_settings ADD COLUMN auto_post_enabled boolean DEFAULT false;
         RAISE NOTICE '✅ Added auto_post_enabled column';
@@ -66,7 +66,7 @@ BEGIN
         RAISE NOTICE '⏭️ auto_post_enabled column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'email_notifications_enabled') THEN
         ALTER TABLE business_settings ADD COLUMN email_notifications_enabled boolean DEFAULT true;
         RAISE NOTICE '✅ Added email_notifications_enabled column';
@@ -74,16 +74,16 @@ BEGIN
         RAISE NOTICE '⏭️ email_notifications_enabled column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'auto_sync_slot') THEN
-        ALTER TABLE business_settings ADD COLUMN auto_sync_slot text DEFAULT 'slot_1' 
+        ALTER TABLE business_settings ADD COLUMN auto_sync_slot text DEFAULT 'slot_1'
             CHECK (auto_sync_slot IN ('slot_1', 'slot_2'));
         RAISE NOTICE '✅ Added auto_sync_slot column';
     ELSE
         RAISE NOTICE '⏭️ auto_sync_slot column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'last_automation_run') THEN
         ALTER TABLE business_settings ADD COLUMN last_automation_run timestamptz;
         RAISE NOTICE '✅ Added last_automation_run column';
@@ -91,7 +91,7 @@ BEGIN
         RAISE NOTICE '⏭️ last_automation_run column already exists';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'business_settings' AND column_name = 'automation_errors') THEN
         ALTER TABLE business_settings ADD COLUMN automation_errors jsonb DEFAULT '[]'::jsonb;
         RAISE NOTICE '✅ Added automation_errors column';
@@ -103,7 +103,7 @@ END $$;
 -- Add automation columns to reviews table (safe if they already exist)
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'reviews' AND column_name = 'automated_reply') THEN
         ALTER TABLE reviews ADD COLUMN automated_reply boolean DEFAULT false;
         RAISE NOTICE '✅ Added automated_reply column to reviews';
@@ -111,7 +111,7 @@ BEGIN
         RAISE NOTICE '⏭️ automated_reply column already exists in reviews';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'reviews' AND column_name = 'automation_failed') THEN
         ALTER TABLE reviews ADD COLUMN automation_failed boolean DEFAULT false;
         RAISE NOTICE '✅ Added automation_failed column to reviews';
@@ -119,7 +119,7 @@ BEGIN
         RAISE NOTICE '⏭️ automation_failed column already exists in reviews';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'reviews' AND column_name = 'automation_error') THEN
         ALTER TABLE reviews ADD COLUMN automation_error text;
         RAISE NOTICE '✅ Added automation_error column to reviews';
@@ -127,7 +127,7 @@ BEGIN
         RAISE NOTICE '⏭️ automation_error column already exists in reviews';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'reviews' AND column_name = 'auto_approved') THEN
         ALTER TABLE reviews ADD COLUMN auto_approved boolean DEFAULT false;
         RAISE NOTICE '✅ Added auto_approved column to reviews';
@@ -140,9 +140,9 @@ END $$;
 DO $$
 BEGIN
     -- Check if business_id column is NOT NULL, modify if needed
-    IF EXISTS (SELECT 1 FROM information_schema.columns 
-               WHERE table_name = 'activities' 
-               AND column_name = 'business_id' 
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'activities'
+               AND column_name = 'business_id'
                AND is_nullable = 'NO') THEN
         ALTER TABLE activities ALTER COLUMN business_id DROP NOT NULL;
         RAISE NOTICE '✅ Modified activities.business_id to allow NULL for system activities';
@@ -156,12 +156,12 @@ END $$;
 -- ====================================================================
 
 -- Add indexes for automation queries
-CREATE INDEX IF NOT EXISTS idx_business_settings_auto_sync 
-ON business_settings (auto_sync_enabled, auto_sync_slot) 
+CREATE INDEX IF NOT EXISTS idx_business_settings_auto_sync
+ON business_settings (auto_sync_enabled, auto_sync_slot)
 WHERE auto_sync_enabled = true;
 
-CREATE INDEX IF NOT EXISTS idx_reviews_automation 
-ON reviews (business_id, status, automated_reply, automation_failed) 
+CREATE INDEX IF NOT EXISTS idx_reviews_automation
+ON reviews (business_id, status, automated_reply, automation_failed)
 WHERE automated_reply = false AND automation_failed = false;
 
 DO $$
@@ -185,16 +185,16 @@ DECLARE
     service_role_key text;
 BEGIN
     -- Set the Edge Function URL (update with your project reference)
-    edge_function_url := 'https://tanxlkgdefjsdynwqend.supabase.co/functions/v1/daily-review-sync';
-    
+    edge_function_url := 'https://nysjjhupnvnshizudfnn.supabase.co/functions/v1/daily-review-sync';
+
     -- Get service role key from environment (this will be set by Supabase)
     service_role_key := current_setting('app.supabase_service_role_key', true);
-    
+
     -- If service role key is not set, use a placeholder that the Edge Function will handle
     IF service_role_key IS NULL OR service_role_key = '' THEN
         service_role_key := 'CRON_JOB_TRIGGER';
     END IF;
-    
+
     -- Log the sync attempt
     INSERT INTO activities (business_id, type, description, metadata)
     VALUES (
@@ -209,7 +209,7 @@ BEGIN
             'activity_subtype', 'review_sync_scheduled'
         )
     );
-    
+
     -- Make HTTP request to Edge Function using pg_net
     SELECT INTO request_id
         net.http_post(
@@ -224,7 +224,7 @@ BEGIN
                 'slot_id', slot_id
             )
         );
-    
+
     -- Log that the request was sent (response will be handled asynchronously)
     INSERT INTO activities (business_id, type, description, metadata)
     VALUES (
@@ -239,9 +239,9 @@ BEGIN
             'activity_subtype', 'review_sync_request_sent'
         )
     );
-    
+
     RAISE NOTICE 'Daily review sync triggered for % with request ID: %', slot_id, request_id;
-    
+
 EXCEPTION WHEN OTHERS THEN
     -- Log any errors
     INSERT INTO activities (business_id, type, description, metadata)
@@ -258,7 +258,7 @@ EXCEPTION WHEN OTHERS THEN
             'activity_subtype', 'review_sync_error'
         )
     );
-    
+
     RAISE NOTICE 'Error triggering daily review sync for %: %', slot_id, SQLERRM;
 END;
 $$;
@@ -280,10 +280,10 @@ BEGIN
             'timestamp', NOW()
         );
     END IF;
-    
+
     -- Call the trigger function
     PERFORM trigger_daily_review_sync(slot_id);
-    
+
     -- Return status
     result := jsonb_build_object(
         'success', true,
@@ -292,7 +292,7 @@ BEGIN
         'timestamp', NOW(),
         'note', 'Check activities table for execution details'
     );
-    
+
     RETURN result;
 END;
 $$;
@@ -313,7 +313,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         b.id,
         b.name,
         b.user_id,
@@ -341,7 +341,7 @@ END $$;
 
 -- Create a view to monitor scheduled jobs
 CREATE OR REPLACE VIEW scheduled_jobs AS
-SELECT 
+SELECT
     jobname,
     schedule,
     active,
@@ -352,7 +352,7 @@ WHERE jobname LIKE 'daily-review-sync%';
 
 -- Create a view to monitor sync activities
 CREATE OR REPLACE VIEW sync_activities AS
-SELECT 
+SELECT
     id,
     business_id,
     type,
@@ -365,7 +365,7 @@ SELECT
 FROM activities
 WHERE metadata->>'activity_subtype' IN (
     'review_sync_automated',
-    'review_sync_scheduled', 
+    'review_sync_scheduled',
     'review_sync_error',
     'review_sync_request_sent'
 )
@@ -429,7 +429,7 @@ SELECT cron.schedule(
     'SELECT trigger_daily_review_sync(''slot_1'');'
 );
 
--- Slot 2: 12:00 AM UTC (good for Americas/Asia business hours) 
+-- Slot 2: 12:00 AM UTC (good for Americas/Asia business hours)
 SELECT cron.schedule(
     'daily-review-sync-slot-2',
     '0 0 * * *',   -- Every day at 12:00 AM UTC (midnight)
@@ -450,10 +450,10 @@ DO $$
 DECLARE
     cron_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO cron_count 
-    FROM cron.job 
+    SELECT COUNT(*) INTO cron_count
+    FROM cron.job
     WHERE jobname LIKE 'daily-review-sync%';
-    
+
     IF cron_count = 2 THEN
         RAISE NOTICE '✅ SUCCESS: Both cron jobs (slot_1 and slot_2) are scheduled';
     ELSE
@@ -466,11 +466,11 @@ DO $$
 DECLARE
     column_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO column_count 
-    FROM information_schema.columns 
-    WHERE table_name = 'business_settings' 
+    SELECT COUNT(*) INTO column_count
+    FROM information_schema.columns
+    WHERE table_name = 'business_settings'
     AND column_name IN ('auto_sync_enabled', 'auto_reply_enabled', 'auto_post_enabled', 'auto_sync_slot');
-    
+
     IF column_count = 4 THEN
         RAISE NOTICE '✅ SUCCESS: All automation columns exist in business_settings';
     ELSE
@@ -483,10 +483,10 @@ DO $$
 DECLARE
     function_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO function_count 
-    FROM pg_proc 
+    SELECT COUNT(*) INTO function_count
+    FROM pg_proc
     WHERE proname IN ('trigger_daily_review_sync', 'manual_review_sync_test', 'get_auto_sync_businesses');
-    
+
     IF function_count >= 3 THEN
         RAISE NOTICE '✅ SUCCESS: All database functions created';
     ELSE
@@ -496,10 +496,10 @@ END $$;
 
 -- Enable automation for test business (optional - uncomment to activate)
 /*
-UPDATE business_settings 
-SET 
+UPDATE business_settings
+SET
     auto_sync_enabled = true,
-    auto_reply_enabled = true, 
+    auto_reply_enabled = true,
     auto_post_enabled = true,
     email_notifications_enabled = true,
     auto_sync_slot = 'slot_1',

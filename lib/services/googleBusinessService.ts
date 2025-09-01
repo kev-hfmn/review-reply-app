@@ -94,9 +94,11 @@ export async function fetchReviews(
     decrypted = decryptFields(business, [
       'google_access_token',
       'google_refresh_token',
-      'google_account_id',
-      'google_location_id'
+      'google_account_id'
+      // google_location_id is now stored as plain text
     ]);
+    // Add plain text location ID
+    decrypted.google_location_id = business.google_location_id;
   } catch {
     // If decryption fails, assume they're stored as plain text (backward compatibility)
     console.log('Using plain text credentials for review fetch (not encrypted)');
@@ -608,9 +610,11 @@ export async function postReplyToGoogle(
       decrypted = decryptFields(business, [
         'google_access_token',
         'google_refresh_token',
-        'google_account_id',
-        'google_location_id'
+        'google_account_id'
+        // google_location_id is now stored as plain text
       ]);
+      // Add plain text location ID
+      decrypted.google_location_id = business.google_location_id;
     } catch {
       // If decryption fails, assume they're stored as plain text (backward compatibility)
       console.log('Using plain text credentials for reply posting (not encrypted)');
@@ -804,9 +808,11 @@ export async function validateBusinessConnection(businessId: string): Promise<Co
     try {
       decrypted = decryptFields(business, [
         'google_access_token',
-        'google_account_id',
-        'google_location_id'
+        'google_account_id'
+        // google_location_id is now stored as plain text
       ]);
+      // Add plain text location ID
+      decrypted.google_location_id = business.google_location_id;
     } catch {
       decrypted = {
         google_access_token: business.google_access_token,
