@@ -42,6 +42,7 @@ export interface ReviewActions {
   updateReply: (reviewId: string, reply: string) => Promise<void>;
   regenerateReply: (reviewId: string, tone?: string) => Promise<void>;
   updateStatus: (reviewId: string, status: Review['status']) => Promise<void>;
+  updatePostedReply: (reviewId: string, newReplyText: string) => Promise<void>;
 }
 
 export interface ReviewDrawerData {
@@ -127,6 +128,7 @@ export interface ReviewTableProps {
   onInlineEdit: (reviewId: string, reply: string) => void;
   onQuickAction: (reviewId: string, action: 'approve' | 'post' | 'skip') => void;
   onGenerateReply: (reviewId: string) => Promise<void>;
+  onUpdateReply?: (reviewId: string, reply: string) => Promise<void>;
   isSubscriber?: boolean;
   onUpgradeRequired?: () => void;
 }
