@@ -1,25 +1,36 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Star,
-  MessageSquare,
-  Check,
-  Send,
-  SkipForward,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Edit3,
+  Send,
+  Check,
+  SkipForward,
   Calendar,
   Loader2,
   RefreshCw,
-  Wand2
+  Wand2,
+  Trash2,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { UserAvatar } from '@/components/UserAvatar';
 import type { ReviewTableProps } from '@/types/reviews';
 import type { Review } from '@/types/dashboard';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 export default function ReviewsTable({
   reviews,
@@ -30,6 +41,7 @@ export default function ReviewsTable({
   onInlineEdit,
   onQuickAction,
   onGenerateReply,
+  onUpdateReply,
   isSubscriber = false,
   onUpgradeRequired
 }: ReviewTableProps) {
@@ -37,6 +49,8 @@ export default function ReviewsTable({
   const [editingText, setEditingText] = useState('');
   const [generatingReviewId, setGeneratingReviewId] = useState<string | null>(null);
   const [postingReviewId, setPostingReviewId] = useState<string | null>(null);
+  const [updatingReviewId, setUpdatingReviewId] = useState<string | null>(null);
+  const [deleteConfirmReviewId, setDeleteConfirmReviewId] = useState<string | null>(null);
 
   // Generate star display
   const renderStars = useCallback((rating: number) => {
@@ -88,19 +102,39 @@ export default function ReviewsTable({
     });
   }, [reviews.length, selection.selectedIds, onSelectionChange]);
 
+  // Handle update posted reply with loading state
+  const handleUpdateReply = useCallback(async (reviewId: string, newReplyText: string) => {
+    if (!onUpdateReply) return;
+
+    setUpdatingReviewId(reviewId);
+    try {
+      await onUpdateReply(reviewId, newReplyText);
+      setEditingReviewId(null); // Close editing mode on success
+    } finally {
+      setUpdatingReviewId(null);
+    }
+  }, [onUpdateReply]);
+
   // Handle inline editing
   const startEditing = useCallback((review: Review) => {
     setEditingReviewId(review.id);
-    setEditingText(review.ai_reply || '');
+    // For posted reviews, use final_reply; for others use ai_reply
+    setEditingText(review.status === 'posted' ? (review.final_reply || '') : (review.ai_reply || ''));
   }, []);
 
-  const saveEdit = useCallback(() => {
+  const saveEdit = useCallback((review: Review) => {
     if (editingReviewId) {
-      onInlineEdit(editingReviewId, editingText);
-      setEditingReviewId(null);
-      setEditingText('');
+      if (review.status === 'posted') {
+        // For posted reviews, use the update handler
+        handleUpdateReply(editingReviewId, editingText);
+      } else {
+        // For non-posted reviews, use the inline edit handler
+        onInlineEdit(editingReviewId, editingText);
+        setEditingReviewId(null);
+        setEditingText('');
+      }
     }
-  }, [editingReviewId, editingText, onInlineEdit]);
+  }, [editingReviewId, editingText, onInlineEdit, handleUpdateReply]);
 
   const cancelEdit = useCallback(() => {
     setEditingReviewId(null);
@@ -206,7 +240,7 @@ export default function ReviewsTable({
             transition={{ delay: index * 0.05 }}
             className={`p-6 transition-colors cursor-pointer ${
               selection.selectedIds.has(review.id)
-                ? 'bg-gray-50'
+                ? 'bg-card-foreground/5'
                 : 'bg-card hover:bg-card'
             }`}
             onClick={() => onReviewClick(review)}
@@ -288,6 +322,7 @@ export default function ReviewsTable({
                         </div>
                       )}
                     </div>
+                    <div className="flex items-center text-xs text-muted-foreground">
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -295,12 +330,38 @@ export default function ReviewsTable({
                       }}
                       variant="ghost"
                       size="sm"
-                      className="text-foreground hover:text-foreground/80 dark:text-foreground/80 dark:hover:text-foreground/80 p-1 h-8 w-8"
+                      className=""
                       disabled={editingReviewId === review.id}
                       title="Edit reply"
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
+
+                    {/* Delete button next to edit button - only for posted reviews */}
+                    {review.status === 'posted' && review.final_reply && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isSubscriber) {
+                            setDeleteConfirmReviewId(review.id);
+                          } else {
+                            onUpgradeRequired?.();
+                          }
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className={`text-red-500/70 hover:text-red-600 p-1 h-8 w-8 ${isSubscriber ? "" : "opacity-50"}`}
+                        title={isSubscriber ? "Delete reply from Google Business Profile" : "Deleting replies requires subscription - click to learn more"}
+                        disabled={updatingReviewId === review.id}
+                      >
+                        {updatingReviewId === review.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                   </div>
 
                   {editingReviewId === review.id ? (
@@ -328,17 +389,28 @@ export default function ReviewsTable({
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            saveEdit();
+                            saveEdit(review);
                           }}
                           size="sm"
+                          disabled={updatingReviewId === review.id}
                         >
-                          Save Changes
+                          {updatingReviewId === review.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              {review.status === 'posted' ? 'Updating on Google...' : 'Saving...'}
+                            </>
+                          ) : (
+                            review.status === 'posted' ? 'Update on Google' : 'Save Changes'
+                          )}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <p className="text-foreground/90 text-sm leading-relaxed">
-                      {review.ai_reply || 'No reply generated/posted yet'}
+                      {review.status === 'posted'
+                        ? (review.final_reply || 'No reply posted yet')
+                        : (review.ai_reply || 'No reply generated yet')
+                      }
                     </p>
                   )}
                 </div>
@@ -419,6 +491,8 @@ export default function ReviewsTable({
                     </Button>
                   )}
 
+                  {/* Delete Reply button moved next to edit button */}
+
                   {/* Show Post button only when AI reply exists */}
                   {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                     <Button
@@ -469,6 +543,32 @@ export default function ReviewsTable({
           </motion.div>
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmReviewId !== null} onOpenChange={(open) => !open && setDeleteConfirmReviewId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Reply</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this reply? This action will permanently remove the reply from Google Business Profile and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirmReviewId) {
+                  onQuickAction(deleteConfirmReviewId, 'delete');
+                  setDeleteConfirmReviewId(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete Reply
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

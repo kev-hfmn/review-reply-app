@@ -94,7 +94,7 @@ export default function ReviewDrawer({
 
       await onRegenerate(review.id, selectedTone);
       // No need for setTimeout - the useEffect will handle the update when allReviews changes
-      
+
     } finally {
       setIsRegenerating(false);
     }
@@ -218,7 +218,7 @@ export default function ReviewDrawer({
                   Customer Review
                 </span>
               </div>
-              <p className="text-foreground leading-relaxed">
+              <p className="text-foreground !text-base">
                 &ldquo;{review.review_text}&rdquo;
               </p>
             </div>
@@ -250,16 +250,16 @@ export default function ReviewDrawer({
               <Textarea
                 value={editedReply}
                 onChange={(e) => setEditedReply(e.target.value)}
-                className="resize-none !text-lg"
+                className="resize-none !text-base"
                 rows={6}
                 placeholder="AI reply will appear here..."
                 disabled={data.isLoading || isRegenerating}
               />
 
               {/* Tone Description */}
-              <p className="text-sm text-muted-foreground">
+{/*               <p className="text-sm text-muted-foreground">
                 {REPLY_TONES.find(t => t.id === selectedTone)?.description}
-              </p>
+              </p> */}
             </div>
           </div>
         </div>

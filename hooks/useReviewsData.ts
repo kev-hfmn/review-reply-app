@@ -28,7 +28,7 @@ const PAGE_SIZE = 25;
 
 export function useReviewsData(options = { useCache: true }) {
   const { user, selectedBusinessId, isLoading: authLoading } = useAuth();
-  
+
   // NEW: Query client for cache invalidation
   const queryClient = useQueryClient();
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -44,7 +44,7 @@ export function useReviewsData(options = { useCache: true }) {
     hasPrevPage: false
   });
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Debug logging
   console.log('useReviewsData loading states:', { isLoading, authLoading, user: !!user, selectedBusinessId });
   const [isUpdating, setIsUpdating] = useState(false);
@@ -61,9 +61,9 @@ export function useReviewsData(options = { useCache: true }) {
   // NEW: Optional cached data layer
   const cachedBusinesses = useBusinessesQuery(options.useCache ? user?.id : null)
   const cachedReviews = useReviewsQuery(
-    options.useCache ? selectedBusinessId : null, 
-    filters, 
-    pagination.currentPage, 
+    options.useCache ? selectedBusinessId : null,
+    filters,
+    pagination.currentPage,
     PAGE_SIZE
   )
 
@@ -356,7 +356,7 @@ export function useReviewsData(options = { useCache: true }) {
       console.log('Skipping reviews fetch - auth still loading');
       return;
     }
-    
+
     // Skip if cache is enabled
     if (options.useCache) {
       console.log('Skipping reviews fetch - cache enabled');
@@ -382,11 +382,11 @@ export function useReviewsData(options = { useCache: true }) {
     if (options.useCache && cachedReviews.data) {
       const { reviews: rawReviews, totalCount } = cachedReviews.data;
       setReviews(rawReviews);
-      
+
       // Transform for table display and apply pagination
       const tableReviews = rawReviews.map(transformReviewForTable);
       const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-      
+
       setFilteredReviews(tableReviews);
       setPagination(prev => ({
         ...prev,
@@ -395,7 +395,7 @@ export function useReviewsData(options = { useCache: true }) {
         hasNextPage: pagination.currentPage < totalPages,
         hasPrevPage: pagination.currentPage > 1
       }));
-      
+
       setIsLoading(cachedReviews.isLoading);
       if (cachedReviews.error) {
         setError(cachedReviews.error.message);
@@ -596,7 +596,7 @@ export function useReviewsData(options = { useCache: true }) {
         showToast({
           type: 'success',
           title: 'Reply updated',
-          message: 'The AI reply has been updated.'
+          message: 'The reply has been updated.'
         });
       } catch (err) {
         console.error('Failed to update reply:', err);
@@ -738,6 +738,60 @@ export function useReviewsData(options = { useCache: true }) {
       } finally {
         setIsUpdating(false);
       }
+    },
+
+    updatePostedReply: async (reviewId: string, newReplyText: string) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      try {
+        setIsUpdating(true);
+        
+        // Call our new API endpoint to update the reply on Google and in database
+        const response = await fetch('/api/reviews/update-reply', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reviewId,
+            userId: user.id,
+            replyText: newReplyText
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.details || result.error || 'Failed to update reply');
+        }
+
+        // Update local state immediately to preserve scroll position
+        updateReviewInState(reviewId, { 
+          final_reply: newReplyText,
+          updated_at: new Date().toISOString()
+        });
+
+        // NEW: Invalidate cache after successful mutation
+        if (options.useCache) {
+          queryClient.invalidateQueries({ queryKey: ['reviews'] })
+        }
+
+        showToast({
+          type: 'success',
+          title: 'Reply updated on Google',
+          message: 'Your reply has been successfully updated on Google Business Profile.'
+        });
+      } catch (err) {
+        console.error('Failed to update posted reply:', err);
+        showToast({
+          type: 'error',
+          title: 'Failed to update reply',
+          message: err instanceof Error ? err.message : 'Please try again.'
+        });
+        throw err; // Re-throw to handle loading states properly
+      } finally {
+        setIsUpdating(false);
+      }
     }
   }), [reviews, showToast, updateReviewInState, user, options.useCache, queryClient]);
 
@@ -762,13 +816,13 @@ export function useReviewsData(options = { useCache: true }) {
     generateReplies: async (reviewIds: string[]) => {
       try {
         setIsUpdating(true);
-        
+
         // Filter to only reviews without existing replies
-        const reviewsToGenerate = reviews.filter(r => 
-          reviewIds.includes(r.id) && 
+        const reviewsToGenerate = reviews.filter(r =>
+          reviewIds.includes(r.id) &&
           (!r.ai_reply || r.ai_reply.trim() === '')
         );
-        
+
         if (reviewsToGenerate.length === 0) {
           showToast({
             type: 'info',
@@ -820,7 +874,7 @@ export function useReviewsData(options = { useCache: true }) {
         }
 
         const result = await response.json();
-        
+
         // Update local state with generated replies
         if (result.results && result.results.length > 0) {
           const updatedReviews = reviews.map(review => {
@@ -838,9 +892,9 @@ export function useReviewsData(options = { useCache: true }) {
             }
             return review;
           });
-          
+
           setReviews(updatedReviews);
-          
+
           // Also update filtered reviews for immediate UI update
           setFilteredReviews(prev => prev.map(review => {
             const updated = updatedReviews.find(r => r.id === review.id);
@@ -851,7 +905,7 @@ export function useReviewsData(options = { useCache: true }) {
         // Show results
         const successCount = result.successCount || 0;
         const failureCount = result.failureCount || 0;
-        
+
         if (successCount > 0 && failureCount === 0) {
           showToast({
             type: 'success',
@@ -871,7 +925,7 @@ export function useReviewsData(options = { useCache: true }) {
             message: 'Failed to generate AI replies. Please try again.'
           });
         }
-        
+
         // Add activity log
         if (reviewsToGenerate[0]) {
           await supabase
@@ -880,7 +934,7 @@ export function useReviewsData(options = { useCache: true }) {
               business_id: reviewsToGenerate[0].business_id,
               type: 'ai_reply_generated',
               description: `Bulk AI reply generation: ${successCount}/${reviewsToGenerate.length} successful`,
-              metadata: { 
+              metadata: {
                 review_count: reviewsToGenerate.length,
                 success_count: successCount,
                 failure_count: failureCount,
@@ -888,7 +942,7 @@ export function useReviewsData(options = { useCache: true }) {
               }
             });
         }
-        
+
       } catch (error) {
         console.error('Bulk generate replies error:', error);
         showToast({
@@ -1126,7 +1180,7 @@ export function useReviewsData(options = { useCache: true }) {
     removeToast,
     showToast,
     fetchReviewsFromGoogle,
-    
+
     // NEW: Cache control and status
     cacheStatus: {
       businessesFromCache: !!(options.useCache && cachedBusinesses.data),

@@ -727,6 +727,158 @@ export async function postReplyToGoogle(
 }
 
 /**
+ * Update existing reply to Google Business Profile review
+ */
+export async function updateReplyToGoogle(
+  businessId: string,
+  googleReviewId: string,
+  replyText: string
+): Promise<{ success: boolean; message: string; error?: string }> {
+  console.log('🔄 Starting Google Business Profile reply update...');
+
+  try {
+    // Get business credentials - Platform OAuth pattern (no user credentials needed)
+    const { data: business, error } = await supabaseAdmin
+      .from('businesses')
+      .select('google_access_token, google_refresh_token, google_account_id, google_location_id, connection_status')
+      .eq('id', businessId)
+      .single();
+
+    if (error || !business) {
+      throw new Error('Business not found or credentials missing');
+    }
+
+    if (!business.google_access_token || !business.google_account_id || !business.google_location_id) {
+      throw new Error('Google Business Profile not connected. Please connect in Settings.');
+    }
+
+    if (business.connection_status === 'needs_reconnection') {
+      throw new Error('Google Business Profile needs reconnection. Please reconnect in Settings.');
+    }
+
+    // Try to decrypt credentials, fallback to plain text if not encrypted - Platform OAuth pattern
+    let decrypted;
+    try {
+      decrypted = decryptFields(business, [
+        'google_access_token',
+        'google_refresh_token',
+        'google_account_id'
+        // google_location_id is now stored as plain text
+      ]);
+      // Add plain text location ID
+      decrypted.google_location_id = business.google_location_id;
+    } catch {
+      // If decryption fails, assume they're stored as plain text (backward compatibility)
+      console.log('Using plain text credentials for reply update (not encrypted)');
+      decrypted = {
+        google_access_token: business.google_access_token,
+        google_refresh_token: business.google_refresh_token,
+        google_account_id: business.google_account_id,
+        google_location_id: business.google_location_id,
+      };
+    }
+
+    // Build the reply URL using the EXACT same pattern as postReplyToGoogle
+    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${decrypted.google_account_id}/locations/${decrypted.google_location_id}/reviews/${googleReviewId}/reply`;
+
+    // Request body for the reply update
+    const requestBody = {
+      comment: replyText
+    };
+
+    try {
+      // Make the PUT request - Same endpoint as creating, but Google handles update automatically
+      const response = await fetch(replyUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${decrypted.google_access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.status === 401) {
+        // Token expired, try to refresh - Platform OAuth pattern
+        if (decrypted.google_refresh_token) {
+          try {
+            const newTokens = await refreshAccessToken(decrypted.google_refresh_token);
+
+            // Store new token - EXACT same pattern as postReplyToGoogle
+            const tokenData = { google_access_token: newTokens.access_token };
+            const encryptedTokens = encryptFields(tokenData, ['google_access_token']);
+
+            await supabaseAdmin
+              .from('businesses')
+              .update(encryptedTokens)
+              .eq('id', businessId);
+
+            // Retry request with new token - EXACT same pattern as postReplyToGoogle
+            const retryResponse = await fetch(replyUrl, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${newTokens.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!retryResponse.ok) {
+              const errorData = await retryResponse.json().catch(() => ({}));
+              console.error('❌ Google API error after token refresh:', retryResponse.status, errorData);
+
+              if (retryResponse.status === 404) {
+                return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
+              } else if (retryResponse.status === 403) {
+                return { success: false, message: 'Permission denied. Please check your Google Business Profile permissions.', error: 'PERMISSION_DENIED' };
+              } else {
+                return { success: false, message: `Google API error: ${retryResponse.status}`, error: 'API_ERROR' };
+              }
+            }
+
+            console.log('✅ Reply updated on Google Business Profile successfully (after token refresh)');
+            return { success: true, message: 'Reply updated successfully on Google Business Profile' };
+
+          } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
+            return { success: false, message: 'Authentication failed. Please reconnect your Google Business Profile.', error: 'TOKEN_REFRESH_FAILED' };
+          }
+        } else {
+          return { success: false, message: 'Authentication expired. Please reconnect your Google Business Profile.', error: 'NO_REFRESH_TOKEN' };
+        }
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Google API error:', response.status, errorData);
+
+        if (response.status === 404) {
+          return { success: false, message: 'Review not found on Google Business Profile. It may have been deleted.', error: 'REVIEW_NOT_FOUND' };
+        } else if (response.status === 403) {
+          return { success: false, message: 'Permission denied. Please check your Google Business Profile permissions.', error: 'PERMISSION_DENIED' };
+        } else {
+          return { success: false, message: `Google API error: ${response.status}`, error: 'API_ERROR' };
+        }
+      }
+
+      console.log('✅ Reply updated on Google Business Profile successfully');
+      return { success: true, message: 'Reply updated successfully on Google Business Profile' };
+
+    } catch (fetchError) {
+      console.error('❌ Network error updating reply:', fetchError);
+      return { success: false, message: 'Network error. Please check your internet connection and try again.', error: 'NETWORK_ERROR' };
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to update reply on Google:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: 'UNKNOWN_ERROR'
+    };
+  }
+}
+
+/**
  * Test Google Business Profile connection
  */
 export async function testConnection(businessId: string): Promise<{ success: boolean; message: string; details?: Record<string, unknown> }> {

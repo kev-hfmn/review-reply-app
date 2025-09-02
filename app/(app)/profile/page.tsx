@@ -18,23 +18,22 @@ import type { ToastNotification } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 
 function getPlanFromSubscription(subscription: any): string {
-  // If subscription has a plan_id field, use it directly
+  // Primary: Use plan_name if available
+  if (subscription?.plan_name) {
+    return subscription.plan_name;
+  }
+
+  // Fallback: Use status field
+  if (subscription?.status) {
+    return subscription.status;
+  }
+
+  // Legacy: If subscription has a plan_id field, use it
   if (subscription?.plan_id) {
     return subscription.plan_id;
   }
 
-  // Otherwise, try to map from price IDs (for legacy Stripe subscriptions)
-  const priceId = subscription?.stripe_price_id;
-  if (!priceId) return 'basic';
-
-  // Map Stripe price IDs to plan names
-  const priceIdToPlan: Record<string, string> = {
-    [process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || '']: 'starter',
-    [process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '']: 'pro',
-    [process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || '']: 'pro-plus'
-  };
-
-  return priceIdToPlan[priceId] || 'basic';
+  return 'basic';
 }
 
 function formatSubscriptionDate(dateString: string): string {

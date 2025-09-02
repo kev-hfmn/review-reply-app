@@ -48,8 +48,8 @@ export default function BulkActionsBar({
               onClick={isSubscriber ? onGenerateReplies : onUpgradeRequired}
               disabled={isLoading}
               className={`${
-                isSubscriber 
-                  ? "bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400" 
+                isSubscriber
+                  ? "bg-accent hover:bg-accent/80 disabled:bg-accent-foreground"
                   : "bg-gray-600 hover:bg-gray-700"
               } text-white`}
               size="sm"
@@ -82,8 +82,8 @@ export default function BulkActionsBar({
               onClick={isSubscriber ? onPost : onUpgradeRequired}
               disabled={isLoading}
               className={`${
-                isSubscriber 
-                  ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400" 
+                isSubscriber
+                  ? "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
                   : "bg-gray-600 hover:bg-gray-700"
               } text-white`}
               size="sm"

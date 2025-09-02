@@ -389,6 +389,7 @@ export default function ReviewsPage() {
           onInlineEdit={handleInlineEdit}
           onQuickAction={handleQuickAction}
           onGenerateReply={reviewActions.regenerateReply}
+          onUpdateReply={reviewActions.updatePostedReply}
           isSubscriber={isSubscriber}
           onUpgradeRequired={() => showToast({
             type: 'info',
