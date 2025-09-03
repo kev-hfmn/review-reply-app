@@ -175,7 +175,23 @@ export default function Dashboard() {
               steps={onboardingSteps}
               onStepAction={(stepId) => {
                 console.log('Onboarding step clicked:', stepId);
-                // Steps now handle their own actions via the action property
+                // Navigate based on step ID
+                switch (stepId) {
+                  case 'connect-google':
+                    window.location.href = '/settings?tab=integrations';
+                    break;
+                  case 'premium-plan':
+                    window.location.href = '/profile';
+                    break;
+                  case 'brand-voice':
+                    window.location.href = '/settings?tab=voice';
+                    break;
+                  case 'auto-replies':
+                    window.location.href = '/settings?tab=approval';
+                    break;
+                  default:
+                    console.log('Unknown step ID:', stepId);
+                }
               }}
             />
             <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-6 flex flex-col justify-center">

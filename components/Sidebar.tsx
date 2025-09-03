@@ -26,8 +26,9 @@ const navigation = [
   { name: 'Reviews', href: '/reviews', icon: MessageSquare },
   { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Help', href: '/help', icon: HelpCircle },
   { name: 'Profile', href: '/profile', icon: User },
+  { name: 'Help', href: '/help', icon: HelpCircle },
+
 ];
 
 export function Sidebar() {

@@ -6,7 +6,7 @@ export interface SubscriptionStatus {
   subscription: {
     id: string;
     user_id: string;
-    plan_name: string; // Changed from plan_id to match database
+    plan_id: string;
     status: string;
     current_period_end: string;
     cancel_at_period_end: boolean;
@@ -61,19 +61,19 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
     // Determine subscription status
     // With the new system: 'active' = paying customer, 'free' = basic user
     const isActiveSubscription = subscription.status === 'active';
-    // Use plan_name from database (not plan_id)
-    const planName = subscription.plan_name || 'basic';
-    const isPaidPlan = planName !== 'basic';
+    // Use plan_id from database
+    const planId = subscription.plan_id || 'basic';
+    const isPaidPlan = planId !== 'basic';
     const isWithinPeriod = new Date(subscription.current_period_end) > new Date();
 
     // Only consider users with active status AND paid plans as subscribers
     const isSubscriber = isActiveSubscription && isPaidPlan && isWithinPeriod;
-    const isBasic = planName === 'basic';
+    const isBasic = planId === 'basic';
 
     return {
       isSubscriber,
       subscription,
-      planId: planName, // Return plan_name as planId for compatibility
+      planId: planId,
       status: subscription.status,
       isBasic,
       isPaid: isPaidPlan

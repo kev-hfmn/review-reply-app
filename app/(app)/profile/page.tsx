@@ -18,9 +18,9 @@ import type { ToastNotification } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 
 function getPlanFromSubscription(subscription: any): string {
-  // Primary: Use plan_name if available
-  if (subscription?.plan_name) {
-    return subscription.plan_name;
+  // Primary: Use plan_id if available
+  if (subscription?.plan_id) {
+    return subscription.plan_id;
   }
 
   // Fallback: Use status field
@@ -28,9 +28,9 @@ function getPlanFromSubscription(subscription: any): string {
     return subscription.status;
   }
 
-  // Legacy: If subscription has a plan_id field, use it
-  if (subscription?.plan_id) {
-    return subscription.plan_id;
+  // Legacy: If subscription has a plan_name field, use it
+  if (subscription?.plan_name) {
+    return subscription.plan_name;
   }
 
   return 'basic';
