@@ -2,97 +2,134 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 
 /**
- * Disconnect Google Business Profile integration
+ * Disconnect Google Business Profile integration - DELETE ALL user businesses
  * POST /api/auth/google-business/disconnect
+ * 
+ * This endpoint disconnects the user's entire Google account and deletes ALL
+ * associated businesses, as Google OAuth tokens are account-level, not per-business.
  */
 export async function POST(request: NextRequest) {
   try {
-    const { businessId, userId } = await request.json();
+    const { userId } = await request.json();
 
-    if (!businessId || !userId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Business ID and User ID are required' },
+        { error: 'User ID is required' },
         { status: 400 }
       );
     }
 
-    // Get business and verify ownership
-    const { data: business, error: businessError } = await supabaseAdmin
-      .from('businesses')
-      .select('id, user_id, google_business_name')
-      .eq('id', businessId)
-      .eq('user_id', userId)
-      .single();
-
-    if (businessError || !business) {
+    // Verify user exists in auth system
+    const { data: user, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (userError || !user) {
       return NextResponse.json(
-        { error: 'Business not found or access denied' },
+        { error: 'User not found or access denied' },
         { status: 404 }
       );
     }
 
-    const businessName = business.google_business_name || 'Google Business Profile';
-
     try {
-      // Clear all Google Business Profile data
-      const { error: updateError } = await supabaseAdmin
+      // Get ALL businesses for this user before deletion (for logging and response)
+      const { data: businesses, error: businessesError } = await supabaseAdmin
         .from('businesses')
-        .update({
-          // Clear tokens and credentials
-          google_access_token: null,
-          google_refresh_token: null,
-          google_account_id: null,
-          google_location_id: null,
-          
-          // Clear business information
-          google_account_name: null,
-          google_business_name: null,
-          google_location_name: null,
-          
-          // Update connection status
-          connection_status: 'disconnected',
-          last_connection_attempt: null,
-          
-          // Clear sync data - user will need to re-sync reviews after reconnecting
-          last_review_sync: null,
-          initial_backfill_complete: false,
-          
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', businessId);
+        .select('id, name, google_business_name, google_location_name, connection_status, created_at')
+        .eq('user_id', userId);
 
-      if (updateError) {
-        console.error('Failed to disconnect Google Business Profile:', updateError);
+      if (businessesError) {
+        console.error('Failed to fetch user businesses:', businessesError);
         return NextResponse.json(
-          { error: 'Failed to disconnect Google Business Profile' },
+          { error: 'Failed to fetch user businesses' },
           { status: 500 }
         );
       }
 
-      // Create activity log entry
-      await supabaseAdmin
-        .from('activities')
-        .insert({
-          business_id: businessId,
-          type: 'settings_updated',
-          description: `Google Business Profile disconnected: ${businessName}`,
-          metadata: {
-            event: 'google_business_profile_disconnected',
-            business_name: businessName,
-            timestamp: new Date().toISOString(),
-            note: 'All Google credentials and sync data cleared',
-          },
+      if (!businesses || businesses.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: 'No Google Business Profile connections to disconnect',
+          deletedBusinesses: {
+            count: 0,
+            names: []
+          }
         });
+      }
 
-      console.log('✅ Google Business Profile disconnected successfully for business:', businessId);
+      // Collect data for logging and response
+      const businessNames = businesses.map(b => 
+        b.google_business_name || b.google_location_name || b.name || 'Unknown Business'
+      );
+      const connectedBusinesses = businesses.filter(b => b.connection_status === 'connected');
+      
+      console.log(`🔄 Disconnecting Google account for user ${userId}`);
+      console.log(`📊 Found ${businesses.length} businesses (${connectedBusinesses.length} connected):`, businessNames);
+
+      // Create comprehensive activity log entry BEFORE deletion
+      // Note: This will be deleted along with the businesses, but it serves as a deletion log
+      const activityData = businesses.map(business => ({
+        business_id: business.id,
+        type: 'settings_updated' as const,
+        description: `Google Business Profile account disconnected - business deleted: ${business.google_business_name || business.name}`,
+        metadata: {
+          event: 'google_account_disconnected_business_deleted',
+          business_name: business.google_business_name || business.name,
+          business_id: business.id,
+          deletion_timestamp: new Date().toISOString(),
+          total_businesses_deleted: businesses.length,
+          user_id: userId,
+          note: 'Account-level disconnection - all businesses deleted'
+        },
+      }));
+
+      // Insert activity logs before deletion
+      if (activityData.length > 0) {
+        const { error: activityError } = await supabaseAdmin
+          .from('activities')
+          .insert(activityData);
+
+        if (activityError) {
+          console.error('⚠️  Failed to create activity logs (proceeding with deletion):', activityError);
+          // Continue with deletion even if activity logging fails
+        }
+      }
+
+      // DELETE ALL businesses for this user
+      // This will CASCADE delete:
+      // - reviews (business_id FK)  
+      // - business_settings (business_id FK)
+      // - activities (business_id FK) 
+      // - weekly_digests (business_id FK)
+      const { error: deleteError } = await supabaseAdmin
+        .from('businesses')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('❌ Failed to delete user businesses:', deleteError);
+        return NextResponse.json(
+          { 
+            error: 'Failed to disconnect Google Business Profile', 
+            details: deleteError.message 
+          },
+          { status: 500 }
+        );
+      }
+
+      console.log(`✅ Successfully deleted ${businesses.length} businesses for user ${userId}`);
+      console.log(`📝 Deleted businesses:`, businessNames);
 
       return NextResponse.json({
-        message: 'Google Business Profile disconnected successfully',
-        disconnectedBusiness: businessName,
+        success: true,
+        message: 'Google Business Profile account disconnected successfully',
+        deletedBusinesses: {
+          count: businesses.length,
+          names: businessNames,
+          connectedCount: connectedBusinesses.length
+        }
       });
 
     } catch (disconnectError) {
-      console.error('❌ Error during disconnection:', disconnectError);
+      console.error('❌ Error during Google account disconnection:', disconnectError);
       return NextResponse.json(
         { 
           error: 'Failed to disconnect Google Business Profile',

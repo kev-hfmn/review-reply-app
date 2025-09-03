@@ -48,7 +48,7 @@ export function PricingSection() {
               <span className="ml-1 text-slate-500 dark:text-slate-400">{tier.interval}</span>
             </div>
             <p className="mt-4 text-slate-500 dark:text-slate-400">{tier.description}</p>
-            <ul className="mt-8 space-y-3">
+            <ul className="mt-4 space-y-2">
               {tier.features.map((feature) => (
                 <li key={feature} className="flex items-center flex-row gap-2">
                   <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />

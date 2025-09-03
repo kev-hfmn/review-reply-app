@@ -17,6 +17,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
@@ -45,13 +56,19 @@ interface ConnectionStatus {
 }
 
 interface GoogleBusinessProfileIntegrationProps {
-  businessId: string | null;
+  connectedBusinesses: Array<{
+    id: string;
+    name: string;
+    google_business_name?: string;
+    google_location_name?: string;
+    connection_status: string;
+  }>;
   onShowToast: (toast: Omit<ToastNotification, 'id'>) => void;
-  onStatusChange?: (status: ConnectionStatus) => void;
+  onStatusChange?: (hasConnectedBusinesses: boolean) => void;
 }
 
 export default function GoogleBusinessProfileIntegration({
-  businessId,
+  connectedBusinesses,
   onShowToast,
   onStatusChange
 }: GoogleBusinessProfileIntegrationProps) {
@@ -61,71 +78,57 @@ export default function GoogleBusinessProfileIntegration({
     status: 'disconnected'
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [currentError, setCurrentError] = useState<GoogleBusinessErrorType | null>(null);
 
-  // Load connection status
-  const loadConnectionStatus = useCallback(async () => {
-    if (!user?.id || !businessId || businessId === 'temp') return;
-
-    try {
-      const response = await fetch(`/api/businesses/${businessId}/status?userId=${user.id}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        const status: ConnectionStatus = {
-          connected: data.connected || false,
-          status: data.status || 'disconnected',
-          lastSync: data.lastSync,
-          businessInfo: data.businessInfo,
-          lastConnectionAttempt: data.lastConnectionAttempt
-        };
-
-        setConnectionStatus(status);
-        onStatusChange?.(status);
-      } else {
-        // If API fails, ensure we stay in disconnected state
-        console.error('Status API failed:', response.status, response.statusText);
-        setConnectionStatus({
-          connected: false,
-          status: 'disconnected'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load connection status:', error);
-      // Ensure we stay in disconnected state on error
-      setConnectionStatus({
-        connected: false,
-        status: 'disconnected'
-      });
-    }
-  }, [businessId, onStatusChange, user?.id]);
+  // Update connection status based on connected businesses
+  const updateConnectionStatus = useCallback(() => {
+    const hasConnectedBusinesses = connectedBusinesses.some(b => b.connection_status === 'connected');
+    const status: ConnectionStatus = {
+      connected: hasConnectedBusinesses,
+      status: hasConnectedBusinesses ? 'connected' : 'disconnected',
+      businessInfo: hasConnectedBusinesses ? {
+        accountName: 'Google Account',
+        businessName: connectedBusinesses.find(b => b.connection_status === 'connected')?.google_business_name || 'Multiple Businesses',
+        locationName: connectedBusinesses.filter(b => b.connection_status === 'connected').length > 1 
+          ? `${connectedBusinesses.filter(b => b.connection_status === 'connected').length} locations`
+          : connectedBusinesses.find(b => b.connection_status === 'connected')?.google_location_name || '',
+        verified: true
+      } : undefined
+    };
+    
+    setConnectionStatus(status);
+    onStatusChange?.(hasConnectedBusinesses);
+  }, [connectedBusinesses, onStatusChange]);
 
   useEffect(() => {
-    if (user?.id && businessId && businessId !== 'temp') {
-      loadConnectionStatus();
-    }
-  }, [user?.id, businessId, loadConnectionStatus]);
+    updateConnectionStatus();
+  }, [updateConnectionStatus]);
 
-  // Check for OAuth success in URL and refresh status
+  // Check for OAuth success in URL
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
-    const businessName = urlParams.get('business_name');
+    const businessCount = urlParams.get('business_count');
+    const businessNames = urlParams.get('business_names');
 
-    if (success === 'google_connected' && businessName && user?.id && businessId) {
+    if (success === 'google_connected' && businessCount && businessNames && user?.id) {
       // Show success toast
       onShowToast({
         type: 'success',
         title: 'Successfully Connected! 🎉',
-        message: `Your Google Business Profile "${decodeURIComponent(businessName)}" is now connected and ready to sync reviews.`
+        message: `Connected ${businessCount} business${parseInt(businessCount) > 1 ? 'es' : ''}: ${decodeURIComponent(businessNames)}`
       });
 
-      // Refresh connection status
-      setTimeout(() => {
-        loadConnectionStatus();
-      }, 500);
+      // Clear URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('success');
+      url.searchParams.delete('business_count');
+      url.searchParams.delete('business_names');
+      window.history.replaceState({}, document.title, url.toString());
     }
-  }, [user?.id, businessId, loadConnectionStatus, onShowToast]);
+  }, [user?.id, onShowToast]);
 
   const handleConnect = async () => {
     if (!user?.id) return;
@@ -175,15 +178,14 @@ export default function GoogleBusinessProfileIntegration({
   const handleDisconnect = async () => {
     if (!user?.id) return;
 
-    setIsLoading(true);
+    setIsDisconnecting(true);
     try {
-      console.log('🔌 Disconnecting Google Business Profile...');
+      console.log('🔌 Disconnecting Google Business Account...');
 
       const response = await fetch('/api/auth/google-business/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          businessId,
           userId: user.id
         })
       });
@@ -196,16 +198,19 @@ export default function GoogleBusinessProfileIntegration({
           status: 'disconnected'
         });
 
-        onStatusChange?.({
-          connected: false,
-          status: 'disconnected'
-        });
+        onStatusChange?.(false);
+        setDisconnectDialogOpen(false);
 
         onShowToast({
-          type: 'info',
-          title: 'Disconnected Successfully 👋',
-          message: 'Your Google Business Profile has been safely disconnected. You can reconnect anytime.'
+          type: 'success',
+          title: 'Google Account Disconnected 👋',
+          message: `Successfully disconnected ${result.deletedBusinesses.count} business${result.deletedBusinesses.count > 1 ? 'es' : ''}. You can reconnect anytime.`
         });
+
+        // Refresh the page to update the businesses list
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         throw new Error(result.error || 'Failed to disconnect');
       }
@@ -219,7 +224,7 @@ export default function GoogleBusinessProfileIntegration({
         message: errorDetails.message
       });
     } finally {
-      setIsLoading(false);
+      setIsDisconnecting(false);
     }
   };
 
@@ -228,14 +233,19 @@ export default function GoogleBusinessProfileIntegration({
 
     setIsLoading(true);
     try {
-      console.log('🧪 Testing Google Business Profile connection...');
+      console.log('🧪 Testing Google Business Profile connections...');
 
-      // This would call a test endpoint to verify the connection
+      // Test the first connected business (they all share the same tokens)
+      const firstConnectedBusiness = connectedBusinesses.find(b => b.connection_status === 'connected');
+      if (!firstConnectedBusiness) {
+        throw new Error('No connected businesses found');
+      }
+
       const response = await fetch('/api/auth/google-business/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          businessId,
+          businessId: firstConnectedBusiness.id,
           userId: user.id
         })
       });
@@ -246,7 +256,7 @@ export default function GoogleBusinessProfileIntegration({
         onShowToast({
           type: 'success',
           title: 'Connection Test Successful ✅',
-          message: 'Your Google Business Profile integration is working perfectly! Reviews will sync automatically.'
+          message: `Your Google Business Profile integration is working perfectly! All ${connectedBusinesses.filter(b => b.connection_status === 'connected').length} business${connectedBusinesses.filter(b => b.connection_status === 'connected').length > 1 ? 'es' : ''} will sync automatically.`
         });
       } else {
         throw new Error(result.message || 'Connection test failed');
@@ -363,15 +373,71 @@ export default function GoogleBusinessProfileIntegration({
                   <TestTube className="h-4 w-4 mr-1" />
                   Test
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDisconnect}
-                  disabled={isLoading}
-                >
-                  <Unlink className="h-4 w-4 mr-1" />
-                  Disconnect
-                </Button>
+                <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoading || isDisconnecting}
+                    >
+                      <Unlink className="h-4 w-4 mr-1" />
+                      Disconnect Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Disconnect Google Business Profile Account?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>
+                          This will permanently disconnect your Google account and delete <strong>ALL business data</strong> from RepliFast.
+                        </p>
+                        
+                        <div>
+                          <p className="font-medium mb-2">
+                            The following {connectedBusinesses.length} business{connectedBusinesses.length > 1 ? 'es' : ''} will be deleted:
+                          </p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            {connectedBusinesses.map((business, index) => (
+                              <li key={business.id}>
+                                {business.google_business_name || business.google_location_name || business.name}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        <div>
+                          <p className="font-medium mb-2">This action will also delete:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>All reviews and replies for these businesses</li>
+                            <li>All business settings and configurations</li>
+                            <li>All activity history and analytics</li>
+                          </ul>
+                        </div>
+                        
+                        <p className="text-amber-600 dark:text-amber-400">
+                          <strong>Note:</strong> You can reconnect later, but all data will need to be re-synced from Google.
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDisconnecting}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDisconnect}
+                        disabled={isDisconnecting}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      >
+                        {isDisconnecting ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Disconnecting...
+                          </>
+                        ) : (
+                          'Yes, Disconnect Account'
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             ) : connectionStatus.status === 'needs_reconnection' ? (
               <Button
