@@ -367,7 +367,7 @@ export default function LandingPage() {
       {/* How it works Section */}
       <section id="how-it-works" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-10 lg:mb-16">
+          <AnimatedSection className="text-center mb-10 lg:mb-10">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
               ✨ Simple Setup Process
             </AnimatedSection>

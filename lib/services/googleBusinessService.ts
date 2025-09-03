@@ -3,7 +3,7 @@
  * Handles API calls to Google Business Profile with platform credentials
  */
 
-import { refreshAccessToken, discoverBusinessLocations, getBusinessInfo, validateBusinessAccess, type BusinessLocation } from './googleOAuthService';
+import { refreshAccessToken, discoverBusinessLocations, validateBusinessAccess, type BusinessLocation } from './googleOAuthService';
 import { decryptFields, encryptFields } from './encryptionService';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 
@@ -215,13 +215,13 @@ export async function syncReviews(
       (new Date().getTime() - new Date(business.last_review_sync).getTime()) > 30 * 24 * 60 * 60 * 1000; // 30+ days ago
 
     if (needsBackfill) {
-      console.log('🔄 Starting INITIAL BACKFILL - fetching reviews from last 2 years');
+      console.log('🔄 Starting INITIAL BACKFILL - fetching reviews from last 4 years');
       result.syncType = 'initial_backfill';
-      await performInitialBackfill(businessId, result);
+      await performInitialBackfill(businessId, result, options.reviewCount);
     } else {
       console.log('⚡ Starting INCREMENTAL SYNC - fetching only new reviews');
       result.syncType = 'incremental';
-      await performIncrementalSync(businessId, result);
+      await performIncrementalSync(businessId, result, options.reviewCount);
     }
 
     // Update last sync time
@@ -272,24 +272,30 @@ export async function syncReviews(
 }
 
 /**
- * Initial backfill: Fetch all reviews from last 2 years
+ * Initial backfill: Fetch all reviews from last 4 years
  */
-async function performInitialBackfill(businessId: string, result: SyncResult): Promise<void> {
-  const twoYearsAgo = new Date();
-  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+async function performInitialBackfill(businessId: string, result: SyncResult, reviewCount: number): Promise<void> {
+  const fourYearsAgo = new Date();
+  fourYearsAgo.setFullYear(fourYearsAgo.getFullYear() - 4);
 
-  console.log(`📅 Backfill cutoff date: ${twoYearsAgo.toISOString()}`);
+  console.log(`📅 Backfill cutoff date: ${fourYearsAgo.toISOString()}`);
 
   let pageToken: string | undefined = undefined;
   let shouldContinue = true;
   let pagesProcessed = 0;
   let consecutiveOldReviews = 0;
-  const maxPages = 100; // Safety limit
+  
+  // Handle unlimited plans (-1) vs limited plans
+  const isUnlimited = reviewCount === -1;
+  const pageSize = isUnlimited ? 200 : Math.min(reviewCount, 50); // Use larger pages for unlimited
+  const maxPages = isUnlimited ? 500 : Math.ceil(reviewCount / pageSize); // More pages for unlimited
+  
+  console.log(`📊 Plan limits: ${isUnlimited ? 'UNLIMITED' : reviewCount} reviews, ${pageSize} per page, max ${maxPages} pages`);
 
   while (shouldContinue && pagesProcessed < maxPages) {
     try {
       console.log(`📄 Fetching backfill page ${pagesProcessed + 1}`);
-      const reviewsResponse = await fetchReviews(businessId, pageToken, 50);
+      const reviewsResponse = await fetchReviews(businessId, pageToken, pageSize);
 
       if (reviewsResponse.reviews && reviewsResponse.reviews.length > 0) {
         let newReviewsInBatch = 0;
@@ -299,22 +305,22 @@ async function performInitialBackfill(businessId: string, result: SyncResult): P
           try {
             const reviewDate = new Date(googleReview.createTime);
 
-            // Check if review is too old (beyond 2-year cutoff)
-            if (reviewDate < twoYearsAgo) {
+            // Check if review is too old (beyond 4-year cutoff)
+            if (reviewDate < fourYearsAgo) {
               oldReviewsInBatch++;
               consecutiveOldReviews++;
 
-              console.log(`📅 Old review found: ${reviewDate.toLocaleDateString()} vs cutoff ${twoYearsAgo.toLocaleDateString()} (${consecutiveOldReviews} consecutive old)`);
+              console.log(`📅 Old review found: ${reviewDate.toLocaleDateString()} vs cutoff ${fourYearsAgo.toLocaleDateString()} (${consecutiveOldReviews} consecutive old)`);
 
               // If we find 5 consecutive old reviews, stop backfill (much more aggressive)
               if (consecutiveOldReviews >= 5) {
-                console.log(`⏹️ Found ${consecutiveOldReviews} consecutive old reviews beyond 2-year cutoff, stopping backfill`);
+                console.log(`⏹️ Found ${consecutiveOldReviews} consecutive old reviews beyond 4-year cutoff, stopping backfill`);
                 shouldContinue = false;
                 break;
               }
               continue;
             } else {
-              consecutiveOldReviews = 0; // Reset counter for any review within 2-year window
+              consecutiveOldReviews = 0; // Reset counter for any review within 4-year window
             }
 
             // Check for duplicates
@@ -356,9 +362,13 @@ async function performInitialBackfill(businessId: string, result: SyncResult): P
         }
 
         result.totalFetched += reviewsResponse.reviews.length;
-        pagesProcessed++;
+        result.backfillComplete = consecutiveOldReviews >= 5;
+        console.log(`📄 Backfill page ${pagesProcessed} complete: ${newReviewsInBatch} new, ${oldReviewsInBatch} old (beyond 4-year cutoff)`);
 
-        console.log(`📊 Backfill batch complete: ${newReviewsInBatch} new, ${oldReviewsInBatch} too old`);
+        if (consecutiveOldReviews >= 5) {
+          console.log(`✅ Backfill complete - reached 4-year cutoff after ${pagesProcessed} pages`);
+          break;
+        }
 
         // Continue pagination
         if (reviewsResponse.nextPageToken && shouldContinue) {
@@ -391,37 +401,42 @@ async function performInitialBackfill(businessId: string, result: SyncResult): P
 /**
  * Incremental sync: Fetch only reviews newer than our newest review
  */
-async function performIncrementalSync(businessId: string, result: SyncResult): Promise<void> {
+async function performIncrementalSync(businessId: string, result: SyncResult, reviewCount: number): Promise<void> {
   // Get the newest review date we have
   const { data: newestReview, error: newestError } = await supabaseAdmin
     .from('reviews')
     .select('review_date')
     .eq('business_id', businessId)
     .order('review_date', { ascending: false })
-    .limit(1);
+    .limit(1)
+    .single();
 
-  if (newestError) {
-    console.error('❌ Error getting newest review:', newestError);
-    result.errors.push(`Error getting newest review: ${newestError.message}`);
-    return;
+  if (newestError && newestError.code !== 'PGRST116') {
+    throw new Error(`Failed to get newest review: ${newestError.message}`);
   }
 
-  const newestReviewDate = newestReview?.[0]?.review_date
-    ? new Date(newestReview[0].review_date)
-    : new Date(0); // If no reviews, start from epoch
+  const cutoffDate = newestReview?.review_date 
+    ? new Date(newestReview.review_date)
+    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago as fallback
 
-  console.log(`📅 Incremental sync cutoff: ${newestReviewDate.toISOString()}`);
+  console.log(`📅 Incremental cutoff date: ${cutoffDate.toISOString()}`);
 
   let pageToken: string | undefined = undefined;
   let shouldContinue = true;
   let pagesProcessed = 0;
-  let consecutiveDuplicates = 0;
-  const maxPages = 20; // Reasonable limit for incremental sync
+  let consecutiveOldReviews = 0;
+  
+  // Handle unlimited plans (-1) vs limited plans
+  const isUnlimited = reviewCount === -1;
+  const pageSize = isUnlimited ? 200 : Math.min(reviewCount, 50);
+  const maxPages = isUnlimited ? 100 : Math.ceil(reviewCount / pageSize); // Fewer pages needed for incremental
+  
+  console.log(`📊 Incremental limits: ${isUnlimited ? 'UNLIMITED' : reviewCount} reviews, ${pageSize} per page, max ${maxPages} pages`);
 
   while (shouldContinue && pagesProcessed < maxPages) {
     try {
       console.log(`📄 Fetching incremental page ${pagesProcessed + 1}`);
-      const reviewsResponse = await fetchReviews(businessId, pageToken, 50);
+      const reviewsResponse = await fetchReviews(businessId, pageToken, pageSize);
 
       if (reviewsResponse.reviews && reviewsResponse.reviews.length > 0) {
         let newReviewsInBatch = 0;
@@ -433,19 +448,19 @@ async function performIncrementalSync(businessId: string, result: SyncResult): P
             const reviewDate = new Date(googleReview.createTime);
 
             // Skip reviews older than our newest review
-            if (reviewDate <= newestReviewDate) {
+            if (reviewDate <= cutoffDate) {
               oldReviewsInBatch++;
-              consecutiveDuplicates++;
+              consecutiveOldReviews++;
 
               // If we find many consecutive old reviews, we've caught up
-              if (consecutiveDuplicates >= 10) {
-                console.log(`⏹️ Found ${consecutiveDuplicates} consecutive old/duplicate reviews, sync complete`);
+              if (consecutiveOldReviews >= 10) {
+                console.log(`⏹️ Found ${consecutiveOldReviews} consecutive old/duplicate reviews, sync complete`);
                 shouldContinue = false;
                 break;
               }
               continue;
             } else {
-              consecutiveDuplicates = 0; // Reset counter
+              consecutiveOldReviews = 0; // Reset counter
             }
 
             // Check for duplicates

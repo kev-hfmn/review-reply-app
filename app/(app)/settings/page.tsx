@@ -83,6 +83,16 @@ interface AutomationSettings {
   lastAutomationRun?: string;
 }
 
+interface ConnectedBusiness {
+  id: string;
+  name: string;
+  google_business_name?: string;
+  google_location_name?: string;
+  connection_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface BillingInfo {
   plan: 'basic' | 'starter' | 'pro' | 'pro plus';
   status: 'active' | 'past_due' | 'canceled';
@@ -174,6 +184,8 @@ function SettingsPage() {
     lastAutomationRun: undefined
   });
 
+  const [connectedBusinesses, setConnectedBusinesses] = useState<ConnectedBusiness[]>([]);
+
   // Helper function to show toast notifications
   const showToast = (toast: Omit<ToastNotification, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -249,6 +261,22 @@ function SettingsPage() {
       setIsLoading(true);
       try {
         console.log('Loading settings for user:', user.id);
+
+        // Load all businesses for this user first
+        const { data: businesses, error: businessesError } = await supabase
+          .from('businesses')
+          .select('id, name, google_business_name, google_location_name, connection_status, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (businessesError) {
+          console.error('Error loading businesses:', businessesError);
+        } else {
+          console.log('Loaded businesses:', businesses);
+          if (mounted) {
+            setConnectedBusinesses(businesses || []);
+          }
+        }
 
         // Use the selected business from AuthContext
         if (!selectedBusinessId) {
@@ -713,7 +741,7 @@ function SettingsPage() {
         {activeTab === 'integrations' && (
           <div className="space-y-6">
             <GoogleBusinessProfileIntegration
-              businessId={null}
+              connectedBusinesses={connectedBusinesses}
               onShowToast={showToast}
             />
           </div>
@@ -1411,7 +1439,7 @@ function SettingsPage() {
 
             {/* New Platform OAuth Integration */}
             <GoogleBusinessProfileIntegration
-              businessId={selectedBusinessId || null}
+              connectedBusinesses={connectedBusinesses}
               onShowToast={showToast}
             />
 
