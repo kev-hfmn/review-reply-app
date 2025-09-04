@@ -37,6 +37,17 @@ const FORBIDDEN_WORDS = [
   'commitment to excellence', 'exceed your expectations', 'valued customer', 'top priority'
 ];
 
+/**
+ * Clean em dashes and en dashes from AI-generated text to prevent AI detection
+ * Replaces various dash types with regular hyphens for more natural text
+ */
+function cleanEmDashes(text: string): string {
+  return text
+    .replace(/—/g, ' - ')  // Em dash to regular dash
+    .replace(/–/g, ' - ')  // En dash to regular dash
+    .replace(/--/g, ' - '); // Double dash to single dash
+}
+
 function buildSystemPrompt(brandVoice: BrandVoiceSettings, businessInfo: BusinessInfo) {
   const { preset, formality, warmth, customInstruction } = brandVoice;
   const { name, industry, contactEmail, phone } = businessInfo;
@@ -131,7 +142,7 @@ function getContextualBrevityGuidance(brevity: number, review: ReviewData): stri
       break;
     case 5: // Very concise
       baseMaxWords = isLowRating ? 25 : 18;
-      baseMinWords = isLowRating ? 15 : 10;
+      baseMinWords = isLowRating ? 15 : 8;
       break;
     default:
       baseMaxWords = 35;
@@ -235,7 +246,7 @@ export async function generateAIReply(
 
   // Call OpenAI API
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4.1-nano',
+    model: 'gpt-4.1-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -246,13 +257,14 @@ export async function generateAIReply(
   });
 
   // Extract and validate response
-  const reply = completion.choices[0]?.message?.content?.trim();
+  const rawReply = completion.choices[0]?.message?.content?.trim();
 
-  if (!reply) {
+  if (!rawReply) {
     throw new Error('No reply generated');
   }
 
-  // No post-processing trimming - let OpenAI handle natural response length within token limits
+  // Clean em dashes and en dashes to prevent AI detection
+  const reply = cleanEmDashes(rawReply);
 
   return {
     reply,
