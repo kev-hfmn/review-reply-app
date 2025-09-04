@@ -1,70 +1,68 @@
 import type { MetadataRoute } from 'next';
+import { BlogService } from '@/lib/services/blogService';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://replifast.com';
   const currentDate = new Date();
 
-  return [
+  // Static pages
+  const staticPages = [
     // Main landing page - highest priority
     {
       url: baseUrl,
       lastModified: currentDate,
-      changeFrequency: 'weekly',
+      changeFrequency: 'weekly' as const,
       priority: 1,
     },
     // Public contact page - good for SEO
     {
       url: `${baseUrl}/contact`,
       lastModified: currentDate,
-      changeFrequency: 'monthly',
+      changeFrequency: 'monthly' as const,
       priority: 0.7,
     },
     // Legal/compliance pages - good for trust and compliance
     {
       url: `${baseUrl}/privacy`,
       lastModified: currentDate,
-      changeFrequency: 'yearly',
+      changeFrequency: 'yearly' as const,
       priority: 0.5,
     },
     {
       url: `${baseUrl}/terms`,
       lastModified: currentDate,
-      changeFrequency: 'yearly',
+      changeFrequency: 'yearly' as const,
       priority: 0.5,
     },
     {
       url: `${baseUrl}/cookies`,
       lastModified: currentDate,
-      changeFrequency: 'yearly',
+      changeFrequency: 'yearly' as const,
       priority: 0.4,
     },
     // Blog section - high priority for content marketing and SEO
     {
       url: `${baseUrl}/blog`,
       lastModified: currentDate,
-      changeFrequency: 'weekly',
+      changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
-    // Individual blog posts - will be dynamically generated in production
-    {
-      url: `${baseUrl}/blog/improve-ui-design-skills`,
-      lastModified: new Date('2024-01-20'),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/relentless-pursuit-perfection-product-design`,
-      lastModified: new Date('2024-01-18'),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/blog/successful-business-with-partner`,
-      lastModified: new Date('2024-01-15'),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    // Note: Removed auth pages (/login, /reset-password, /verify-email) and payment pages (/pay)
-    // These should not be indexed by search engines as they're private/functional pages
   ];
+
+  // Dynamic blog posts
+  let blogPages: MetadataRoute.Sitemap = [];
+  try {
+    const { posts } = await BlogService.getPosts({ per_page: 100 }); // Get all published posts
+    blogPages = posts.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(post.updated_at || post.published_at),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }));
+  } catch (error) {
+    console.error('Error generating blog sitemap entries:', error);
+    // Continue with static pages only if blog fetch fails
+  }
+
+  return [...staticPages, ...blogPages];
 }
