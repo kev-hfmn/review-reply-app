@@ -147,7 +147,7 @@ export default function LandingPage() {
   return (
     <NavigationWrapper navigationSections={publicNavigationSections}>
       {/* Hero Section with Extended Particles Background */}
-      <section id="home" className="relative overflow-hidden bg-foreground/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/20 to-foreground/50 ">
+      <section id="home" className="relative overflow-hidden bg-secondary/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/25 to-secondary/70 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
         {/* Darker overlay for light mode */}

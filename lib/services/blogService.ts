@@ -1,5 +1,6 @@
 import { supabase } from '@/utils/supabase';
 import { BlogPost, BlogPostsResponse, BlogFilters } from '@/types/blog';
+import { getSupabaseImageUrl, transformImageUrlsInContent } from '@/lib/utils/imageUtils';
 
 // Database type for Supabase responses
 interface BlogPostRow {
@@ -22,6 +23,34 @@ interface BlogPostRow {
   published: boolean;
   category: string;
   tags: string[];
+}
+
+/**
+ * Transforms a BlogPostRow from database to BlogPost with proper image URLs
+ */
+function transformBlogPostData(postRow: BlogPostRow): BlogPost {
+  return {
+    id: postRow.id,
+    title: postRow.title,
+    slug: postRow.slug,
+    excerpt: postRow.excerpt,
+    content: transformImageUrlsInContent(postRow.content),
+    author: {
+      name: postRow.author_name,
+      role: postRow.author_role,
+      avatar: getSupabaseImageUrl(postRow.author_avatar) || undefined,
+    },
+    featured_image: getSupabaseImageUrl(postRow.featured_image) || undefined,
+    published_at: postRow.published_at,
+    created_at: postRow.created_at,
+    updated_at: postRow.updated_at,
+    tags: postRow.tags || [],
+    category: postRow.category || '',
+    read_time: postRow.read_time || 5,
+    is_featured: postRow.is_featured || false,
+    meta_title: postRow.meta_title,
+    meta_description: postRow.meta_description,
+  };
 }
 
 export class BlogService {
@@ -69,29 +98,8 @@ export class BlogService {
         throw error;
       }
 
-      // Transform data to match BlogPost interface
-      const posts: BlogPost[] = (data || []).map((post: BlogPostRow) => ({
-        id: post.id,
-        title: post.title,
-        slug: post.slug,
-        excerpt: post.excerpt,
-        content: post.content,
-        author: {
-          name: post.author_name,
-          role: post.author_role,
-          avatar: post.author_avatar,
-        },
-        featured_image: post.featured_image,
-        published_at: post.published_at,
-        created_at: post.created_at,
-        updated_at: post.updated_at,
-        tags: post.tags || [],
-        category: post.category || '',
-        read_time: post.read_time || 5,
-        is_featured: post.is_featured || false,
-        meta_title: post.meta_title,
-        meta_description: post.meta_description,
-      }));
+      // Transform data to match BlogPost interface with proper image URLs
+      const posts: BlogPost[] = (data || []).map((post: BlogPostRow) => transformBlogPostData(post));
 
       const total = count || 0;
       const total_pages = Math.ceil(total / per_page);
@@ -132,30 +140,7 @@ export class BlogService {
       if (!data) return null;
 
       const postRow = data as BlogPostRow;
-      const post: BlogPost = {
-        id: postRow.id,
-        title: postRow.title,
-        slug: postRow.slug,
-        excerpt: postRow.excerpt,
-        content: postRow.content,
-        author: {
-          name: postRow.author_name,
-          role: postRow.author_role,
-          avatar: postRow.author_avatar,
-        },
-        featured_image: postRow.featured_image,
-        published_at: postRow.published_at,
-        created_at: postRow.created_at,
-        updated_at: postRow.updated_at,
-        tags: postRow.tags || [],
-        category: postRow.category || '',
-        read_time: postRow.read_time || 5,
-        is_featured: postRow.is_featured || false,
-        meta_title: postRow.meta_title,
-        meta_description: postRow.meta_description,
-      };
-
-      return post;
+      return transformBlogPostData(postRow);
     } catch (error) {
       console.error('BlogService.getPostBySlug error:', error);
       throw error;
@@ -167,51 +152,37 @@ export class BlogService {
    */
   static async getRelatedPosts(currentPost: BlogPost, limit: number = 3): Promise<BlogPost[]> {
     try {
-      if (!currentPost.tags || currentPost.tags.length === 0) {
-        return [];
-      }
-
-      const { data, error } = await supabase
+      // First, try to get posts from the same category
+      let { data, error } = await supabase
         .from('blog_posts')
         .select('*')
         .neq('id', currentPost.id)
         .eq('published', true)
-        .or(`category.eq.${currentPost.category},tags.cs.{${currentPost.tags.join(',')}}`)
+        .eq('category', currentPost.category)
         .order('published_at', { ascending: false })
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching related posts:', error);
-        throw error;
+        console.error('Error fetching related posts by category:', error);
+        // Fall back to just getting recent posts
+        ({ data, error } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .neq('id', currentPost.id)
+          .eq('published', true)
+          .order('published_at', { ascending: false })
+          .limit(limit));
+        
+        if (error) {
+          console.error('Error fetching recent posts as fallback:', error);
+          return [];
+        }
       }
 
-      const posts: BlogPost[] = (data || []).map((post: BlogPostRow) => ({
-        id: post.id,
-        title: post.title,
-        slug: post.slug,
-        excerpt: post.excerpt,
-        content: post.content,
-        author: {
-          name: post.author_name,
-          role: post.author_role,
-          avatar: post.author_avatar,
-        },
-        featured_image: post.featured_image,
-        published_at: post.published_at,
-        created_at: post.created_at,
-        updated_at: post.updated_at,
-        tags: post.tags || [],
-        category: post.category || '',
-        read_time: post.read_time || 5,
-        is_featured: post.is_featured || false,
-        meta_title: post.meta_title,
-        meta_description: post.meta_description,
-      }));
-
-      return posts;
+      return (data || []).map((post: BlogPostRow) => transformBlogPostData(post));
     } catch (error) {
       console.error('BlogService.getRelatedPosts error:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -233,31 +204,7 @@ export class BlogService {
         throw error;
       }
 
-      // Transform data to match BlogPost interface
-      const posts: BlogPost[] = (data || []).map((post: BlogPostRow) => ({
-        id: post.id,
-        title: post.title,
-        slug: post.slug,
-        excerpt: post.excerpt,
-        content: post.content,
-        author: {
-          name: post.author_name,
-          role: post.author_role,
-          avatar: post.author_avatar,
-        },
-        featured_image: post.featured_image,
-        published_at: post.published_at,
-        created_at: post.created_at,
-        updated_at: post.updated_at,
-        tags: post.tags || [],
-        category: post.category || '',
-        read_time: post.read_time || 5,
-        is_featured: post.is_featured || false,
-        meta_title: post.meta_title,
-        meta_description: post.meta_description,
-      }));
-
-      return posts;
+      return (data || []).map((post: BlogPostRow) => transformBlogPostData(post));
     } catch (error) {
       console.error('BlogService.getFeaturedPosts error:', error);
       throw error;

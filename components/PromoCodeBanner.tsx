@@ -34,7 +34,7 @@ export function PromoCodeBanner() {
 
 
         <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-          🎉 Launch Special: 30% Off All Plans!
+          🎉 Launch Special: 33% Off All Plans!
         </h3>
 
         <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6  max-w-2xl mx-auto">

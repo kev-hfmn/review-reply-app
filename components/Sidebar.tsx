@@ -71,7 +71,7 @@ export function Sidebar() {
           {/* Logo area - hidden on mobile since it's in TopBar */}
           <div className="hidden lg:flex h-16 items-center pl-6 pr-2 border-b border-border">
             <div className="flex items-center gap-1 w-full min-w-0">
-              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mr-1" />
               {businesses.length > 1 ? (
                 <Select
                   value={selectedBusinessId || ''}
@@ -99,7 +99,7 @@ export function Sidebar() {
                   </SelectContent>
                 </Select>
               ) : (
-                <span className="font-normal leading-tighter text-foreground/90 truncate min-w-0 flex-1">
+                <span className="font-medium leading-tighter text-foreground/90 truncate min-w-0 flex-1">
                   {businesses[0]?.name || 'Your Business'}
                 </span>
               )}

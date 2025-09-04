@@ -8,6 +8,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   webpack: (config, { isServer }) => {
     config.ignoreWarnings = [
       { module: /node_modules\/punycode/ }

@@ -10,6 +10,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Suspense } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { ProfilePricingSection } from '@/components/ProfilePricingSection';
+import { PromoCodeBanner } from '@/components/PromoCodeBanner';
 import ToastNotifications from '@/components/ToastNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -467,6 +468,9 @@ function ProfileContent() {
           </CardContent>
         </Card>
       )}
+
+        {/* Promo Code Banner */}
+        <PromoCodeBanner />
 
         {/* Pricing Section for Upgrades */}
         <ProfilePricingSection

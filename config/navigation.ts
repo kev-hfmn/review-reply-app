@@ -5,5 +5,5 @@ export const publicNavigationSections = [
   // { id: 'testimonials', title: 'Testimonials' },
   { id: 'faq', title: 'FAQ' },
   { id: 'contact', title: 'Contact' },
-  //{ id: 'blog', title: 'Blog' },
+  { id: 'blog', title: 'Blog' },
 ];
