@@ -13,9 +13,9 @@ import { TableOfContents } from '@/components/TableOfContents';
 import { format } from 'date-fns';
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function getPostData(slug: string) {
@@ -52,7 +52,8 @@ async function getPostData(slug: string) {
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = await BlogService.getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await BlogService.getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -83,7 +84,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { post, latestPosts } = await getPostData(params.slug);
+  const { slug } = await params;
+  const { post, latestPosts } = await getPostData(slug);
 
   if (!post) {
     notFound();
