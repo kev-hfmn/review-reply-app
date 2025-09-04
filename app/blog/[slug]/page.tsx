@@ -10,6 +10,7 @@ import { BlogPost } from '@/types/blog';
 import { BlogService } from '@/lib/services/blogService';
 import { BlogPostCard } from '@/components/BlogPostCard';
 import { TableOfContents } from '@/components/TableOfContents';
+import { BlogSEO } from '@/components/BlogSEO';
 import { format } from 'date-fns';
 
 interface BlogPostPageProps {
@@ -62,23 +63,65 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     };
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://replifast.com';
+  const canonicalUrl = `${siteUrl}/blog/${post.slug}`;
+
   return {
     title: post.meta_title || post.title,
     description: post.meta_description || post.excerpt,
+    keywords: post.tags.join(', '),
+    authors: [{ name: post.author.name }],
+    creator: post.author.name,
+    publisher: 'RepliFast',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: post.meta_title || post.title,
       description: post.meta_description || post.excerpt,
       type: 'article',
       publishedTime: post.published_at,
+      modifiedTime: post.updated_at,
       authors: [post.author.name],
       tags: post.tags,
-      images: post.featured_image ? [{ url: post.featured_image }] : undefined,
+      url: canonicalUrl,
+      siteName: 'RepliFast',
+      locale: 'en_US',
+      images: post.featured_image ? [{
+        url: post.featured_image,
+        width: 1200,
+        height: 630,
+        alt: post.title,
+      }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: post.meta_title || post.title,
       description: post.meta_description || post.excerpt,
-      images: post.featured_image ? [post.featured_image] : undefined,
+      site: '@replifast',
+      creator: '@replifast',
+      images: post.featured_image ? [{
+        url: post.featured_image,
+        alt: post.title,
+      }] : undefined,
+    },
+    other: {
+      'article:published_time': post.published_at,
+      'article:modified_time': post.updated_at,
+      'article:author': post.author.name,
+      'article:section': post.category,
+      'article:tag': post.tags.join(','),
     },
   };
 }
@@ -92,7 +135,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <BlogSEO post={post} />
+      <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-primary/60 via-accent/40 to-secondary/40 pt-16 pb-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -221,5 +266,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
