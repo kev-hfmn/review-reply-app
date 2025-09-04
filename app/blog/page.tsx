@@ -1,13 +1,12 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { CalendarIcon, ClockIcon, UserIcon } from 'lucide-react';
 import { BlogPost } from '@/types/blog';
 import { BlogService } from '@/lib/services/blogService';
 import { BlogPostCard } from '@/components/BlogPostCard';
+import { format } from 'date-fns';
 
 export const metadata: Metadata = {
   title: 'Blog | RepliFast - Customer Review Management Insights',
@@ -36,9 +35,9 @@ export default async function BlogPage() {
   const regularPosts = posts.filter((post: BlogPost) => !post.is_featured);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/40 to-accent-foreground/60">
+    <div className="min-h-screen ">
       {/* Hero Section */}
-      <div className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8">
+      <div className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/60 via-accent/40 to-secondary/40">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
             <Badge variant="secondary" className="mb-4 bg-background/50 text-muted-foreground border-border">
@@ -67,37 +66,43 @@ export default async function BlogPage() {
       </div>
 
       {/* Blog Posts Grid */}
-      <div className="bg-white">
+      <div className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           {/* Featured Post */}
           {featuredPost && (
             <div className="mb-16">
-              <Link href={`/blog/${featuredPost.slug}`}>
-                <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                  <div className="relative h-64 md:h-96">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-amber-500/20 z-10" />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 md:px-16 text-foreground">
+              <div className="relative bg-muted/30 rounded-2xl border border-border/50 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                <Link href={`/blog/${featuredPost.slug}`}>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[400px]">
+                    {/* Left Column - Content */}
+                    <div className="flex flex-col justify-center p-8 lg:p-12">
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {featuredPost.tags.map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="bg-white/30 text-muted-foreground border-border hover:bg-white/50 hover:text-foreground">
+                        <Badge variant="default" className="text-xs font-medium">
+                          Featured
+                        </Badge>
+                        {featuredPost.tags.slice(0, 2).map((tag: string) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
                       </div>
-                      <h2 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
+
+                      <h2 className="text-xl md:text-2xl lg:text-2xl font-semibold mb-4 leading-tight text-foreground group-hover:text-primary transition-colors">
                         {featuredPost.title}
                       </h2>
-                      <p className="text-md md:text-lg text-foreground/90 mb-6 max-w-3xl">
+
+                      <p className="text-lg text-muted-foreground mb-6 line-clamp-3">
                         {featuredPost.excerpt}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-foreground/80">
+
+                      <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <UserIcon className="h-4 w-4" />
                           <span>{featuredPost.author.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4" />
-                          <span>{new Date(featuredPost.published_at).toLocaleDateString()}</span>
+                          <span>{format(new Date(featuredPost.published_at), 'MMM dd, yyyy')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <ClockIcon className="h-4 w-4" />
@@ -105,9 +110,30 @@ export default async function BlogPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Right Column - Image */}
+                    <div className="relative lg:order-last order-first">
+                      {featuredPost.featured_image ? (
+                        <div className="relative h-64 lg:h-full w-full">
+                          <Image
+                            src={featuredPost.featured_image}
+                            alt={featuredPost.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-transparent lg:to-background/20" />
+                        </div>
+                      ) : (
+                        <div className="relative h-64 lg:h-full w-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                          <div className="text-6xl font-bold text-primary/20">
+                            {featuredPost.title.charAt(0)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </Card>
-              </Link>
+                </Link>
+              </div>
             </div>
           )}
 

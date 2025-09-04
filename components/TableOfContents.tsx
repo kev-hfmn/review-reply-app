@@ -20,57 +20,86 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   // Extract headings and set up everything after component mounts
   useEffect(() => {
     let observer: IntersectionObserver | null = null;
+    let timeouts: NodeJS.Timeout[] = [];
 
     // Wait for the DOM to be fully rendered
-    const timer = setTimeout(() => {
+    const setupTimer = setTimeout(() => {
       const articleElement = document.querySelector('article');
-      if (!articleElement) return;
+      if (!articleElement) {
+        // Try again after a longer delay if article not found
+        const retryTimer = setTimeout(() => {
+          const retryArticle = document.querySelector('article');
+          if (retryArticle) setupTOC(retryArticle);
+        }, 500);
+        timeouts.push(retryTimer);
+        return;
+      }
 
-      const domHeadings = articleElement.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      
+      setupTOC(articleElement);
+    }, 200);
+    timeouts.push(setupTimer);
+
+    function setupTOC(articleElement: Element) {
+      const domHeadings = articleElement.querySelectorAll('h2');
+
       const extractedHeadings: Heading[] = Array.from(domHeadings).map((heading, index) => {
         const text = heading.textContent || '';
         const level = parseInt(heading.tagName.charAt(1));
-        
+
         // Create a slug from the heading text
-        const id = text
+        let id = text
           .toLowerCase()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
-          .trim()
-          || `heading-${index}`;
-        
+          .trim();
+
+        if (!id) {
+          id = `heading-${index}`;
+        }
+
+        // Ensure unique IDs
+        let finalId = id;
+        let counter = 1;
+        while (document.getElementById(finalId)) {
+          finalId = `${id}-${counter}`;
+          counter++;
+        }
+
         // Add the ID to the actual heading element
-        heading.id = id;
-        
-        return { id, text, level };
+        heading.id = finalId;
+
+        return { id: finalId, text, level };
       });
-      
+
       setHeadings(extractedHeadings);
 
       // Set up intersection observer for scroll tracking
       if (extractedHeadings.length > 0) {
         observer = new IntersectionObserver(
           (entries) => {
-            // Find the entry that's most visible
-            let maxRatio = 0;
-            let activeEntry: IntersectionObserverEntry | null = null;
+            // Find all intersecting entries
+            const intersectingEntries = entries.filter(entry => entry.isIntersecting);
 
-            entries.forEach((entry) => {
-              if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
-                maxRatio = entry.intersectionRatio;
-                activeEntry = entry;
-              }
-            });
+            if (intersectingEntries.length > 0) {
+              // Find the one closest to the top of the viewport
+              let closestEntry = intersectingEntries[0];
+              let closestDistance = Math.abs(intersectingEntries[0].boundingClientRect.top);
 
-            if (activeEntry) {
-              setActiveId(activeEntry.target.id);
+              intersectingEntries.forEach((entry) => {
+                const distance = Math.abs(entry.boundingClientRect.top);
+                if (distance < closestDistance) {
+                  closestDistance = distance;
+                  closestEntry = entry;
+                }
+              });
+
+              setActiveId(closestEntry.target.id);
             }
           },
           {
-            rootMargin: '-100px 0px -66% 0px',
-            threshold: [0, 0.25, 0.5, 0.75, 1],
+            rootMargin: '-20% 0px -60% 0px',
+            threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
           }
         );
 
@@ -82,15 +111,28 @@ export function TableOfContents({ content }: TableOfContentsProps) {
           }
         });
 
-        // Set initial active heading
-        if (extractedHeadings.length > 0) {
-          setActiveId(extractedHeadings[0].id);
-        }
+        // Set initial active heading based on current scroll position
+        const initialActiveTimer = setTimeout(() => {
+          const scrollPosition = window.scrollY + window.innerHeight * 0.3;
+          let activeHeading = extractedHeadings[0];
+
+          for (const heading of extractedHeadings) {
+            const element = document.getElementById(heading.id);
+            if (element && element.offsetTop <= scrollPosition) {
+              activeHeading = heading;
+            } else {
+              break;
+            }
+          }
+
+          setActiveId(activeHeading.id);
+        }, 100);
+        timeouts.push(initialActiveTimer);
       }
-    }, 100); // Small delay to ensure DOM is ready
+    }
 
     return () => {
-      clearTimeout(timer);
+      timeouts.forEach(timeout => clearTimeout(timeout));
       if (observer) {
         observer.disconnect();
       }
@@ -100,36 +142,37 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   const handleClick = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      // Calculate offset to account for sticky header
-      const offsetTop = element.offsetTop - 120;
-      
+      // Get the element's position relative to the document
+      const elementRect = element.getBoundingClientRect();
+      const bodyRect = document.body.getBoundingClientRect();
+      const elementTop = elementRect.top - bodyRect.top;
+
+      // Calculate offset to account for header and some padding
+      const offsetTop = elementTop - 120;
+
       window.scrollTo({
-        top: offsetTop,
+        top: Math.max(0, offsetTop),
         behavior: 'smooth',
       });
-      
+
       // Update active state immediately
       setActiveId(id);
+
+      // Optional: Update URL hash without triggering scroll
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', `#${id}`);
+      }
     }
   };
 
   if (headings.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <h3 className="font-semibold text-gray-900">Table of Contents</h3>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">No headings found</p>
-        </CardContent>
-      </Card>
-    );
+    return null; // Don't render anything if no headings found
   }
 
   return (
     <Card>
       <CardHeader>
-        <h3 className="font-semibold text-gray-900">Table of Contents</h3>
+        <h3 className="font-semibold text-foreground/80">Table of Contents</h3>
       </CardHeader>
       <CardContent className="space-y-1">
         {headings.map(({ id, text, level }) => (
@@ -137,15 +180,11 @@ export function TableOfContents({ content }: TableOfContentsProps) {
             key={id}
             onClick={() => handleClick(id)}
             className={`
-              block w-full text-left text-sm transition-colors duration-200 py-2 px-3 rounded-md
-              ${level === 2 ? 'pl-3' : ''}
-              ${level === 3 ? 'pl-6' : ''}
-              ${level === 4 ? 'pl-9' : ''}
-              ${level >= 5 ? 'pl-12' : ''}
+              block w-full text-left text-sm transition-all duration-200 py-2 px-3 rounded-md relative
               ${
                 activeId === id
-                  ? 'text-blue-600 bg-blue-50 font-medium border-l-2 border-blue-600'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  ? 'text-foreground/90 bg-muted font-medium border-l-2 border-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground/90 hover:bg-muted hover:border-l-2 hover:border-primary'
               }
             `}
           >

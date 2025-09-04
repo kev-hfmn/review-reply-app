@@ -28,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/contexts/AuthContext';
 import { useInsightsData, downloadBlob, type TimePeriodType } from '@/hooks/useInsightsData';
 import { supabase } from '@/utils/supabase';
+import { format } from 'date-fns';
 import type { Business } from '@/types/dashboard';
 import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
 import { hasFeature } from '@/lib/utils/subscription-client';
@@ -177,7 +178,7 @@ export default function InsightsPage() {
   const hasInsightsAccess = subscriptionQuery.data ? hasFeature(subscriptionQuery.data.planId, 'advancedInsights') : false;
   const currentPlan = subscriptionQuery.data?.planId || 'basic';
   const planName = currentPlan === 'basic' ? 'Basic' : currentPlan === 'starter' ? 'Starter' : currentPlan === 'pro' ? 'Pro' : 'Pro Plus';
-  
+
   // Show upgrade prompt for users without insights access
   if (!hasInsightsAccess) {
     return (
@@ -261,7 +262,7 @@ export default function InsightsPage() {
   // Error state
   if (error && !insights) {
     const isSubscriptionError = error.includes('Pro plan') || error.includes('subscription') || error.includes('require');
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -413,7 +414,7 @@ export default function InsightsPage() {
             </h1>
             <div className="flex items-center gap-4 mt-1">
               <p className="text-muted-foreground">
-                {insights ? `${new Date(insights.week_start).toLocaleDateString()} - ${new Date(insights.week_end).toLocaleDateString()}` : selectedPeriod.label}
+                {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
               </p>
 
               {lastGenerated && (
@@ -549,7 +550,7 @@ export default function InsightsPage() {
           </h1>
           <div className="flex items-center gap-4 mt-1">
             <p className="text-muted-foreground">
-              {insights ? `${new Date(insights.week_start).toLocaleDateString()} - ${new Date(insights.week_end).toLocaleDateString()}` : selectedPeriod.label}
+              {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
             </p>
 
             {lastGenerated && (
@@ -856,7 +857,7 @@ export default function InsightsPage() {
                               <div className="text-xs text-muted-foreground">
                                 <strong className="text-blue-600">Business Impact:</strong> {tooltipData.impact}
                               </div>
-                              <div className="text-xs text-purple-600 font-medium">
+                              <div className="text-xs text-foreground font-medium">
                                 <strong>How to Leverage:</strong> {tooltipData.action}
                               </div>
                             </div>
