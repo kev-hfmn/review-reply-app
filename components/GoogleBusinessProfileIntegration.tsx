@@ -12,7 +12,8 @@ import {
   Unlink,
   Info,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,6 +82,7 @@ export default function GoogleBusinessProfileIntegration({
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [currentError, setCurrentError] = useState<GoogleBusinessErrorType | null>(null);
+  const [removingBusinessId, setRemovingBusinessId] = useState<string | null>(null);
 
   // Update connection status based on connected businesses
   const updateConnectionStatus = useCallback(() => {
@@ -276,6 +278,52 @@ export default function GoogleBusinessProfileIntegration({
     }
   };
 
+  const handleRemoveBusiness = async (businessId: string, businessName: string) => {
+    if (!user?.id) return;
+
+    setRemovingBusinessId(businessId);
+    try {
+      console.log('🗑️ Removing business:', businessId);
+
+      const response = await fetch('/api/auth/google-business/remove-business', {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          businessId,
+          userId: user.id 
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        onShowToast({
+          type: 'success',
+          title: 'Business Removed ✅',
+          message: `${businessName} has been disconnected successfully`
+        });
+
+        // Refresh the page to update the businesses list
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        throw new Error(result.error || 'Failed to remove business');
+      }
+    } catch (error) {
+      console.error('❌ Business removal failed:', error);
+      onShowToast({
+        type: 'error',
+        title: 'Removal Failed',
+        message: 'Failed to remove business. Please try again.'
+      });
+    } finally {
+      setRemovingBusinessId(null);
+    }
+  };
+
   const getStatusIcon = () => {
     switch (connectionStatus.status) {
       case 'connected':
@@ -345,12 +393,70 @@ export default function GoogleBusinessProfileIntegration({
                 {getStatusBadge()}
               </div>
 
-              {connectionStatus.businessInfo && (
-                <div className="mt-1 text-sm text-muted-foreground">
-                  <p className="font-medium">{connectionStatus.businessInfo.businessName}</p>
-                  <p>{connectionStatus.businessInfo.locationName}</p>
-                </div>
-              )}
+              {/* Business Info - Single or Multiple */}
+              {connectionStatus.connected && (() => {
+                const connectedBusinessList = connectedBusinesses.filter(b => b.connection_status === 'connected');
+                const hasMultipleBusinesses = connectedBusinessList.length > 1;
+
+                if (hasMultipleBusinesses) {
+                  return (
+                    <div className="mt-3 space-y-3">
+                      <div className="text-sm font-medium text-foreground">
+                        Connected Businesses ({connectedBusinessList.length})
+                      </div>
+                      {connectedBusinessList.map(business => (
+                        <div key={business.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-muted/20">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <div>
+                              <div className="font-medium text-sm text-foreground">
+                                {business.google_business_name || business.name}
+                              </div>
+                              {business.google_location_name && (
+                                <div className="text-xs text-muted-foreground">
+                                  {business.google_location_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            disabled={removingBusinessId === business.id || connectedBusinessList.length === 1}
+                            onClick={() => handleRemoveBusiness(business.id, business.google_business_name || business.name)}
+                            className="text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40"
+                          >
+                            {removingBusinessId === business.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Remove
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                      {connectedBusinessList.length === 1 && (
+                        <p className="text-xs text-muted-foreground">
+                          Cannot remove the last connected business. Use "Disconnect Account" to remove all businesses.
+                        </p>
+                      )}
+                    </div>
+                  );
+                } else if (connectedBusinessList.length === 1) {
+                  const business = connectedBusinessList[0];
+                  return (
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      <p className="font-medium">{business.google_business_name || business.name}</p>
+                      {business.google_location_name && (
+                        <p>{business.google_location_name}</p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {connectionStatus.lastSync && (
                 <p className="text-xs text-muted-foreground mt-1">
