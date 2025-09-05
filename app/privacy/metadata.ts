@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Privacy Policy - Data Protection & Privacy Rights | RepliFast",
     description: "Learn how RepliFast protects your privacy and handles your data. Complete privacy policy and GDPR compliance information.",
-    url: "https://replifast.com/privacy"
+    url: "https://www.replifast.com/privacy"
   },
   twitter: {
     title: "Privacy Policy - Data Protection & Privacy Rights | RepliFast",
     description: "Learn how RepliFast protects your privacy and handles your data."
   },
   alternates: {
-    canonical: "https://replifast.com/privacy"
+    canonical: "https://www.replifast.com/privacy"
   }
 };

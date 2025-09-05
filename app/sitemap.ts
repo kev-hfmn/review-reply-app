@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { BlogService } from '@/lib/services/blogService';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://replifast.com';
+  const baseUrl = 'https://www.replifast.com';
   const currentDate = new Date();
 
   // Static pages

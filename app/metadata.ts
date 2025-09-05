@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://replifast.com"),
+  metadataBase: new URL("https://www.replifast.com"),
   title: {
     default: "Reply to Google Reviews Automatically | RepliFast",
     template: "%s | RepliFast"
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Reply to Google Reviews Automatically | RepliFast",
     description:
       "Automate your Google review replies with on‑brand responses. Daily auto‑sync and optional auto‑approve for 4–5★ reviews.",
-    url: "https://replifast.com",
+    url: "https://www.replifast.com",
     images: [
       {
         url: "/og.png",

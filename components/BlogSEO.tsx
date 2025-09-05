@@ -5,7 +5,7 @@ interface BlogSEOProps {
 }
 
 export function BlogSEO({ post }: BlogSEOProps) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://replifast.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.replifast.com';
   const canonicalUrl = `${siteUrl}/blog/${post.slug}`;
   
   // Calculate word count for reading time validation
