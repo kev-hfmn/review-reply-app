@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Contact Us - Get Support & Answers | RepliFast",
     description: "Contact our team for support with RepliFast's AI review management platform. We're here to help with setup, billing, and technical questions.",
-    url: "https://replifast.com/contact"
+    url: "https://www.replifast.com/contact"
   },
   twitter: {
     title: "Contact Us - Get Support & Answers | RepliFast",
     description: "Contact our team for support with RepliFast's AI review management platform. We're here to help with setup, billing, and technical questions."
   },
   alternates: {
-    canonical: "https://replifast.com/contact"
+    canonical: "https://www.replifast.com/contact"
   }
 };

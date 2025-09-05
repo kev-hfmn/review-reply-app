@@ -21,7 +21,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://replifast.com/sitemap.xml',
-    host: 'https://replifast.com',
+    sitemap: 'https://www.replifast.com/sitemap.xml',
+    host: 'https://www.replifast.com',
   };
 }

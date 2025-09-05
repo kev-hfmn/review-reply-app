@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Cookie Policy - Cookie Usage & Preferences | RepliFast",
     description: "Understand how RepliFast uses cookies and manage your cookie preferences. Complete cookie policy information.",
-    url: "https://replifast.com/cookies"
+    url: "https://www.replifast.com/cookies"
   },
   twitter: {
     title: "Cookie Policy - Cookie Usage & Preferences | RepliFast", 
     description: "Understand how RepliFast uses cookies and manage your cookie preferences."
   },
   alternates: {
-    canonical: "https://replifast.com/cookies"
+    canonical: "https://www.replifast.com/cookies"
   }
 };

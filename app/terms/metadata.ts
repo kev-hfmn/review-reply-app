@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Terms of Service - Legal Terms & Conditions | RepliFast",
     description: "Read our terms of service for using RepliFast's AI review management platform. Complete legal terms and user responsibilities.",
-    url: "https://replifast.com/terms"
+    url: "https://www.replifast.com/terms"
   },
   twitter: {
     title: "Terms of Service - Legal Terms & Conditions | RepliFast", 
     description: "Read our terms of service for using RepliFast's AI review management platform."
   },
   alternates: {
-    canonical: "https://replifast.com/terms"
+    canonical: "https://www.replifast.com/terms"
   }
 };
