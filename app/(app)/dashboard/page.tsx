@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const AUTH_TIMEOUT = 15000; // 15 seconds
 
 export default function Dashboard() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, selectedBusinessId } = useAuth();
   const { subscription, fetchSubscription } = useSubscription();
   const [hasCheckedSubscription, setHasCheckedSubscription] = useState(false);
   // Removed trial system - users are either basic or premium subscribers
@@ -145,7 +145,13 @@ export default function Dashboard() {
           </h1>
           {businesses.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
-              Managing {businesses.length} business{businesses.length > 1 ? 'es' : ''}
+              {businesses.length > 1 ? (
+                selectedBusinessId 
+                  ? `Viewing: ${businesses.find(b => b.id === selectedBusinessId)?.name || 'Selected Business'}`
+                  : `Managing ${businesses.length} businesses`
+              ) : (
+                `Managing ${businesses[0]?.name || 'your business'}`
+              )}
             </p>
           )}
         </div>

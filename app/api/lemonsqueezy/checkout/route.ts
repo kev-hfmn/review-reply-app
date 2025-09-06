@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     // Dynamic import to avoid environment variable loading issues
     const { supabaseAdmin } = await import('@/utils/supabase-admin');
-    const { variantId, userId, customData } = await request.json();
+    const { variantId, userId, customData, quantity = 1 } = await request.json();
 
     // Validate required parameters
     if (!variantId || !userId) {
@@ -37,14 +37,82 @@ export async function POST(request: NextRequest) {
 
     if (subscriptionError) {
       console.error('Error checking existing subscriptions:', subscriptionError);
-    } else if (existingSubscriptions && existingSubscriptions.length > 0) {
-      // User already has an active subscription
+    } 
+    
+    // Handle existing subscription - upgrade/change plan instead of blocking
+    if (existingSubscriptions && existingSubscriptions.length > 0) {
       const activeSubscription = existingSubscriptions[0];
       if (new Date(activeSubscription.current_period_end) > new Date()) {
-        return NextResponse.json(
-          { error: 'User already has an active subscription' }, 
-          { status: 409 }
+        console.log('Existing subscription found, attempting plan update...', {
+          currentPlan: activeSubscription.plan_id,
+          newVariantId: variantId,
+          quantity,
+          subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
+          subscriptionKeys: Object.keys(activeSubscription)
+        });
+        
+        // Check if we have the Lemon Squeezy subscription ID
+        if (!activeSubscription.lemonsqueezy_subscription_id) {
+          console.error('No Lemon Squeezy subscription ID found for user subscription:', activeSubscription.id);
+          return NextResponse.json(
+            { error: 'Subscription update not available - missing subscription ID. Please contact support.' },
+            { status: 500 }
+          );
+        }
+        
+        // Use subscription update instead of creating new checkout
+        const { data: updatedSubscription, error: updateError } = await LemonSqueezyService.updateSubscription(
+          activeSubscription.lemonsqueezy_subscription_id,
+          {
+            variantId: variantId,
+            // For Pro Plus with quantity > 1, this handles graduated pricing
+            quantity: quantity > 1 ? quantity : undefined,
+          }
         );
+
+        if (updateError) {
+          console.error('Subscription update failed:', updateError);
+          return NextResponse.json(
+            { error: `Failed to update subscription: ${updateError}` },
+            { status: 500 }
+          );
+        }
+
+        if (!updatedSubscription) {
+          return NextResponse.json(
+            { error: 'Subscription update returned no data' },
+            { status: 500 }
+          );
+        }
+
+        // Update local database with new subscription details
+        const { error: dbUpdateError } = await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            lemonsqueezy_variant_id: variantId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', activeSubscription.id);
+
+        if (dbUpdateError) {
+          console.error('Failed to update local subscription record:', dbUpdateError);
+          // Note: Don't return error here as Lemon Squeezy update succeeded
+        }
+
+        console.log('Subscription updated successfully:', {
+          subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
+          userId,
+          newVariantId: variantId,
+          quantity
+        });
+
+        // Return success response with plan change confirmation
+        return NextResponse.json({
+          success: true,
+          action: 'subscription_updated',
+          subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
+          message: 'Subscription plan updated successfully'
+        });
       }
     }
 
@@ -59,6 +127,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
         ...customData,
       },
+      quantity,
     });
 
     if (checkoutError || !checkout) {

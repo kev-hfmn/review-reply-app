@@ -1,5 +1,4 @@
-import { supabaseAdmin } from '@/utils/supabase-admin';
-import { PLAN_CONFIGS, PlanId } from '@/lib/config/plans';
+import { PLAN_CONFIGS, PlanId, PlanPricing } from '@/lib/config/plans';
 
 export interface SubscriptionStatus {
   isSubscriber: boolean;
@@ -38,6 +37,7 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
     }
 
     // Get the most recent subscription for this user
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
     const { data: subscription, error } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
@@ -171,6 +171,7 @@ export async function getCurrentUsage(userId: string, businessId: string): Promi
     billingPeriodStart.setDate(billingPeriodStart.getDate() - 30);
 
     // Get or create usage record for current billing period
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
     const { data: usage, error } = await supabaseAdmin
       .from('subscription_usage')
       .select('replies_posted, billing_period_start, billing_period_end')
@@ -288,6 +289,7 @@ export async function incrementReplyCount(userId: string, businessId: string): P
     billingPeriodStart.setDate(billingPeriodStart.getDate() - 30);
 
     // Increment the counter atomically using RPC function
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
     const { error } = await supabaseAdmin.rpc('increment_reply_count', {
       p_user_id: userId,
       p_business_id: businessId,
@@ -316,4 +318,98 @@ export function isWithinLimit(current: number, planId: string, limit: keyof type
     return current < maxLimit;
   }
   return false;
+}
+
+/**
+ * Check if user can connect another business based on their plan limits
+ */
+export function canConnectBusiness(planId: string, currentBusinessCount: number): { canConnect: boolean; message?: string } {
+  const maxBusinesses = getPlanLimit(planId, 'maxBusinesses') as number;
+  
+  // Unlimited businesses allowed
+  if (maxBusinesses === -1) {
+    return { canConnect: true };
+  }
+  
+  // Check if within limits
+  if (currentBusinessCount < maxBusinesses) {
+    return { canConnect: true };
+  }
+  
+  // Over limit
+  const requiredPlan = planId === 'basic' ? 'starter' : 
+                      planId === 'starter' ? 'pro' : 
+                      'pro-plus';
+  
+  return {
+    canConnect: false,
+    message: `Your ${planId} plan allows only ${maxBusinesses} business location${maxBusinesses === 1 ? '' : 's'}. Upgrade to ${requiredPlan} to connect more businesses.`
+  };
+}
+
+/**
+ * Calculate dynamic pricing for Pro Plus based on business count
+ */
+export function calculateDynamicPricing(planId: string, businessCount: number): {
+  basePrice: number;
+  additionalCost: number;
+  totalPrice: number;
+  breakdown: string;
+} {
+  const config = getPlanConfig(planId);
+  const basePrice = config.pricing.basePrice;
+  const additionalLocationPrice = config.pricing.additionalLocationPrice;
+  
+  // For Pro Plus, calculate additional location costs
+  if (planId === 'pro-plus' && businessCount > 1) {
+    const additionalLocations = businessCount - 1;
+    const additionalCost = additionalLocations * additionalLocationPrice;
+    const totalPrice = basePrice + additionalCost;
+    
+    return {
+      basePrice,
+      additionalCost,
+      totalPrice,
+      breakdown: `$${basePrice} + $${additionalCost} (${additionalLocations} additional location${additionalLocations === 1 ? '' : 's'}) = $${totalPrice}`
+    };
+  }
+  
+  // For other plans, just return base price
+  return {
+    basePrice,
+    additionalCost: 0,
+    totalPrice: basePrice,
+    breakdown: `$${basePrice}`
+  };
+}
+
+/**
+ * Check if business count exceeds plan limits
+ */
+export function checkBusinessCountLimits(planId: string, businessCount: number): {
+  withinLimits: boolean;
+  requiredPlan?: string;
+  message?: string;
+} {
+  const maxBusinesses = getPlanLimit(planId, 'maxBusinesses') as number;
+  
+  // Unlimited businesses allowed
+  if (maxBusinesses === -1) {
+    return { withinLimits: true };
+  }
+  
+  // Check if within limits
+  if (businessCount <= maxBusinesses) {
+    return { withinLimits: true };
+  }
+  
+  // Over limit - determine required plan
+  const requiredPlan = businessCount > 1 ? 'pro-plus' : 
+                      planId === 'basic' ? 'starter' : 'pro';
+  
+  return {
+    withinLimits: false,
+    requiredPlan,
+    message: `You have ${businessCount} business locations connected, but your ${planId} plan allows only ${maxBusinesses}. Upgrade to ${requiredPlan} plan to continue using all features.`
+  };
 }

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PublicNavigation } from '@/components/PublicNavigation';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 import { Mail, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 
 interface ContactFormData {

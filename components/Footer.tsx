@@ -1,17 +1,25 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Mail, Heart, Sun, Moon } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { useThemeSafe } from '@/hooks/useThemeSafe';
+import { Heart } from 'lucide-react';
 import Image from 'next/image';
-import { showCookiePreferences } from '@/lib/cookieConsent';
-import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { ContactButtons } from '@/components/ContactButtons';
+import { BlogService } from '@/lib/services/blogService';
+import { BlogPost } from '@/types/blog';
+import { CookieButton } from '@/components/CookieButton';
 
-export function Footer() {
+async function getRecentBlogPosts() {
+  try {
+    const { posts } = await BlogService.getPosts({ per_page: 4 });
+    return posts;
+  } catch (error) {
+    console.error('Error fetching blog posts for footer:', error);
+    return [];
+  }
+}
+
+export default async function Footer() {
   const currentYear = new Date().getFullYear();
-  const { theme, toggleTheme } = useThemeSafe();
+  const blogPosts = await getRecentBlogPosts();
 
   const footerLinks = {
     product: [
@@ -20,6 +28,10 @@ export function Footer() {
       { name: 'Reviews', href: '/reviews' },
       { name: 'Dashboard', href: '/dashboard' }
     ],
+    blog: blogPosts.slice(0, 4).map((post: BlogPost) => ({
+      name: post.title,
+      href: `/blog/${post.slug}`
+    })),
     legal: [
       { name: 'Privacy Policy', href: '/privacy' },
       { name: 'Terms of Service', href: '/terms' },
@@ -34,15 +46,10 @@ export function Footer() {
   return (
     <footer className="bg-secondary text-primary-foreground py-12 md:py-16">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:justify-between gap-12">
+        {/* Top Section - Company Info and Main Links */}
+        <div className="flex flex-col lg:flex-row lg:justify-between gap-12 mb-8">
           {/* Main Content Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            viewport={{ once: true }}
-            className="lg:max-w-sm"
-          >
+          <div className="lg:max-w-sm">
             <div className="flex items-center mb-4">
               <Image src="/icons/icon.png" alt="RepliFast Logo" width={32} height={32} className="mr-2 rounded-md" />
               <span className="text-xl font-semibold">RepliFast</span>
@@ -53,46 +60,19 @@ export function Footer() {
             <p className="text-sm text-primary-foreground/60 mb-6 font-light">
               RepliFast is a product of Soulrise LLC
             </p>
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => window.location.href = "/login"}
-                className="text-primary-foreground dark:border-primary-foreground hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
-                variant="outline"
-              >
-                Sign Up
-              </Button>
-              <Button
-                onClick={() => window.location.href = "mailto:hello@replifast.com"}
-                className="text-primary-foreground dark:border-primary-foreground hover:bg-primary-foreground hover:text-primary transition-colors text-sm"
-                variant="outline"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Contact Us
-              </Button>
-            </div>
+
+            <ContactButtons />
 
             {/* Theme Toggle */}
-            <div className="flex items-center gap-2 mt-6">
-              <Sun className="h-4 w-4 text-primary-foreground/80" />
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={toggleTheme}
-                aria-label="Toggle theme"
-                className="data-[state=checked]:bg-card"
-              />
-              <Moon className="h-4 w-4 text-primary-foreground/80" />
+            <div className="mt-6">
+              <ThemeToggle />
             </div>
-          </motion.div>
+          </div>
 
-          {/* Link Columns Wrapper */}
+          {/* Main Link Columns */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 lg:flex lg:gap-16">
             {/* Product Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Product</h3>
               <ul className="space-y-3">
                 {footerLinks.product.map((link) => (
@@ -103,15 +83,10 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
 
             {/* Support Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Support</h3>
               <ul className="space-y-3">
                 {footerLinks.support.map((link) => (
@@ -122,15 +97,10 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
 
             {/* Legal Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Legal</h3>
               <ul className="space-y-3">
                 {footerLinks.legal.map((link) => (
@@ -141,27 +111,50 @@ export function Footer() {
                   </li>
                 ))}
                 <li>
-                  <button
-                    onClick={() => showCookiePreferences()}
-                    className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors text-left"
-                  >
-                    Manage Cookies
-                  </button>
+                  <CookieButton />
                 </li>
               </ul>
-            </motion.div>
+            </div>
           </div>
         </div>
 
+        {/* Blog Posts Section */}
+        {blogPosts.length > 0 && (
+          <div className="border-t border-primary-foreground/10 pt-8 mb-8">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Latest from our Blog</h3>
+              <p className="text-sm text-primary-foreground/70">
+                Tips, insights, and best practices for managing your business reputation.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {footerLinks.blog.slice(0, 4).map((link) => (
+                <div key={link.name} className="group">
+                  <Link href={link.href} className="block">
+                    <h4 className="text-sm font-medium text-primary-foreground/90 group-hover:text-primary-foreground transition-colors mb-2 line-clamp-2 leading-snug">
+                      {link.name}
+                    </h4>
+                    <span className="text-xs text-primary-foreground/60 group-hover:text-primary-foreground/80 transition-colors">
+                      Read article →
+                    </span>
+                  </Link>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6">
+              <Link
+                href="/blog"
+                className="inline-flex items-center text-sm font-medium text-primary-foreground/90 hover:text-primary-foreground transition-colors"
+              >
+                View all posts →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Copyright */}
-        <div className="border-t border-primary-foreground/20 mt-12 pt-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="flex flex-col md:flex-row justify-center items-center text-center gap-4"
-          >
+        <div className="border-t border-primary-foreground/20 pt-8">
+          <div className="flex flex-col md:flex-row justify-center items-center text-center gap-4">
             <p className="text-sm text-primary-foreground/60">
               &copy; {currentYear} Soulrise LLC. All rights reserved.
             </p>
@@ -170,7 +163,7 @@ export function Footer() {
               <Heart className="h-4 w-4 text-red-500 fill-current" />
               <span>for small businesses</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </footer>

@@ -282,7 +282,7 @@ async function performInitialBackfill(businessId: string, result: SyncResult, re
 
   let pageToken: string | undefined = undefined;
   let shouldContinue = true;
-  let pagesProcessed = 0;
+  const pagesProcessed = 0;
   let consecutiveOldReviews = 0;
   
   // Handle unlimited plans (-1) vs limited plans

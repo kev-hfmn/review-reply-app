@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cookie, FileText, Settings, Shield, Clock } from 'lucide-react';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 import { PublicNavigation } from '@/components/PublicNavigation';
 import ManageCookiePreferences from '@/components/ManageCookiePreferences';
 

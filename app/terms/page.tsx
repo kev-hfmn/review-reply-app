@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Scale, FileText, AlertTriangle, Shield, Users, Clock, Eye, Lock, Globe } from 'lucide-react';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 import { PublicNavigation } from '@/components/PublicNavigation';
 
 export default function TermsOfServicePage() {

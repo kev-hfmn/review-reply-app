@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { postReplyToGoogle } from '@/lib/services/googleBusinessService';
-import { checkUserSubscription, checkReplyLimit, incrementReplyCount } from '@/lib/utils/subscription';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { checkUserSubscription, checkReplyLimit, incrementReplyCount, checkBusinessCountLimits } from '@/lib/utils/subscription';
 
 /**
  * Post reply to Google Business Profile review
@@ -32,6 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the review and verify ownership - EXACT same pattern as other API routes
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
     const { data: review, error: reviewError } = await supabaseAdmin
       .from('reviews')
       .select(`
@@ -91,6 +86,28 @@ export async function POST(request: NextRequest) {
           error: 'Subscription required',
           message: 'Posting replies requires an active subscription. Please upgrade your plan.',
           code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check business count limits BEFORE allowing reply posting
+    const { data: userBusinesses } = await supabaseAdmin
+      .from('businesses')
+      .select('id')
+      .eq('user_id', userId);
+    
+    const businessCount = userBusinesses?.length || 0;
+    const businessLimitCheck = checkBusinessCountLimits(subscriptionStatus.planId, businessCount);
+    
+    if (!businessLimitCheck.withinLimits) {
+      return NextResponse.json(
+        { 
+          error: 'Business limit exceeded',
+          message: businessLimitCheck.message,
+          requiredPlan: businessLimitCheck.requiredPlan,
+          businessCount,
+          code: 'BUSINESS_LIMIT_EXCEEDED'
         },
         { status: 403 }
       );

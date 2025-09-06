@@ -1,5 +1,5 @@
 import { PublicNavigation } from '@/components/PublicNavigation';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 import { publicNavigationSections } from '@/config/navigation';
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

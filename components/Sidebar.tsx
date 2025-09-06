@@ -77,7 +77,7 @@ export function Sidebar() {
                   value={selectedBusinessId || ''}
                   onValueChange={setSelectedBusinessId}
                 >
-                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none px-2 py-1 focus:ring-0 hover:bg-accent/50 min-w-0 w-full flex-1">
+                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none px-2 py-1 hover:bg-muted min-w-0 w-full flex-1">
                     <div className="truncate text-left">
                       {selectedBusinessId
                         ? businesses.find(b => b.id === selectedBusinessId)?.name

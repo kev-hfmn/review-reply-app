@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
 import { PublicNavigation } from '@/components/PublicNavigation';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 
 export default function LoginPage() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();

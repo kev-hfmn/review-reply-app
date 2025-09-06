@@ -27,7 +27,7 @@ const buttonVariants = cva(
         pillActive: "rounded-full border border-input border-primary/60 shadow-inner bg-muted",
         outlineDefault: "border border-input bg-transparent hover:bg-muted hover:text-default-foreground",
         outlineGreen: "border text-green-600 border-green-600 bg-transparent hover:bg-green-600 hover:text-green-600 hover:text-primary-foreground",
-
+        outlineOrange: "border text-orange-600 border-orange-600 bg-transparent hover:bg-orange-600 hover:text-orange-600 hover:text-primary-foreground",
       },
       size: {
         default: "h-10 px-4 py-2",

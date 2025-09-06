@@ -20,7 +20,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   // Extract headings and set up everything after component mounts
   useEffect(() => {
     let observer: IntersectionObserver | null = null;
-    let timeouts: NodeJS.Timeout[] = [];
+    const timeouts: NodeJS.Timeout[] = [];
 
     // Wait for the DOM to be fully rendered
     const setupTimer = setTimeout(() => {
