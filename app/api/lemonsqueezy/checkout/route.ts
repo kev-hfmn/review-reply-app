@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LemonSqueezyService } from '@/lib/services/lemonSqueezyService';
-import { supabaseAdmin } from '@/utils/supabase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    // Dynamic import to avoid environment variable loading issues
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
     const { variantId, userId, customData } = await request.json();
 
     // Validate required parameters
