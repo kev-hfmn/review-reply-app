@@ -22,6 +22,7 @@ export interface CheckoutOptions {
   userEmail: string;
   redirectUrl?: string;
   customData?: Record<string, any>;
+  quantity?: number;
 }
 
 export interface CheckoutResponse {
@@ -50,19 +51,32 @@ export class LemonSqueezyService {
       });
 
       // Use the simplified SDK approach - just pass the required params
-      console.log('Calling createCheckout with storeId:', storeId, 'variantId:', options.variantId);
+      console.log('Calling createCheckout with storeId:', storeId, 'variantId:', options.variantId, 'quantity:', options.quantity);
       
-      const { data, error } = await createCheckout(storeId, options.variantId, {
+      const checkoutOptions: any = {
         checkoutData: {
           email: options.userEmail,
           custom: {
             user_id: options.userId,
+            ...options.customData,
           },
         },
         productOptions: {
           redirectUrl: options.redirectUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/profile?payment=success`,
         },
-      });
+      };
+
+      // Add variant quantities for graduated pricing if quantity is specified
+      if (options.quantity && options.quantity > 1) {
+        checkoutOptions.checkoutData.variant_quantities = [
+          {
+            variant_id: parseInt(options.variantId),
+            quantity: options.quantity
+          }
+        ];
+      }
+      
+      const { data, error } = await createCheckout(storeId, options.variantId, checkoutOptions);
 
       if (error) {
         console.error('Lemon Squeezy checkout creation error:', error);
@@ -140,6 +154,7 @@ export class LemonSqueezyService {
       billingAnchor?: number;
       trialEndsAt?: string;
       pause?: { mode: 'void' | 'free'; resumesAt?: string } | null;
+      quantity?: number;
     }
   ): Promise<{ data?: Subscription; error?: string }> {
     try {
@@ -154,6 +169,8 @@ export class LemonSqueezyService {
             mode: updateData.pause.mode,
             resumes_at: updateData.pause.resumesAt,
           } : updateData.pause,
+          // Handle quantity for Pro Plus graduated pricing
+          variant_quantity: updateData.quantity,
         },
       });
 

@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncReviews } from '@/lib/services/googleBusinessService';
-import { createClient } from '@supabase/supabase-js';
-import { checkUserSubscription, hasFeature, getPlanLimit } from '@/lib/utils/subscription';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { checkUserSubscription, hasFeature, getPlanLimit, checkBusinessCountLimits } from '@/lib/utils/subscription';
 
 /**
  * Sync reviews from Google Business Profile
@@ -46,6 +40,29 @@ export async function POST(request: NextRequest) {
           message: 'Review syncing requires a Starter plan or higher.',
           requiredPlan: 'starter',
           code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check business count limits BEFORE allowing sync
+    const { supabaseAdmin } = await import('@/utils/supabase-admin');
+    const { data: userBusinesses } = await supabaseAdmin
+      .from('businesses')
+      .select('id')
+      .eq('user_id', userId);
+    
+    const businessCount = userBusinesses?.length || 0;
+    const businessLimitCheck = checkBusinessCountLimits(subscription.planId, businessCount);
+    
+    if (!businessLimitCheck.withinLimits) {
+      return NextResponse.json(
+        { 
+          error: 'Business limit exceeded',
+          message: businessLimitCheck.message,
+          requiredPlan: businessLimitCheck.requiredPlan,
+          businessCount,
+          code: 'BUSINESS_LIMIT_EXCEEDED'
         },
         { status: 403 }
       );

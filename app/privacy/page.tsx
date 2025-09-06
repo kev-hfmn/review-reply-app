@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Lock, Eye, FileText, Clock, Users, AlertTriangle, Globe, Baby } from 'lucide-react';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 import { PublicNavigation } from '@/components/PublicNavigation';
 
 export default function PrivacyPolicyPage() {

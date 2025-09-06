@@ -17,6 +17,11 @@ export const PLAN_CONFIGS = {
       syncFrequency: 'never' as const,
       maxBulkActions: 0
     },
+    pricing: {
+      basePrice: 0,
+      additionalLocationPrice: 0,
+      currency: 'USD'
+    },
     ui: {
       showUpgradePrompts: true,
       defaultUpgradePlan: 'starter' as const
@@ -38,6 +43,11 @@ export const PLAN_CONFIGS = {
       maxRepliesPerMonth: 200, // 200 replies per month
       syncFrequency: 'manual' as const,
       maxBulkActions: 10
+    },
+    pricing: {
+      basePrice: 19,
+      additionalLocationPrice: 0,
+      currency: 'USD'
     },
     ui: {
       showUpgradePrompts: true,
@@ -61,6 +71,11 @@ export const PLAN_CONFIGS = {
       syncFrequency: 'daily' as const,
       maxBulkActions: -1 // Unlimited
     },
+    pricing: {
+      basePrice: 39,
+      additionalLocationPrice: 0,
+      currency: 'USD'
+    },
     ui: {
       showUpgradePrompts: true,
       defaultUpgradePlan: 'pro-plus' as const
@@ -83,6 +98,11 @@ export const PLAN_CONFIGS = {
       syncFrequency: 'daily' as const,
       maxBulkActions: -1
     },
+    pricing: {
+      basePrice: 39,
+      additionalLocationPrice: 19, // $25 per additional location (matches Lemon Squeezy)
+      currency: 'USD'
+    },
     ui: {
       showUpgradePrompts: false,
       defaultUpgradePlan: null
@@ -93,3 +113,4 @@ export const PLAN_CONFIGS = {
 export type PlanId = keyof typeof PLAN_CONFIGS;
 export type PlanFeatures = typeof PLAN_CONFIGS[PlanId]['features'];
 export type PlanLimits = typeof PLAN_CONFIGS[PlanId]['limits'];
+export type PlanPricing = typeof PLAN_CONFIGS[PlanId]['pricing'];

@@ -23,12 +23,13 @@ interface DashboardApiResponse {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
+  const selectedBusinessId = searchParams.get('selectedBusinessId');
   
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
   }
 
-  console.log('Dashboard API called with userId:', userId);
+  console.log('Dashboard API called with userId:', userId, 'selectedBusinessId:', selectedBusinessId);
 
   // Create service role client to bypass RLS
   const supabase = createClient(
@@ -77,6 +78,13 @@ export async function GET(request: NextRequest) {
 
     const businessIds = businessesData?.map(b => b.id) || [];
     console.log('Business IDs found:', businessIds);
+
+    // Filter business IDs based on selectedBusinessId if provided
+    const filteredBusinessIds = selectedBusinessId && businessIds.includes(selectedBusinessId) 
+      ? [selectedBusinessId] 
+      : businessIds;
+    
+    console.log('Filtered Business IDs:', filteredBusinessIds);
 
     // If no businesses, return empty data with onboarding steps for new users
     if (businessIds.length === 0) {
@@ -173,14 +181,14 @@ export async function GET(request: NextRequest) {
       supabase
         .from('reviews')
         .select('*')
-        .in('business_id', businessIds)
+        .in('business_id', filteredBusinessIds)
         .order('created_at', { ascending: false }),
 
       // 2. Fetch reviews for this month (using DB-level date filtering)
       supabase
         .from('reviews')
         .select('*')
-        .in('business_id', businessIds)
+        .in('business_id', filteredBusinessIds)
         .gte('review_date', thisMonthStartStr)
         .lte('review_date', thisMonthEndStr)
         .order('review_date', { ascending: false }),
@@ -189,24 +197,24 @@ export async function GET(request: NextRequest) {
       supabase
         .from('reviews')
         .select('*')
-        .in('business_id', businessIds)
+        .in('business_id', filteredBusinessIds)
         .gte('review_date', lastMonthStartStr)
         .lte('review_date', lastMonthEndStr)
         .order('review_date', { ascending: false }),
 
-      // 4. Fetch activities for all businesses
+      // 4. Fetch activities for filtered businesses
       supabase
         .from('activities')
         .select('*')
-        .in('business_id', businessIds)
+        .in('business_id', filteredBusinessIds)
         .order('created_at', { ascending: false })
         .limit(10),
 
-      // 5. Fetch business settings for first business (single business per user)
+      // 5. Fetch business settings for first filtered business
       supabase
         .from('business_settings')
         .select('*')
-        .eq('business_id', businessIds[0])
+        .eq('business_id', filteredBusinessIds[0])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()

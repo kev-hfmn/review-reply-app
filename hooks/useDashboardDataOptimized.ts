@@ -25,9 +25,15 @@ interface DashboardData {
   subscription: Subscription | null;
 }
 
-async function fetchDashboardData(userId: string): Promise<DashboardApiData> {
-  console.log('Frontend: Fetching dashboard data for userId:', userId);
-  const response = await fetch(`/api/dashboard/data?userId=${encodeURIComponent(userId)}`, {
+async function fetchDashboardData(userId: string, selectedBusinessId?: string | null): Promise<DashboardApiData> {
+  console.log('Frontend: Fetching dashboard data for userId:', userId, 'selectedBusinessId:', selectedBusinessId);
+  
+  const params = new URLSearchParams({ userId });
+  if (selectedBusinessId) {
+    params.append('selectedBusinessId', selectedBusinessId);
+  }
+  
+  const response = await fetch(`/api/dashboard/data?${params.toString()}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -45,14 +51,14 @@ async function fetchDashboardData(userId: string): Promise<DashboardApiData> {
 }
 
 export function useDashboardDataOptimized() {
-  const { user } = useAuth();
+  const { user, selectedBusinessId } = useAuth();
   
   // Get subscription from centralized cache
   const subscriptionQuery = useSubscriptionQuery(user?.id || null);
   
   const dashboardQuery = useQuery({
-    queryKey: ['dashboard-optimized', user?.id],
-    queryFn: () => fetchDashboardData(user!.id),
+    queryKey: ['dashboard-optimized', user?.id, selectedBusinessId],
+    queryFn: () => fetchDashboardData(user!.id, selectedBusinessId),
     enabled: !!user?.id,
     
     // Restore proper cache times (was staleTime: 0 for debugging)
@@ -100,7 +106,7 @@ export function useDashboardCacheInvalidation() {
     if (user?.id) {
       queryClient.invalidateQueries({ 
         queryKey: ['dashboard-optimized', user.id],
-        exact: true 
+        exact: false // Allow invalidation of all business selections
       });
       // Also invalidate subscription cache if needed
       queryClient.invalidateQueries({ 
@@ -114,7 +120,7 @@ export function useDashboardCacheInvalidation() {
     if (user?.id) {
       queryClient.refetchQueries({ 
         queryKey: ['dashboard-optimized', user.id],
-        exact: true 
+        exact: false // Allow refetch of all business selections
       });
     }
   };

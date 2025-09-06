@@ -24,7 +24,7 @@ import {
 import Image from 'next/image'
 import { faqItems } from '@/lib/faq'
 import Script from 'next/script'
-import { Footer } from '@/components/Footer'
+import Footer from '@/components/Footer'
 import { HowItWorksSteps } from '@/components/HowItWorksSteps'
 import NavigationWrapper from '@/components/NavigationWrapper';
 import { publicNavigationSections } from '@/config/navigation';

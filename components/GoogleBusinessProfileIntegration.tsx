@@ -4,15 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Globe,
-  CheckCircle,
   AlertCircle,
   XCircle,
   RefreshCw,
-  TestTube,
+  Activity,
   Unlink,
   Info,
-  ExternalLink,
-  HelpCircle,
   Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,14 +27,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
-  GoogleBusinessErrorType,
-  parseGoogleBusinessError,
-  getGoogleBusinessError,
   createErrorMessage
 } from '@/lib/errors/googleBusinessErrors';
 import type { ToastNotification } from '@/types/reviews';
+import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
+import { checkBusinessCountLimits } from '@/lib/utils/subscription';
 
 interface BusinessInfo {
   accountName: string;
@@ -52,7 +47,7 @@ interface ConnectionStatus {
   lastSync?: string;
   businessInfo?: BusinessInfo;
   lastConnectionAttempt?: string;
-  errorType?: GoogleBusinessErrorType;
+  errorType?: string;
   errorMessage?: string;
 }
 
@@ -73,16 +68,26 @@ export default function GoogleBusinessProfileIntegration({
   onShowToast,
   onStatusChange
 }: GoogleBusinessProfileIntegrationProps) {
-  const { user } = useAuth();
+  const { user, businesses } = useAuth();
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     connected: false,
     status: 'disconnected'
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get subscription data for business limit checks
+  const subscriptionQuery = useSubscriptionQuery(user?.id || null);
+  const businessCount = businesses.length;
+
+  // Check if business count exceeds plan limits
+  const businessLimitCheck = subscriptionQuery.data
+    ? checkBusinessCountLimits(subscriptionQuery.data.planId, businessCount)
+    : null;
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [currentError, setCurrentError] = useState<GoogleBusinessErrorType | null>(null);
   const [removingBusinessId, setRemovingBusinessId] = useState<string | null>(null);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [businessToRemove, setBusinessToRemove] = useState<{ id: string; name: string } | null>(null);
 
   // Update connection status based on connected businesses
   const updateConnectionStatus = useCallback(() => {
@@ -93,13 +98,13 @@ export default function GoogleBusinessProfileIntegration({
       businessInfo: hasConnectedBusinesses ? {
         accountName: 'Google Account',
         businessName: connectedBusinesses.find(b => b.connection_status === 'connected')?.google_business_name || 'Multiple Businesses',
-        locationName: connectedBusinesses.filter(b => b.connection_status === 'connected').length > 1 
+        locationName: connectedBusinesses.filter(b => b.connection_status === 'connected').length > 1
           ? `${connectedBusinesses.filter(b => b.connection_status === 'connected').length} locations`
           : connectedBusinesses.find(b => b.connection_status === 'connected')?.google_location_name || '',
         verified: true
       } : undefined
     };
-    
+
     setConnectionStatus(status);
     onStatusChange?.(hasConnectedBusinesses);
   }, [connectedBusinesses, onStatusChange]);
@@ -165,7 +170,6 @@ export default function GoogleBusinessProfileIntegration({
     } catch (error) {
       console.error('❌ Connection initiation failed:', error);
       const { error: errorDetails } = createErrorMessage(error);
-      setCurrentError(parseGoogleBusinessError(error));
 
       onShowToast({
         type: 'error',
@@ -266,7 +270,6 @@ export default function GoogleBusinessProfileIntegration({
     } catch (error) {
       console.error('❌ Connection test failed:', error);
       const { error: errorDetails } = createErrorMessage(error);
-      setCurrentError(parseGoogleBusinessError(error));
 
       onShowToast({
         type: 'error',
@@ -287,12 +290,12 @@ export default function GoogleBusinessProfileIntegration({
 
       const response = await fetch('/api/auth/google-business/remove-business', {
         method: 'DELETE',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           businessId,
-          userId: user.id 
+          userId: user.id
         })
       });
 
@@ -326,8 +329,6 @@ export default function GoogleBusinessProfileIntegration({
 
   const getStatusIcon = () => {
     switch (connectionStatus.status) {
-      case 'connected':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'needs_reconnection':
         return <AlertCircle className="h-5 w-5 text-amber-500" />;
       case 'connecting':
@@ -377,38 +378,58 @@ export default function GoogleBusinessProfileIntegration({
           Google Business Profile
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
-          Connect your Google Business Profile to automatically sync reviews and post replies
+        Connect your Google Business Profile to allow RepliFast to access your reviews and post replies on your behalf. Everything runs through Google’s official login, so we never see your password.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Business Count Warning */}
+        {businessLimitCheck && !businessLimitCheck.withinLimits && (
+          <div className="p-4 bg-amber-100 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+              <AlertCircle className="h-4 w-4" />
+              <div>
+                <div className="font-medium">Multiple Business Locations Detected</div>
+                <div className="mt-1">{businessLimitCheck.message}</div>
+                <Button
+                  size="sm"
+                  variant="outlineOrange"
+                  className="mt-2 "
+                  onClick={() => window.location.href = '/profile'}
+                >
+                  Upgrade to {businessLimitCheck.requiredPlan}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Connection Status */}
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div className="flex items-center gap-3">
             {getStatusIcon()}
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-foreground">
-                  {getStatusText()}
-                </p>
-                {getStatusBadge()}
-              </div>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-foreground">
+                {getStatusText()}
+              </p>
+              {getStatusBadge()}
+            </div>
+          </div>
 
-              {/* Business Info - Single or Multiple */}
-              {connectionStatus.connected && (() => {
-                const connectedBusinessList = connectedBusinesses.filter(b => b.connection_status === 'connected');
-                const hasMultipleBusinesses = connectedBusinessList.length > 1;
+          {/* Business Info - Single or Multiple */}
+          {connectionStatus.connected && (() => {
+            const connectedBusinessList = connectedBusinesses.filter(b => b.connection_status === 'connected');
+            const hasMultipleBusinesses = connectedBusinessList.length > 1;
 
-                if (hasMultipleBusinesses) {
-                  return (
-                    <div className="mt-3 space-y-3">
-                      <div className="text-sm font-medium text-foreground">
-                        Connected Businesses ({connectedBusinessList.length})
-                      </div>
-                      {connectedBusinessList.map(business => (
-                        <div key={business.id} className="flex items-center justify-between p-3 border border-border rounded-md bg-muted/20">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <div>
+            if (hasMultipleBusinesses) {
+              return (
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-foreground">
+                    Connected Businesses ({connectedBusinessList.length})
+                  </div>
+                  {connectedBusinessList.map(business => (
+                    <div key={business.id} className="flex items-center justify-between w-full p-3 border border-border rounded-md bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <div>
                               <div className="font-medium text-sm text-foreground">
                                 {business.google_business_name || business.name}
                               </div>
@@ -419,77 +440,130 @@ export default function GoogleBusinessProfileIntegration({
                               )}
                             </div>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            disabled={removingBusinessId === business.id || connectedBusinessList.length === 1}
-                            onClick={() => handleRemoveBusiness(business.id, business.google_business_name || business.name)}
-                            className="text-destructive hover:text-destructive border-destructive/20 hover:border-destructive/40"
-                          >
-                            {removingBusinessId === business.id ? (
-                              <RefreshCw className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Remove
-                              </>
-                            )}
-                          </Button>
+                          <AlertDialog open={removeDialogOpen && businessToRemove?.id === business.id} onOpenChange={(open) => {
+                            if (!open) {
+                              setRemoveDialogOpen(false);
+                              setBusinessToRemove(null);
+                            }
+                          }}>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructiveOutline"
+                                size="sm"
+                                disabled={removingBusinessId === business.id || connectedBusinessList.length === 1}
+                                onClick={() => {
+                                  setBusinessToRemove({ id: business.id, name: business.google_business_name || business.name });
+                                  setRemoveDialogOpen(true);
+                                }}
+                                className=""
+                              >
+                                {removingBusinessId === business.id ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Remove
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Business Location?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to remove <strong>{business.google_business_name || business.name}</strong> from RepliFast?
+                                  <br /><br />
+                                  This will permanently delete:
+                                  <ul className="list-disc list-inside mt-2 space-y-1">
+                                    <li>All reviews and replies for this location</li>
+                                    <li>All settings and configurations for this business</li>
+                                    <li>All activity history and analytics for this location</li>
+                                  </ul>
+                                  <br />
+                                  Your other connected businesses will remain unaffected.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel disabled={removingBusinessId === business.id}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    if (businessToRemove) {
+                                      handleRemoveBusiness(businessToRemove.id, businessToRemove.name);
+                                      setRemoveDialogOpen(false);
+                                      setBusinessToRemove(null);
+                                    }
+                                  }}
+                                  disabled={removingBusinessId === business.id}
+                                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                >
+                                  {removingBusinessId === business.id ? (
+                                    <>
+                                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                      Removing...
+                                    </>
+                                  ) : (
+                                    'Yes, Remove Business'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       ))}
-                      {connectedBusinessList.length === 1 && (
-                        <p className="text-xs text-muted-foreground">
-                          Cannot remove the last connected business. Use "Disconnect Account" to remove all businesses.
-                        </p>
-                      )}
+                  {connectedBusinessList.length === 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      Cannot remove the last connected business. Use &quot;Disconnect Account&quot; to remove all businesses.
+                    </p>
+                  )}
+                </div>
+              );
+            } else if (connectedBusinessList.length === 1) {
+              const business = connectedBusinessList[0];
+              return (
+                <div className="w-full p-3 border border-border rounded-md bg-muted/20">
+                  <div className="font-medium text-sm text-foreground">
+                    {business.google_business_name || business.name}
+                  </div>
+                  {business.google_location_name && (
+                    <div className="text-xs text-muted-foreground">
+                      {business.google_location_name}
                     </div>
-                  );
-                } else if (connectedBusinessList.length === 1) {
-                  const business = connectedBusinessList[0];
-                  return (
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      <p className="font-medium">{business.google_business_name || business.name}</p>
-                      {business.google_location_name && (
-                        <p>{business.google_location_name}</p>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+                  )}
+                </div>
+              );
+            }
+            return null;
+          })()}
 
-              {connectionStatus.lastSync && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Last sync: {new Date(connectionStatus.lastSync).toLocaleString()}
-                </p>
-              )}
-            </div>
-          </div>
+          {connectionStatus.lastSync && (
+            <p className="text-xs text-muted-foreground">
+              Last sync: {new Date(connectionStatus.lastSync).toLocaleString()}
+            </p>
+          )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            {connectionStatus.connected ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestConnection}
-                  disabled={isLoading}
-                >
-                  <TestTube className="h-4 w-4 mr-1" />
-                  Test
-                </Button>
-                <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isLoading || isDisconnecting}
-                    >
-                      <Unlink className="h-4 w-4 mr-1" />
-                      Disconnect Account
-                    </Button>
-                  </AlertDialogTrigger>
+          {connectionStatus.connected && (
+            <div className="flex items-center justify-end space-x-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestConnection}
+                disabled={isLoading}
+              >
+                <Activity className="h-4 w-4 mr-1" />
+                Verify
+              </Button>
+              <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading || isDisconnecting}
+                  >
+                    <Unlink className="h-4 w-4 mr-1" />
+                    Disconnect Account
+                  </Button>
+                </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Disconnect Google Business Profile Account?</AlertDialogTitle>
@@ -497,20 +571,20 @@ export default function GoogleBusinessProfileIntegration({
                         <p>
                           This will permanently disconnect your Google account and delete <strong>ALL business data</strong> from RepliFast.
                         </p>
-                        
+
                         <div>
                           <p className="font-medium mb-2">
                             The following {connectedBusinesses.length} business{connectedBusinesses.length > 1 ? 'es' : ''} will be deleted:
                           </p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            {connectedBusinesses.map((business, index) => (
+                            {connectedBusinesses.map((business) => (
                               <li key={business.id}>
                                 {business.google_business_name || business.google_location_name || business.name}
                               </li>
                             ))}
                           </ul>
                         </div>
-                        
+
                         <div>
                           <p className="font-medium mb-2">This action will also delete:</p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
@@ -519,7 +593,7 @@ export default function GoogleBusinessProfileIntegration({
                             <li>All activity history and analytics</li>
                           </ul>
                         </div>
-                        
+
                         <p className="text-amber-600 dark:text-amber-400">
                           <strong>Note:</strong> You can reconnect later, but all data will need to be re-synced from Google.
                         </p>
@@ -544,22 +618,32 @@ export default function GoogleBusinessProfileIntegration({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </>
-            ) : connectionStatus.status === 'needs_reconnection' ? (
+            </div>
+          )}
+
+          {/* Connect/Reconnect Button for non-connected states */}
+          {!connectionStatus.connected && connectionStatus.status === 'needs_reconnection' && (
+            <div className="w-full">
               <Button
                 size="sm"
                 onClick={handleConnect}
                 disabled={isLoading}
+                className="w-full"
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Reconnect
               </Button>
-            ) : (
+            </div>
+          )}
+
+          {!connectionStatus.connected && connectionStatus.status !== 'needs_reconnection' && (
+            <div className="w-full">
               <Button
                 size="sm"
                 onClick={handleConnect}
                 disabled={isLoading}
                 variant="primary"
+                className="w-full"
               >
                 <svg className="h-5 w-5 mr-1" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -569,8 +653,8 @@ export default function GoogleBusinessProfileIntegration({
                 </svg>
                 Connect securely via Google
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* How It Works Info */}

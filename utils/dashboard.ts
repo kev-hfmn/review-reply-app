@@ -78,7 +78,8 @@ export function createMetrics(
 ): DashboardMetric[] {
   return [
     {
-      title: "Reviews this month",
+      title: "New reviews",
+      subtitle: "This month",
       value: reviewsThisWeek.toString(),
       change: formatMetricChange(reviewsThisWeekChange),
       icon: React.createElement(MessageSquareText, { className: "h-6 w-6 text-primary" }),

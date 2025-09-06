@@ -5,7 +5,6 @@ import {
   Filter,
   Star,
   Calendar as CalendarIcon,
-  Building2,
   X,
   RotateCcw
 } from 'lucide-react';
@@ -31,7 +30,6 @@ import { format } from 'date-fns';
 
 export default function ReviewFilters({
   filters,
-  businesses,
   onFiltersChange,
   onReset,
   isLoading = false,
@@ -44,7 +42,6 @@ export default function ReviewFilters({
   const hasActiveFilters = filters.search ||
     filters.rating !== null ||
     filters.status !== 'all' ||
-    filters.businessId !== 'all' ||
     filters.dateRange.from ||
     filters.dateRange.to;
 
@@ -61,9 +58,6 @@ export default function ReviewFilters({
     onFiltersChange({ ...filters, status: value as 'all' | 'pending' | 'approved' | 'posted' | 'needs_edit' | 'skipped' });
   }, [filters, onFiltersChange]);
 
-  const handleBusinessChange = useCallback((value: string) => {
-    onFiltersChange({ ...filters, businessId: value });
-  }, [filters, onFiltersChange]);
 
   const handleDateFromChange = useCallback((date: Date | undefined) => {
     onFiltersChange({
@@ -145,7 +139,6 @@ export default function ReviewFilters({
                 {[
                   filters.rating !== null,
                   filters.status !== 'all',
-                  filters.businessId !== 'all',
                   filters.dateRange.from,
                   filters.dateRange.to
                 ].filter(Boolean).length}
@@ -212,35 +205,9 @@ export default function ReviewFilters({
               </Select>
             </div>
 
-            {/* Business Filter */}
-            {businesses.length > 1 && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  <Building2 className="inline h-4 w-4 mr-1" />
-                  Business
-                </label>
-                <Select
-                  value={filters.businessId}
-                  onValueChange={handleBusinessChange}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Businesses</SelectItem>
-                    {businesses.map(business => (
-                      <SelectItem key={business.id} value={business.id}>
-                        {business.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             {/* Date Range */}
-            <div className={businesses.length > 1 ? 'sm:col-span-2 lg:col-span-1' : 'sm:col-span-2'}>
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-foreground mb-2">
                 <CalendarIcon className="inline h-4 w-4 mr-1" />
                 Date Range

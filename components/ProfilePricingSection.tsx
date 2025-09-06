@@ -2,10 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { CheckCircle2, CreditCard, Crown, Zap, Building2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { pricingTiers as basePricingTiers } from '@/lib/pricing';
+import { calculateDynamicPricing } from '@/lib/utils/subscription';
+import Link from 'next/link';
 
 interface ProfilePricingSectionProps {
   currentPlan?: string;
@@ -21,20 +23,48 @@ const getIcon = (iconName: string | undefined) => {
   }
 };
 
-const profilePricingTiers = basePricingTiers.map(tier => ({
-  ...tier,
-  icon: getIcon(tier.iconName),
-  cta: tier.id === 'starter' ? 'Upgrade to Starter' :
-       tier.id === 'pro' ? 'Upgrade to Pro' :
-       tier.id === 'pro-plus' ? 'Upgrade to Pro Plus' : tier.cta,
-  name: tier.id === 'pro-plus' ? 'Pro Plus' : tier.name,
-  interval: tier.id === 'pro-plus' ? '/month per additional location' : tier.interval,
-  description: tier.id === 'starter' ? 'Perfect for small businesses with several hundred reviews' : tier.description
-}));
+// Dynamic pricing tiers - will be calculated inside component
 
 export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: ProfilePricingSectionProps) {
-  const { user } = useAuth();
+  const { user, businesses } = useAuth();
   const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  // Calculate business count from existing AuthContext
+  const businessCount = businesses.length;
+
+  // Calculate dynamic pricing for Pro Plus based on business count
+  const proPlusPricing = useMemo(() => {
+    return calculateDynamicPricing('pro-plus', Math.max(1, businessCount));
+  }, [businessCount]);
+
+  // Create dynamic pricing tiers
+  const profilePricingTiers = useMemo(() => {
+    return basePricingTiers.map(tier => {
+      if (tier.id === 'pro-plus') {
+        // Use dynamic pricing for Pro Plus
+        return {
+          ...tier,
+          icon: getIcon(tier.iconName),
+          price: `$${proPlusPricing.totalPrice}`,
+          interval: businessCount > 1 ? '/month' : '/month per additional location',
+          name: 'Pro Plus',
+          description: businessCount > 1
+            ? `${proPlusPricing.breakdown}/month - Perfect for multiple locations`
+            : 'Perfect for scaling to multiple locations',
+          cta: 'Upgrade to Pro Plus'
+        };
+      }
+
+      return {
+        ...tier,
+        icon: getIcon(tier.iconName),
+        cta: tier.id === 'starter' ? 'Upgrade to Starter' :
+             tier.id === 'pro' ? 'Upgrade to Pro' :
+             tier.cta,
+        description: tier.id === 'starter' ? 'Perfect for small businesses with several hundred reviews' : tier.description
+      };
+    });
+  }, [basePricingTiers, proPlusPricing, businessCount]);
 
   const handleUpgrade = async (tier: typeof profilePricingTiers[0]) => {
     if (!user?.id) return;
@@ -52,7 +82,9 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
         ? {
             variantId: tier.lemonSqueezyVariantId,
             userId: user.id,
-            customData: { planId: tier.id }
+            customData: { planId: tier.id },
+            // For Pro Plus with multiple businesses, pass business count as quantity
+            ...(tier.id === 'pro-plus' && businessCount > 1 && { quantity: businessCount })
           }
         : {
             priceId: tier.priceId,
@@ -62,6 +94,15 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
       // Validate required fields
       if (useLemonSqueezy && !tier.lemonSqueezyVariantId) {
         throw new Error(`Lemon Squeezy variant ID not configured for ${tier.name}`);
+      }
+
+      // Debug logging for Pro Plus quantity
+      if (tier.id === 'pro-plus') {
+        console.log('🔢 Pro Plus checkout:', {
+          businessCount,
+          quantity: payload.quantity || 1,
+          pricing: proPlusPricing
+        });
       }
 
       const response = await fetch(endpoint, {
@@ -74,19 +115,28 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
 
       const data = await response.json();
 
+      // Handle different response types: checkout URL vs subscription update
       if (data.url) {
+        // New subscription checkout - redirect to payment
         window.location.href = data.url;
+      } else if (data.success && data.action === 'subscription_updated') {
+        // Subscription update success - show success message and reload
+        alert(`Plan updated successfully! Your subscription has been changed to ${tier.name}.`);
+        // Refresh the page to show updated plan
+        window.location.reload();
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error(data.error || 'Unexpected response from server');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Error processing plan change:', error);
 
       // Show user-friendly error message
       if (error instanceof Error && error.message.includes('variant ID not configured')) {
         alert('This plan is temporarily unavailable. Please try again later or contact support.');
+      } else if (error instanceof Error && error.message.includes('Failed to update subscription')) {
+        alert('Unable to update your subscription. Please try again or contact support.');
       } else {
-        alert('Unable to create checkout session. Please try again or contact support.');
+        alert('Unable to process plan change. Please try again or contact support.');
       }
 
       onUpgrade?.(tier.id);
@@ -117,9 +167,26 @@ export function ProfilePricingSection({ currentPlan = 'starter', onUpgrade }: Pr
 
       </CardHeader>
       <CardContent>
-      <p className="text-muted-foreground mt-0 mb-10">
+      <p className="text-muted-foreground mt-0 mb-6">
           Upgrade to a paid plan to unlock all powerful features. A subscription is required to use the app.
         </p>
+
+        {/* Business Count Indicator */}
+        {businessCount > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+              <Building2 className="h-4 w-4" />
+              <span>
+                You have <strong>{businessCount}</strong> business location{businessCount === 1 ? '' : 's'} connected
+                {businessCount > 1 && (
+                  <span className="ml-1">
+                    (Pro Plus required for multiple locations). Alternatively, remove connected locations in <Link href="/settings?tab=integrations" className="underline">Settings</Link>.
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {profilePricingTiers.map((tier, i) => (
           <motion.div

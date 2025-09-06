@@ -18,7 +18,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: "starter",
     name: "Starter",
-    price: "$25",
+    price: "$19",
     interval: "/month",
     priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter',
     lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_STARTER_VARIANT_ID || '',
@@ -44,7 +44,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: "pro",
     name: "Pro",
-    price: "$50",
+    price: "$39",
     interval: "/month",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro',
     lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_VARIANT_ID || '',
@@ -66,7 +66,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: "pro-plus",
     name: "Pro Plus - Multiple Locations Add-On",
-    price: "+$25",
+    price: "+$19",
     interval: "/month per additional location",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || 'price_pro_plus',
     lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_PLUS_VARIANT_ID || '',
