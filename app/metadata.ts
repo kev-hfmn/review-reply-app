@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true
   },
+  alternates: {
+    canonical: "https://www.replifast.com"
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
