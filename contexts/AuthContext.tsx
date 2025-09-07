@@ -261,6 +261,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? `https://${authDomain}/api/auth/proxy-callback`
         : `${window.location.origin}/auth/callback`;
       
+      console.log('AuthContext: signInWithGoogle called');
+      console.log('AuthContext: authDomain =', authDomain);
+      console.log('AuthContext: callbackUrl =', callbackUrl);
+      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
