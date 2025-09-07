@@ -514,7 +514,7 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-primary/80 to-foreground/70 via-accent/80 relative overflow-hidden">
+      <section className="py-16 bg-gradient-to-br from-primary/80 to-secondary/50 via-accent/70 relative overflow-hidden">
         <div className="absolute inset-0 dark:bg-grid-white/10 bg-[length:40px_40px] bg-slate-700/50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-4">
