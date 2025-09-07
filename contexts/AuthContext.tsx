@@ -255,10 +255,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     supabase,
     signInWithGoogle: async () => {
+      // Use custom auth domain for OAuth callback if available, otherwise fallback to current origin
+      const authDomain = process.env.NEXT_PUBLIC_CUSTOM_AUTH_DOMAIN;
+      const callbackUrl = authDomain 
+        ? `https://${authDomain}/api/auth/proxy-callback`
+        : `${window.location.origin}/auth/callback`;
+      
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: callbackUrl
         }
       });
     },
