@@ -57,7 +57,7 @@ export function LoginForm({
           <Button
             onClick={onGoogleSignIn}
             disabled={isLoading}
-            className="w-full h-12 text-base font-medium bg-white hover:bg-white/90 text-gray-900 hover:text-black border border-primary/80 shadow-md hover:shadow-lg transition-all duration-200 "
+            className="w-full h-12 text-base font-medium bg-white hover:bg-white/90 text-gray-900 hover:text-black border border-primary/80 dark:border-white shadow-md hover:shadow-lg transition-all duration-200 "
             variant="outline"
           >
             <Image
@@ -67,7 +67,7 @@ export function LoginForm({
               height={25}
               className="mr-2"
             />
-            Continue with Google
+            Sign in with Google
           </Button>
 
           <p className="text-xs text-muted-foreground text-center px-4">

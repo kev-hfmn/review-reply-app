@@ -60,15 +60,15 @@ export default function LoginPage() {
           </div>
           </div>
         </main>
-        <Footer />
+
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-primary/10 to-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-primary/20 to-background">
       <PublicNavigation />
-      <main className="flex-1 min-h-[95vh] flex items-center justify-center py-8 px-4 sm:py-16">
+      <main className="flex-1 h-full flex items-center justify-center py-8 px-4 sm:py-16">
         <LoginForm
           onSubmit={handleSubmit}
           onGoogleSignIn={signInWithGoogle}
@@ -76,7 +76,7 @@ export default function LoginPage() {
           error={error}
         />
       </main>
-      <Footer />
+
     </div>
   );
 }
