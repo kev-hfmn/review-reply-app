@@ -257,20 +257,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle: async () => {
       // Use custom auth domain for OAuth callback if available, otherwise fallback to current origin
       const authDomain = process.env.NEXT_PUBLIC_CUSTOM_AUTH_DOMAIN;
-      const callbackUrl = authDomain 
-        ? `https://${authDomain}/api/auth/proxy-callback`
-        : `${window.location.origin}/auth/callback`;
+      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       
-      console.log('AuthContext: signInWithGoogle called');
-      console.log('AuthContext: authDomain =', authDomain);
-      console.log('AuthContext: callbackUrl =', callbackUrl);
-      
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: callbackUrl
-        }
-      });
+      if (authDomain && googleClientId) {
+        // Option 3: Direct Google OAuth URL construction with PKCE for complete domain control
+        const protocol = authDomain.includes('localhost') ? 'http' : 'https';
+        const redirectUri = `${protocol}://${authDomain}/api/auth/proxy-callback`;
+        
+        // Generate PKCE parameters
+        const generateCodeVerifier = () => {
+          const array = new Uint8Array(32);
+          crypto.getRandomValues(array);
+          return btoa(String.fromCharCode.apply(null, Array.from(array)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+        };
+        
+        const generateCodeChallenge = async (verifier: string) => {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(verifier);
+          const digest = await crypto.subtle.digest('SHA-256', data);
+          return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(digest))))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+        };
+        
+        const codeVerifier = generateCodeVerifier();
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        
+        // Store code verifier in cookie for server-side access
+        document.cookie = `pkce_code_verifier=${codeVerifier}; path=/; max-age=600; SameSite=Lax`;
+        
+        const googleOAuthUrl = 
+          `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${encodeURIComponent(googleClientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `response_type=code&` +
+          `scope=${encodeURIComponent('openid email profile')}&` +
+          `code_challenge=${encodeURIComponent(codeChallenge)}&` +
+          `code_challenge_method=S256&` +
+          `access_type=offline&` +
+          `prompt=consent`;
+        
+        console.log('AuthContext: Using direct Google OAuth URL construction with PKCE');
+        console.log('AuthContext: redirectUri =', redirectUri);
+        console.log('AuthContext: codeVerifier =', codeVerifier);
+        
+        // Direct redirect to Google (bypassing Supabase OAuth URL construction)
+        window.location.href = googleOAuthUrl;
+      } else {
+        // Fallback to original Supabase OAuth flow
+        const callbackUrl = `${window.location.origin}/auth/callback`;
+        
+        console.log('AuthContext: Using fallback Supabase OAuth flow');
+        console.log('AuthContext: callbackUrl =', callbackUrl);
+        
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: callbackUrl
+          }
+        });
+      }
     },
     signInWithEmail: async (email: string, password: string) => {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
