@@ -9,19 +9,19 @@ import { CookieButton } from '@/components/CookieButton';
 const staticBlogPosts = [
   {
     title: "Automated Google Review Responses: Enhance Your Reputation and Local SEO",
-    slug: "automated-google-review-responses-enhance-reputation-local-seo"
+    slug: "automated-google-review-responses"
   },
   {
     title: "How Automated Review Replies Can Transform Your Business Reputation",
-    slug: "how-automated-review-replies-transform-business-reputation"
+    slug: "automated-review-replies-business-reputation"
   },
   {
     title: "How to Respond to Negative Google Reviews: A Complete Guide for Small Businesses",
-    slug: "how-to-respond-negative-google-reviews-complete-guide"
+    slug: "how-to-respond-to-negative-google-reviews"
   },
   {
     title: "Why Replying to Google Reviews Is Critical for Local Businesses",
-    slug: "why-replying-google-reviews-critical-local-businesses"
+    slug: "why-replying-to-google-reviews-is-critical"
   }
 ];
 
