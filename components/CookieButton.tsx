@@ -6,7 +6,7 @@ export function CookieButton() {
   return (
     <button
       onClick={() => showCookiePreferences()}
-      className="text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors text-left"
+      className="text-sm text-foreground/80 hover:text-foreground transition-colors text-left"
     >
       Manage Cookies
     </button>

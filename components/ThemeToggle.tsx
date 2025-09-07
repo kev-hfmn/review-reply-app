@@ -9,14 +9,14 @@ export function ThemeToggle() {
 
   return (
     <div className="flex items-center gap-2">
-      <Sun className="h-4 w-4 text-primary-foreground/80" />
+      <Sun className="h-4 w-4 text-foreground/80" />
       <Switch
         checked={theme === 'dark'}
         onCheckedChange={toggleTheme}
         aria-label="Toggle theme"
-        className="data-[state=checked]:bg-card"
+        className=""
       />
-      <Moon className="h-4 w-4 text-primary-foreground/80" />
+      <Moon className="h-4 w-4 text-foreground/80" />
     </div>
   );
 }

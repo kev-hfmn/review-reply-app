@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
 import { PublicNavigation } from '@/components/PublicNavigation';
 import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function LoginPage() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -52,26 +53,34 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <PublicNavigation />
-        <div className="flex-1 flex items-center justify-center bg-background">
-          <div className="text-foreground">Loading...</div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <PublicNavigation />
-      <main className="flex-1 flex items-center justify-center bg-background py-16 px-4">
-        <div className="w-full max-w-md min-h-[70vh]">
+        <main className="flex-1 flex items-center justify-center bg-background py-16 px-4">
+          <div className="relative w-full max-w-md min-h-[70vh]">
+          <div className="absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-foreground flex items-center justify-center gap-5 animate-pulse"><LoadingSpinner />Loading...</div>
+          <div className="blur-[3px] z-5 opacity-40">
           <LoginForm
             onSubmit={handleSubmit}
             onGoogleSignIn={signInWithGoogle}
             isLoading={isLoading}
             error={error}
           />
-        </div>
+          </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-primary/10 to-background">
+      <PublicNavigation />
+      <main className="flex-1 min-h-[95vh] flex items-center justify-center py-8 px-4 sm:py-16">
+        <LoginForm
+          onSubmit={handleSubmit}
+          onGoogleSignIn={signInWithGoogle}
+          isLoading={isLoading}
+          error={error}
+        />
       </main>
       <Footer />
     </div>
