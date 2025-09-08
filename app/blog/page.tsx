@@ -37,30 +37,22 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen ">
       {/* Hero Section */}
-      <div className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/60 via-accent/40 to-secondary/40">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4 bg-background/50 text-muted-foreground border-border">
-              Blog
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-snug">
-            Smart Reputation Tips for Small Businesses
-            </h1>
-            <p className="text-xl text-foreground/90 mb-8 max-w-2xl mx-auto">
-            Our blog covers everything from customer trust to local SEO: short, clear, and actionable content built for busy business owners who don’t have hours to spare.
-            </p>
+      <div className="relative bg-muted/50 overflow-hidden">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-primary/20 to-accent/20 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
+        <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-30" />
 
-            {/* Newsletter Signup */}
-         {/*    <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 bg-white/10 border-white/30 text-white placeholder:text-white/70"
-              />
-              <Button className="bg-white text-blue-600 hover:bg-white/90 font-semibold px-8">
-                Subscribe
-              </Button>
-            </div> */}
+        <div className="relative container mx-auto px-4 py-16 md:py-24">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              RepliFast{' '}
+              <span className="bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+                Blog
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              Smart Reputation Tips for Small Businesses. Our blog covers everything from customer trust to local SEO: short, clear, and actionable content built for busy business owners who don’t have hours to spare.
+            </p>
           </div>
         </div>
       </div>

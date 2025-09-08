@@ -45,7 +45,7 @@ export default function Footer() {
       { name: 'Cookie Policy', href: '/cookies' }
     ],
     support: [
-      { name: 'Help Center', href: '/help' },
+      { name: 'Help Center', href: '/support' },
       { name: 'Contact', href: '/contact' }
     ]
   };
@@ -77,7 +77,7 @@ export default function Footer() {
           </div>
 
           {/* Main Link Columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:flex lg:gap-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 lg:flex lg:gap-16">
             {/* Product Links */}
             <div>
               <h3 className="text-sm font-semibold tracking-wider uppercase mb-4">Product</h3>

@@ -45,7 +45,7 @@ export function AccountManagement() {
 
 
       {/* User Information */}
-      <div className="mb-6 space-y-2 text-base">
+      <div className="mb-6 space-y-2 text-sm">
         <p><span className="font-medium">Email:</span> {user?.email}</p>
         <p><span className="font-medium">Last Sign In:</span> {user?.last_sign_in_at ? format(new Date(user.last_sign_in_at), 'd. MMMM yyyy') : 'Never'}</p>
         <p><span className="font-medium">Account Type:</span> {isOAuthUser ? 'Google Account' : 'Email Account'}</p>
@@ -91,7 +91,7 @@ export function AccountManagement() {
               <button
                 onClick={handleDeleteAccount}
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg disabled:opacity-50"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50"
               >
                 {isLoading ? 'Deleting...' : 'Delete Account'}
               </button>
