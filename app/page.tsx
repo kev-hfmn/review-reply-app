@@ -586,7 +586,7 @@ export default function LandingPage() {
                       href="/contact"
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
                     >
-                      Contact us via support
+                      Contact us
                     </a> if you have any more questions.
                   </p>
                   <p className="text-lg text-slate-600 dark:text-slate-300 mb-4">

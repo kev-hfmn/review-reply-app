@@ -42,6 +42,35 @@ export default function ContactPage() {
     }
   }, [user, formData.email]);
 
+  useEffect(() => {
+    // Define global Turnstile callbacks
+    if (typeof window !== 'undefined') {
+      (window as any).onTurnstileSuccess = (token: string) => {
+        setTurnstileToken(token);
+        setTurnstileError('');
+      };
+
+      (window as any).onTurnstileExpired = () => {
+        setTurnstileToken('');
+        setTurnstileError('CAPTCHA expired. Please try again.');
+      };
+
+      (window as any).onTurnstileError = () => {
+        setTurnstileToken('');
+        setTurnstileError('CAPTCHA failed. Please try again.');
+      };
+    }
+
+    // Load Turnstile script if keys are configured and not already loaded
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !document.querySelector('script[src*="turnstile"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  }, []);
+
   const [heroRef, heroInView] = useInView({
     triggerOnce: true,
     threshold: 0.1
@@ -298,19 +327,36 @@ export default function ContactPage() {
                           />
                         </div>
 
-                        {/* Verification Section - Development Mode Only */}
+                        {/* CAPTCHA Section */}
                         <div className="space-y-2">
                           <Label className="text-foreground">
-                            Verification (Development Mode)
+                            Verification
                           </Label>
                           <div className="flex justify-center">
-                            <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                              <p className="text-sm text-muted-foreground text-center">
-                                ✓ CAPTCHA disabled in development
-                                <br />
-                                <span className="text-xs">Set NEXT_PUBLIC_TURNSTILE_SITE_KEY to enable</span>
-                              </p>
-                            </div>
+                            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+                              <div className="w-full max-w-sm">
+                                <div
+                                  className="cf-turnstile"
+                                  data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                                  data-callback="onTurnstileSuccess"
+                                  data-expired-callback="onTurnstileExpired"
+                                  data-error-callback="onTurnstileError"
+                                />
+                                {turnstileError && (
+                                  <p className="text-sm text-red-500 mt-2 text-center">
+                                    {turnstileError}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                                <p className="text-sm text-muted-foreground text-center">
+                                  ✓ CAPTCHA disabled in development
+                                  <br />
+                                  <span className="text-xs">Set NEXT_PUBLIC_TURNSTILE_SITE_KEY to enable</span>
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
 
