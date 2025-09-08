@@ -139,16 +139,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <BlogSEO post={post} />
       <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary/60 via-accent/40 to-secondary/40 pt-16 pb-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
-            <ArrowLeftIcon className="h-4 w-4" />
-            Back to Blog
-          </Link>
+      <div className="relative bg-muted/50 overflow-hidden">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-primary/20 to-accent/20 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
+        <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-30" />
+
+        <div className="relative container mx-auto px-4 py-16 md:py-24">
+
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Column - Content */}
+
             <div>
+            <Link href="/blog" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
+            <ArrowLeftIcon className="h-4 w-4" />
+            Back to Blog
+          </Link>
               <div className="flex flex-wrap gap-2 mb-6">
                 {post.tags.map((tag: string) => (
                   <Badge key={tag} variant="secondary" className="bg-background/20 text-foreground/80 border-border">
@@ -192,9 +198,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                     className="object-cover"
                     priority
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-lg" />
                 </div>
-                {/* Optional overlay for better text readability if needed */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-lg" />
               </div>
             )}
           </div>

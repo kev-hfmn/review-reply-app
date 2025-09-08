@@ -318,7 +318,7 @@ function ProfileContent() {
               <div className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className=" font-medium ">Status:</span>
+                    <span className=" font-medium text-sm ">Status:</span>
                     <Badge
                       variant={subscription.status === 'active' ? 'default' : 'secondary'}
                       className={`${subscription.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}
@@ -400,7 +400,7 @@ function ProfileContent() {
                               }
                             }}
                             className=""
-                            variant="outlinePrimary"
+                            variant="outline"
                           >
                             Manage Subscription
                           </Button>
@@ -450,7 +450,7 @@ function ProfileContent() {
                             });
                           }
                         }}
-                        variant="outlinePrimary"
+                        variant="outline"
                       >
                         Manage Subscription
                       </Button>

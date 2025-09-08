@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PublicNavigation } from '@/components/PublicNavigation';
 import Footer from '@/components/Footer';
 import { Mail, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ContactFormData {
   businessName: string;
@@ -19,6 +20,8 @@ interface ContactFormData {
 }
 
 export default function ContactPage() {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState<ContactFormData>({
     businessName: '',
     email: '',
@@ -26,6 +29,16 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Pre-fill email if user is authenticated
+  useEffect(() => {
+    if (user?.email && !formData.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || ''
+      }));
+    }
+  }, [user, formData.email]);
 
   const [heroRef, heroInView] = useInView({
     triggerOnce: true,
@@ -54,17 +67,17 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual webhook URL
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
+      const response = await fetch('https://hook.eu2.make.com/knv29vbyny2wdm0zwv4wv14p4wyjg4gw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
+      }
 
       setIsSubmitted(true);
       setFormData({ businessName: '', email: '', message: '' });
@@ -86,8 +99,10 @@ export default function ContactPage() {
         />
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-[#0B1120] dark:via-[#0B1120] dark:to-[#1a1a2e]">
-          <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
+        <section className="relative bg-muted/50 overflow-hidden">
+          {/* Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-primary/20 to-accent/20 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
+          <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-30" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="pt-10 pb-16 sm:pt-20 sm:pb-24">
@@ -98,17 +113,17 @@ export default function ContactPage() {
                 transition={{ duration: 0.6 }}
                 className="text-center"
               >
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm font-medium mb-8">
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8">
                   <Mail className="h-4 w-4 mr-2" />
                   Get in Touch
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight mb-6">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
                   Contact us
                 </h1>
 
-                <p className="mt-6 max-w-2xl mx-auto text-xl text-slate-600 dark:text-slate-300">
-                  Have questions about RepliFast? Need help getting started? We're here to help you streamline your review management process.
+                <p className="mt-6 max-w-2xl mx-auto text-xl text-muted-foreground">
+                  Have questions about RepliFast? Need help getting started? We&apos;re here to help you streamline your review management process.
                 </p>
               </motion.div>
             </div>
@@ -116,7 +131,7 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Form Section */}
-        <section className="py-24 bg-slate-50 dark:bg-[#0f1629]">
+        <section className="py-24 bg-muted/50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
               {/* Left Side - Contact Info */}
@@ -127,29 +142,29 @@ export default function ContactPage() {
                 className="space-y-8"
               >
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                    Let's start a conversation
+                  <h2 className="text-3xl font-bold text-foreground mb-4">
+                    Let&apos;s start a conversation
                   </h2>
-                  <p className="text-lg text-slate-600 dark:text-slate-300">
-                    Whether you're looking to get started with RepliFast or need support with your existing account, our team is ready to help.
+                  <p className="text-lg text-muted-foreground">
+                    Whether you&apos;re looking to get started with RepliFast or need support with your existing account, our team is ready to help.
                   </p>
                 </div>
 
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                      <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <Mail className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-1">
                         Email Support
                       </h3>
-                      <p className="text-slate-600 dark:text-slate-300">
+                      <p className="text-muted-foreground">
                         Get help with your account, billing, or technical questions.
                       </p>
                       <a
                         href="mailto:support@replifast.com"
-                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                       >
                         support@replifast.com
                       </a>
@@ -157,14 +172,14 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                      <MessageSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <MessageSquare className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-1">
                         Quick Response
                       </h3>
-                      <p className="text-slate-600 dark:text-slate-300">
+                      <p className="text-muted-foreground">
                         We typically respond to all inquiries within 24 hours during business days.
                       </p>
                     </div>
@@ -179,13 +194,13 @@ export default function ContactPage() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
               >
-                <Card className="shadow-lg rounded-xl border-0 bg-white dark:bg-slate-800/50">
+                <Card className="shadow-lg rounded-xl border-0 bg-card">
                   <CardHeader className="pb-6">
-                    <CardTitle className="text-2xl text-slate-900 dark:text-white">
+                    <CardTitle className="text-2xl text-foreground">
                       Send us a message
                     </CardTitle>
-                    <CardDescription className="text-slate-600 dark:text-slate-300">
-                      Fill out the form below and we'll get back to you as soon as possible.
+                    <CardDescription className="text-muted-foreground">
+                      Fill out the form below and we&apos;ll get back to you as soon as possible.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -195,14 +210,14 @@ export default function ContactPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         className="text-center py-8"
                       >
-                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <CheckCircle2 className="h-8 w-8 text-green-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                        <h3 className="text-xl font-semibold text-foreground mb-2">
                           Message sent successfully!
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-300 mb-4">
-                          Thank you for reaching out. We'll get back to you within 24 hours.
+                        <p className="text-muted-foreground mb-4">
+                          Thank you for reaching out. We&apos;ll get back to you within 24 hours.
                         </p>
                         <Button
                           onClick={() => setIsSubmitted(false)}
@@ -214,7 +229,7 @@ export default function ContactPage() {
                     ) : (
                       <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                          <Label htmlFor="businessName" className="text-slate-900 dark:text-white">
+                          <Label htmlFor="businessName" className="text-foreground">
                             Business Name *
                           </Label>
                           <Input
@@ -225,12 +240,12 @@ export default function ContactPage() {
                             onChange={handleInputChange}
                             placeholder="Enter your business name"
                             required
-                            className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400"
+                            className="bg-card border-border focus:border-primary"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="email" className="text-slate-900 dark:text-white">
+                          <Label htmlFor="email" className="text-foreground">
                             Email Address *
                           </Label>
                           <Input
@@ -241,12 +256,12 @@ export default function ContactPage() {
                             onChange={handleInputChange}
                             placeholder="Enter your email address"
                             required
-                            className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400"
+                            className="bg-card border-border focus:border-primary"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="message" className="text-slate-900 dark:text-white">
+                          <Label htmlFor="message" className="text-foreground">
                             Message *
                           </Label>
                           <Textarea
@@ -257,7 +272,7 @@ export default function ContactPage() {
                             placeholder="Tell us how we can help you..."
                             required
                             rows={5}
-                            className="bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 resize-none"
+                            className="bg-card border-border focus:border-primary resize-none"
                           />
                         </div>
 
@@ -280,7 +295,7 @@ export default function ContactPage() {
                           )}
                         </Button>
 
-                        <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                        <p className="text-sm text-muted-foreground text-center">
                           * Required fields
                         </p>
                       </form>
@@ -293,26 +308,35 @@ export default function ContactPage() {
         </section>
 
         {/* FAQ Quick Links */}
-        <section className="py-16 bg-white dark:bg-[#0B1120]">
+        <section className="py-16 bg-background">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+              <h3 className="text-2xl font-bold text-foreground mb-4">
                 Looking for quick answers?
               </h3>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Check out our frequently asked questions for immediate help.
               </p>
-              <Button
-                onClick={() => window.location.href = '/#faq'}
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                View FAQ Section
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={() => window.location.href = '/#faq'}
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  View FAQ Section
+                </Button>
+                <Button
+                  onClick={() => window.location.href = '/help'}
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  Help Center
+                </Button>
+              </div>
             </motion.div>
           </div>
         </section>

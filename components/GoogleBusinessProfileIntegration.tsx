@@ -637,7 +637,7 @@ export default function GoogleBusinessProfileIntegration({
           )}
 
           {!connectionStatus.connected && connectionStatus.status !== 'needs_reconnection' && (
-            <div className="w-full">
+            <div className="w-full max-w-md">
               <Button
                 size="sm"
                 onClick={handleConnect}
