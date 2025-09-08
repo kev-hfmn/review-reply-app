@@ -33,6 +33,7 @@ import ReviewShowcase from '@/components/ReviewShowcase'
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection'
 import { Button } from '@/components/ui/button'
 import { PromoCodeBanner } from '@/components/PromoCodeBanner'
+import Link from 'next/link'
 
 const toPlain = (s: string) =>
   s
@@ -580,13 +581,16 @@ export default function LandingPage() {
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-6">
                     Frequently asked questions
                   </h2>
-                  <p className="text-slate-600 dark:text-slate-300 mb-4">
+                  <p className="text-lg text-slate-600 dark:text-slate-300 mb-4">
                     <a
                       href="/contact"
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors"
                     >
                       Contact us via support
                     </a> if you have any more questions.
+                  </p>
+                  <p className="text-lg text-slate-600 dark:text-slate-300 mb-4">
+                    Or visit our <Link href="/support" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline cursor-pointer transition-colors">Support center</Link> for more information and detailed instructions.
                   </p>
                 </AnimatedSection>
               </div>

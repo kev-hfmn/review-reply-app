@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Turnstile } from '@marsidev/react-turnstile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,7 +53,9 @@ export default function ContactPage() {
     { id: "features", title: "Features" },
     { id: "benefits", title: "Benefits" },
     { id: "pricing", title: "Pricing" },
-    { id: "contact", title: "Contact" }
+    { id: "faq", title: "FAQ" },
+    { id: "contact", title: "Contact" },
+    { id: "blog", title: "Blog" }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -67,7 +68,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Only require turnstile token if keys are configured
     if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
       setTurnstileError('Please complete the CAPTCHA verification');
@@ -106,9 +107,9 @@ export default function ContactPage() {
     }
   };
 
-  const isFormValid = formData.businessName.trim() && 
-                     formData.email.trim() && 
-                     formData.message.trim() && 
+  const isFormValid = formData.businessName.trim() &&
+                     formData.email.trim() &&
+                     formData.message.trim() &&
                      (turnstileToken || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   return (
@@ -297,51 +298,21 @@ export default function ContactPage() {
                           />
                         </div>
 
-                        {/* Turnstile CAPTCHA */}
-                        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-                          <div className="space-y-2">
-                            <Label className="text-foreground">
-                              Verification *
-                            </Label>
-                            <div className="flex justify-center">
-                              <Turnstile
-                                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                                onSuccess={(token) => {
-                                  setTurnstileToken(token);
-                                  setTurnstileError('');
-                                }}
-                                onError={() => {
-                                  setTurnstileError('CAPTCHA verification failed. Please try again.');
-                                  setTurnstileToken('');
-                                }}
-                                onExpire={() => {
-                                  setTurnstileError('CAPTCHA verification expired. Please verify again.');
-                                  setTurnstileToken('');
-                                }}
-                              />
-                            </div>
-                            {turnstileError && (
-                              <p className="text-sm text-red-500 text-center">
-                                {turnstileError}
+                        {/* Verification Section - Development Mode Only */}
+                        <div className="space-y-2">
+                          <Label className="text-foreground">
+                            Verification (Development Mode)
+                          </Label>
+                          <div className="flex justify-center">
+                            <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                              <p className="text-sm text-muted-foreground text-center">
+                                ✓ CAPTCHA disabled in development
+                                <br />
+                                <span className="text-xs">Set NEXT_PUBLIC_TURNSTILE_SITE_KEY to enable</span>
                               </p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <Label className="text-foreground">
-                              Verification (Development Mode)
-                            </Label>
-                            <div className="flex justify-center">
-                              <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                                <p className="text-sm text-muted-foreground text-center">
-                                  ✓ CAPTCHA disabled in development
-                                  <br />
-                                  <span className="text-xs">Set NEXT_PUBLIC_TURNSTILE_SITE_KEY to enable</span>
-                                </p>
-                              </div>
                             </div>
                           </div>
-                        )}
+                        </div>
 
                         <Button
                           type="submit"
