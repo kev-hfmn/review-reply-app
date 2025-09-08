@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +30,8 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const [turnstileError, setTurnstileError] = useState<string>('');
 
   // Pre-fill email if user is authenticated
   useEffect(() => {
@@ -64,31 +67,49 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Only require turnstile token if keys are configured
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setTurnstileError('Please complete the CAPTCHA verification');
+      return;
+    }
+
     setIsSubmitting(true);
+    setTurnstileError('');
 
     try {
-      const response = await fetch('https://hook.eu2.make.com/knv29vbyny2wdm0zwv4wv14p4wyjg4gw', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          turnstileToken
+        }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to submit form');
+        throw new Error(result.error || 'Failed to submit form');
       }
 
       setIsSubmitted(true);
       setFormData({ businessName: '', email: '', message: '' });
+      setTurnstileToken('');
     } catch (error) {
       console.error('Error submitting form:', error);
+      setTurnstileError(error instanceof Error ? error.message : 'Failed to submit form. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid = formData.businessName.trim() && formData.email.trim() && formData.message.trim();
+  const isFormValid = formData.businessName.trim() && 
+                     formData.email.trim() && 
+                     formData.message.trim() && 
+                     (turnstileToken || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0B1120] relative">
@@ -275,6 +296,52 @@ export default function ContactPage() {
                             className="bg-card border-border focus:border-primary resize-none"
                           />
                         </div>
+
+                        {/* Turnstile CAPTCHA */}
+                        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+                          <div className="space-y-2">
+                            <Label className="text-foreground">
+                              Verification *
+                            </Label>
+                            <div className="flex justify-center">
+                              <Turnstile
+                                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                                onSuccess={(token) => {
+                                  setTurnstileToken(token);
+                                  setTurnstileError('');
+                                }}
+                                onError={() => {
+                                  setTurnstileError('CAPTCHA verification failed. Please try again.');
+                                  setTurnstileToken('');
+                                }}
+                                onExpire={() => {
+                                  setTurnstileError('CAPTCHA verification expired. Please verify again.');
+                                  setTurnstileToken('');
+                                }}
+                              />
+                            </div>
+                            {turnstileError && (
+                              <p className="text-sm text-red-500 text-center">
+                                {turnstileError}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Label className="text-foreground">
+                              Verification (Development Mode)
+                            </Label>
+                            <div className="flex justify-center">
+                              <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                                <p className="text-sm text-muted-foreground text-center">
+                                  ✓ CAPTCHA disabled in development
+                                  <br />
+                                  <span className="text-xs">Set NEXT_PUBLIC_TURNSTILE_SITE_KEY to enable</span>
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         <Button
                           type="submit"
