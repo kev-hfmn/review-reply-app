@@ -146,9 +146,11 @@ const benefits = [
 
 export default function LandingPage() {
   return (
-    <NavigationWrapper navigationSections={publicNavigationSections}>
-      {/* Hero Section with Extended Particles Background */}
-      <section id="home" className="relative overflow-hidden bg-secondary/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/25 to-secondary/70 ">
+    <>
+
+      <NavigationWrapper navigationSections={publicNavigationSections}>
+        {/* Hero Section with Extended Particles Background */}
+        <section id="home" className="relative overflow-hidden bg-secondary/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/25 to-secondary/70 ">
         <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
         <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
         {/* Darker overlay for light mode */}
@@ -401,6 +403,7 @@ export default function LandingPage() {
             </p>
           </AnimatedSection>
 
+<div id="promocode">
           {/* Launch Discount Banner */}
           <AnimatedSection
             delay={0.2}
@@ -408,7 +411,7 @@ export default function LandingPage() {
           >
             <PromoCodeBanner />
           </AnimatedSection>
-
+</div>
           <PricingSection />
 
           {/* USP Section */}
@@ -622,5 +625,6 @@ export default function LandingPage() {
       {/* Footer */}
       <Footer />
     </NavigationWrapper>
+    </>
   )
 }

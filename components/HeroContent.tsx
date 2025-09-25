@@ -12,7 +12,7 @@ export default function HeroContent() {
             <Sparkles className="h-4 w-4 mr-2" />
             Your Reputation, On Autopilot
           </div>
-          
+
           {/* SEO Critical Content - Server Rendered */}
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white !leading-[1.2]">

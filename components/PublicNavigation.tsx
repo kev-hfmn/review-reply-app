@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import AnnouncementBar from '@/components/AnnouncementBar';
 
 interface NavigationSection {
   id: string;
@@ -41,6 +42,7 @@ export function PublicNavigation({
 
   return (
     <nav className="sticky top-0 z-50 bg-background/75 shadow-lg backdrop-blur-md border-b border-border">
+      <AnnouncementBar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
