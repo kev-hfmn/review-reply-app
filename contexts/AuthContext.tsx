@@ -58,12 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (subscriptionQuery.data) {
       setIsSubscriber(subscriptionQuery.data.isSubscriber)
       
-      // Log subscription details for debugging (preserved)
-      console.log(`User ${user?.id} subscription status:`, {
-        plan: subscriptionQuery.data.planId,
-        status: subscriptionQuery.data.status,
-        isSubscriber: subscriptionQuery.data.isSubscriber
-      });
+      // Only log subscription changes when they actually occur
+      if (subscriptionQuery.data.isSubscriber !== isSubscriber) {
+        console.log(`User ${user?.id} subscription changed:`, {
+          plan: subscriptionQuery.data.planId,
+          status: subscriptionQuery.data.status,
+          isSubscriber: subscriptionQuery.data.isSubscriber
+        });
+      }
     } else if (subscriptionQuery.error) {
       console.error('Subscription check error:', subscriptionQuery.error);
       setIsSubscriber(false);

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
-import { ThemeToggle } from '@/components/ThemeToggle';
+// import { ThemeToggle } from '@/components/ThemeToggle'; // Commented out - used for theme toggle
 import { ContactButtons } from '@/components/ContactButtons';
 import { CookieButton } from '@/components/CookieButton';
 
@@ -70,10 +70,10 @@ export default function Footer() {
 
             <ContactButtons />
 
-            {/* Theme Toggle */}
-            <div className="mt-6">
+            {/* Theme Toggle - Commented out for now */}
+            {/* <div className="mt-6">
               <ThemeToggle />
-            </div>
+            </div> */}
           </div>
 
           {/* Main Link Columns */}

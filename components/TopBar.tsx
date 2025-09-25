@@ -81,7 +81,7 @@ export default function TopBar() {
   };
 
   return (
-    <div className="w-full bg-sidebar border-b border-border">
+    <div className="w-full bg-sidebar border-b border-border shadow-subtle">
       <div className="mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-1 hover:opacity-80 transition-opacity">
           <Image

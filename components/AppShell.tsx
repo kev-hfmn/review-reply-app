@@ -12,17 +12,17 @@ export function AppShell({ children }: AppShellProps) {
     <div className="h-screen bg-background flex flex-col">
       {/* TopBar */}
       <TopBar />
-      
+
       {/* Main layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Fixed */}
         <Sidebar />
-        
+
         {/* Main content - Scrollable */}
         <main className="flex-1 overflow-y-auto lg:ml-0">
           {/* Content area with padding */}
           <div className="p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-8xl mx-auto">
               {children}
             </div>
           </div>

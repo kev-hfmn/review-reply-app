@@ -379,7 +379,7 @@ function SettingsPage() {
           const isGoogleConnected = business.connection_status === 'connected';
           console.log('🔍 DEBUG: business.connection_status =', business.connection_status);
           console.log('🔍 DEBUG: isGoogleConnected =', isGoogleConnected);
-          
+
           const integrationState = {
             googleBusiness: {
               connected: isGoogleConnected,
@@ -727,7 +727,7 @@ function SettingsPage() {
             <p className="text-muted-foreground max-w-md mx-auto">
               To access settings, you need to connect your Google Business Profile first. This will create your business profile and unlock all features.
             </p>
-            <Button 
+            <Button
               onClick={() => setActiveTab('integrations')}
               className="mt-4"
             >
@@ -763,22 +763,27 @@ function SettingsPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-border">
-        <nav className="flex space-x-8">
+      <div className="mb-8">
+        <nav className="flex flex-wrap gap-3">
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
+                className={`
+                  flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-base
+                  transition-all duration-200 ease-in-out transform hover:scale-[1.02]
+                  focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2
+                  ${isActive
+                    ? 'bg-primary/80 text-primary-foreground shadow-md shadow-primary/25 border border-primary/20'
+                    : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-border hover:border-border/80 hover:shadow-sm'
+                  }
+                `}
               >
-                <Icon className="h-4 w-4" />
-                {tab.label}
+                <Icon className={`mr-1 h-5 w-5 ${isActive ? 'text-primary-foreground' : ''}`} />
+                <span className="whitespace-nowrap">{tab.label}</span>
               </button>
             );
           })}
@@ -794,10 +799,11 @@ function SettingsPage() {
       >
         {/* Business Profile Tab */}
         {activeTab === 'profile' && (
+          <div>
           <Card className=" border-slate-200 dark:border-slate-700">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Building2 className="h-5 w-5" />
+
                 Business Profile
               </CardTitle>
             </CardHeader>
@@ -855,7 +861,7 @@ function SettingsPage() {
               </div>
 
               {/* Contact Information Section */}
-              <div className="border-t pt-6">
+              <div className="pt-6">
                 <h3 className="text-lg font-medium text-foreground mb-4">Customer Support Contact</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   These contact details will be included in AI-generated replies to low-rated reviews (1-3 stars) to help customers reach you directly.
@@ -888,138 +894,179 @@ function SettingsPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end">
-                <Button onClick={handleSaveProfile} disabled={isSaving}>
+            </CardContent>
+          </Card>
+          <div className="flex justify-end mt-6">
+           <Button onClick={handleSaveProfile} disabled={isSaving}>
                   <Save className="h-4 w-4 mr-2" />
                   {isSaving ? 'Saving...' : 'Save Profile'}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+                </div>
         )}
 
         {/* Brand Voice Tab */}
         {activeTab === 'voice' && (
-          <Card className="text-card-foreground">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5" />
-                Brand Voice Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-3">
-                  Voice Preset
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {(['friendly', 'professional', 'playful', 'custom'] as const).map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => setBrandVoice(prev => ({ ...prev, preset }))}
-                      className={`p-3 rounded-lg border-2 text-center transition-colors ${
-                        brandVoice.preset === preset
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary dark:text-foreground/80'
-                          : 'border-border hover:border-border/80 text-muted-foreground hover:text-foreground/80'
-                      }`}
-                    >
-                      <div className="font-medium capitalize">{preset}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Formality Level: {brandVoice.formality}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={brandVoice.formality}
-                    onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Very Casual</span>
-                    <span>Casual</span>
-                    <span>Balanced</span>
-                    <span>Formal</span>
-                    <span>Very Formal</span>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Voice Preset Card */}
+              <Card className="text-card-foreground">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <MessageSquare className="h-5 w-5" />
+                    Voice Preset
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className=" inline-flex gap-3 flex-wrap">
+                    {(['friendly', 'professional', 'playful', 'custom'] as const).map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => setBrandVoice(prev => ({ ...prev, preset }))}
+                        className={`px-5 py-2 !text-sm rounded-full border-2 text-center transition-colors ${
+                          brandVoice.preset === preset
+                            ? 'border-primary bg-primary/5 dark:bg-primary/10 text-primary dark:text-foreground/80'
+                            : 'border-border hover:border-border/80 text-muted-foreground hover:text-foreground/80'
+                        }`}
+                      >
+                        <div className="font-medium capitalize">{preset}</div>
+                      </button>
+                    ))}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Warmth Level: {brandVoice.warmth}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={brandVoice.warmth}
-                    onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Minimal</span>
-                    <span>Low</span>
-                    <span>Moderate</span>
-                    <span>Warm</span>
-                    <span>Very Warm</span>
+                  {/* Voice Preset Descriptions */}
+                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="space-y-2 text-sm">
+                      {brandVoice.preset === 'friendly' && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Friendly:</span> Warm, approachable, and concise tone. Perfect for creating genuine connections with customers while maintaining professionalism.
+                        </p>
+                      )}
+                      {brandVoice.preset === 'professional' && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Professional:</span> Polished, respectful, and concise tone. Ideal for formal businesses that want to maintain a sophisticated image.
+                        </p>
+                      )}
+                      {brandVoice.preset === 'playful' && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Playful:</span> Light, upbeat, and engaging tone. Can include tasteful emojis when natural. Great for creative or fun businesses.
+                        </p>
+                      )}
+                      {brandVoice.preset === 'custom' && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-foreground">Custom:</span> User-defined tone based on your specific brand instructions below. Perfect for unique brand voices and specialized messaging.
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Brevity Level: {brandVoice.brevity}
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={brandVoice.brevity}
-                    onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
-                    className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Very Detailed</span>
-                    <span>Detailed</span>
-                    <span>Moderate</span>
-                    <span>Concise</span>
-                    <span>Very Concise</span>
+              {/* Tone Adjustments Card */}
+              <Card className="text-card-foreground pb-5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <SettingsIcon className="h-5 w-5" />
+                    Tone Adjustments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Formality Level: {brandVoice.formality}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={brandVoice.formality}
+                      onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Very Casual</span>
+                      <span>Casual</span>
+                      <span>Balanced</span>
+                      <span>Formal</span>
+                      <span>Very Formal</span>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Custom Instruction */}
-              <div>
-                <label className="block text-sm font-medium text-foreground/80 mb-2">
-                  Custom Instructions
-                </label>
-                <Textarea
-                  value={brandVoice.customInstruction || ''}
-                  onChange={(e) => setBrandVoice(prev => ({ ...prev, customInstruction: e.target.value }))}
-                  placeholder="Add specific instructions for AI reply generation (e.g., 'Always mention our 24/7 customer service', 'Include a call to action', 'Use our brand terminology')..."
-                  className="w-full min-h-[100px] px-3 py-2 border  resize-vertical"
-                  rows={4}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
-                </p>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Warmth Level: {brandVoice.warmth}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={brandVoice.warmth}
+                      onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Minimal</span>
+                      <span>Low</span>
+                      <span>Moderate</span>
+                      <span>Warm</span>
+                      <span>Very Warm</span>
+                    </div>
+                  </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleSaveBrandVoice} disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Saving...' : 'Save Voice Settings'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
+                      Brevity Level: {brandVoice.brevity}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={brandVoice.brevity}
+                      onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Very Detailed</span>
+                      <span>Detailed</span>
+                      <span>Moderate</span>
+                      <span>Concise</span>
+                      <span>Very Concise</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Custom Instructions Card - spans full width */}
+              <Card className="text-card-foreground lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Zap className="h-5 w-5" />
+                    Custom Instructions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Textarea
+                    value={brandVoice.customInstruction || ''}
+                    onChange={(e) => setBrandVoice(prev => ({ ...prev, customInstruction: e.target.value }))}
+                    placeholder="Add specific instructions for AI reply generation (e.g., 'Always mention our 24/7 customer service', 'Include a call to action', 'Use our brand terminology')..."
+                    className="w-full min-h-[100px] px-3 py-2 border resize-vertical"
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <Button onClick={handleSaveBrandVoice} disabled={isSaving}>
+                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save Voice Settings'}
+              </Button>
+            </div>
+          </div>
         )}
 
 

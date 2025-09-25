@@ -77,7 +77,7 @@ export default function ReviewsPage() {
   }, []);
 
   // Handle drawer save
-  const handleDrawerSave = useCallback(async (reviewId: string, reply: string, tone: string) => {
+  const handleDrawerSave = useCallback(async (reviewId: string, reply: string) => {
     setDrawerData(prev => ({ ...prev, isLoading: true }));
     try {
       await reviewActions.updateReply(reviewId, reply);
@@ -189,6 +189,22 @@ export default function ReviewsPage() {
     setSelection({ selectedIds: new Set(), isAllSelected: false, isIndeterminate: false });
   }, []);
 
+  const handleSelectAll = useCallback(() => {
+    if (selection.isAllSelected) {
+      setSelection({
+        selectedIds: new Set(),
+        isAllSelected: false,
+        isIndeterminate: false
+      });
+    } else {
+      setSelection({
+        selectedIds: new Set(reviews.map(r => r.id)),
+        isAllSelected: true,
+        isIndeterminate: false
+      });
+    }
+  }, [reviews, selection.isAllSelected]);
+
   // Handle fetching reviews from Google Business Profile
   const handleFetchReviews = useCallback(async (options: FetchOptions) => {
     setIsFetchingReviews(true);
@@ -204,8 +220,6 @@ export default function ReviewsPage() {
 
   const filteredCount = reviews.length;
 
-  // Debug logging to check loading states
-  console.log('Reviews Page Loading States:', { authLoading, dataLoading, isPageLoading });
 
   // Force loading screen to show for at least 500ms to prevent flicker
   const [minLoadingTime, setMinLoadingTime] = useState(true);
@@ -274,10 +288,10 @@ export default function ReviewsPage() {
               onClick={() => handleFetchReviews({ timePeriod: '30days', reviewCount: 50 })}
               disabled={isFetchingReviews || isUpdating}
               variant="primary"
-              className="flex items-center space-x-0 px-3 py-2 "
+              className="flex items-center space-x-0 px-4 py-2 "
             >
               <RefreshCw className={`h-4 w-4 ${isFetchingReviews ? 'animate-spin' : ''}`} />
-              <span>Fetch New Reviews</span>
+              <span>Sync Reviews</span>
             </Button>
           ) : (
             <Button
@@ -337,6 +351,8 @@ export default function ReviewsPage() {
         onReset={resetFilters}
         isLoading={dataLoading}
         resultCount={filteredCount}
+        selection={selection}
+        onSelectAll={handleSelectAll}
       />
 
       {/* Empty State for Basic Users */}
@@ -401,32 +417,35 @@ export default function ReviewsPage() {
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-muted-foreground/5 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400">
+        <div className="flex flex-col gap-y-5 pt-10 items-center justify-between  p-4  border-slate-200 dark:border-slate-700">
+
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => goToPage(pagination.currentPage - 1)}
+              disabled={!pagination.hasPrevPage}
+              variant="pill"
+              className="h-12 w-12 bg-card shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <span className="px-3 py-1 text-sm font-medium">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <Button
+              onClick={() => goToPage(pagination.currentPage + 1)}
+              disabled={!pagination.hasNextPage}
+              variant="pill"
+              className="h-12 w-12 bg-card shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            >
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <span>
               Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to{' '}
               {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}
               {pagination.totalItems} results
             </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => goToPage(pagination.currentPage - 1)}
-              disabled={!pagination.hasPrevPage}
-              className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <span className="px-3 py-1 text-sm font-medium">
-              Page {pagination.currentPage} of {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => goToPage(pagination.currentPage + 1)}
-              disabled={!pagination.hasNextPage}
-              className="px-3 py-1 text-sm border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
           </div>
         </div>
       )}

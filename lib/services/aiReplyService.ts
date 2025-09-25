@@ -1,5 +1,12 @@
 import { supabaseAdmin } from '@/utils/supabase-admin';
 import { generateAIReply } from './openaiService';
+import type {
+  ReviewData,
+  BrandVoiceSettings,
+  BusinessInfo,
+  GenerateReplyResult,
+  BatchGenerateResult
+} from '@/lib/types/aiTypes';
 
 // Re-export types from shared types file
 export type {
@@ -89,6 +96,68 @@ export async function getBusinessInfo(businessId: string): Promise<BusinessInfo 
 // BatchGenerateResult type moved to @/lib/types/aiTypes
 
 /**
+ * Extract avoid phrases from recent AI replies for anti-repetition
+ */
+export async function extractAvoidPhrases(businessId: string, limit: number = 10): Promise<string[]> {
+  try {
+    const { data: recentReplies, error } = await supabaseAdmin
+      .from('reviews')
+      .select('ai_reply')
+      .eq('business_id', businessId)
+      .not('ai_reply', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+
+    if (error || !recentReplies) {
+      console.warn('Failed to fetch recent replies for avoid phrases:', error);
+      return [];
+    }
+
+    const avoidPhrases: string[] = [];
+
+    for (const reply of recentReplies) {
+      if (reply.ai_reply) {
+        const text = reply.ai_reply.toLowerCase();
+
+        // Extract opening phrases (first 4-6 words)
+        const words = text.split(/\s+/);
+        if (words.length >= 4) {
+          avoidPhrases.push(words.slice(0, 4).join(' '));
+          if (words.length >= 6) {
+            avoidPhrases.push(words.slice(0, 6).join(' '));
+          }
+        }
+
+        // Extract common patterns
+        const patterns = [
+          /thank you for .{1,20}/g,
+          /we appreciate .{1,20}/g,
+          /glad (that )?you .{1,20}/g,
+          /so happy .{1,20}/g,
+          /it('s| is) wonderful .{1,20}/g,
+          /we('re| are) grateful .{1,20}/g
+        ];
+
+        patterns.forEach(pattern => {
+          const matches = text.match(pattern);
+          if (matches) {
+            avoidPhrases.push(...matches.slice(0, 2)); // Limit matches per pattern
+          }
+        });
+      }
+    }
+
+    // Remove duplicates and return most common phrases
+    const uniquePhrases = [...new Set(avoidPhrases)];
+    return uniquePhrases.slice(0, 15); // Limit to top 15 phrases
+
+  } catch (error) {
+    console.warn('Error extracting avoid phrases:', error);
+    return [];
+  }
+}
+
+/**
  * Generate AI reply for a single review (automated version)
  */
 export async function generateAutomatedReply(
@@ -98,10 +167,11 @@ export async function generateAutomatedReply(
   console.log('🤖 Starting automated reply generation for review:', review.id);
 
   try {
-    // Get business settings and info
-    const [brandVoice, businessInfo] = await Promise.all([
+    // Get business settings, info, and recent phrases to avoid
+    const [brandVoice, businessInfo, avoidPhrases] = await Promise.all([
       getBusinessSettings(businessId),
       getBusinessInfo(businessId),
+      extractAvoidPhrases(businessId)
     ]);
 
     if (!brandVoice || !businessInfo) {
@@ -117,12 +187,15 @@ export async function generateAutomatedReply(
       businessName: businessInfo.name,
       industry: businessInfo.industry,
       brandVoice: brandVoice.preset,
-      customInstruction: !!brandVoice.customInstruction
+      customInstruction: !!brandVoice.customInstruction,
+      avoidPhrasesCount: avoidPhrases.length
     });
 
-    // Call OpenAI service directly (server-side)
+    // Call OpenAI service directly (server-side) with avoid phrases
     console.log('🚀 Calling OpenAI service...');
-    const aiResult = await generateAIReply(review, brandVoice, businessInfo);
+    const aiResult = await generateAIReply(review, brandVoice, businessInfo, {
+      avoidPhrases: avoidPhrases.length > 0 ? avoidPhrases : undefined
+    });
     console.log('✅ OpenAI success - Reply length:', aiResult.reply.length);
 
     return {
@@ -163,7 +236,7 @@ function getServerFallbackReply(review: ReviewData, tone: string = 'friendly'): 
 }
 
 /**
- * Generate AI replies for multiple reviews in batches
+ * Generate AI replies for multiple reviews in batches with anti-repetition
  */
 export async function batchGenerateReplies(
   reviews: ReviewData[],
@@ -218,6 +291,13 @@ export async function batchGenerateReplies(
       return result;
     }
 
+    // Extract phrases to avoid from recent replies
+    const avoidPhrases = await extractAvoidPhrases(businessId, 15);
+    console.log(`🔄 Bulk generation: avoiding ${avoidPhrases.length} recent phrases`);
+
+    // Track phrases generated in this batch to avoid immediate repetition
+    const thisBatchPhrases: string[] = [];
+
     // Process reviews in batches to avoid overwhelming the API
     for (let i = 0; i < reviews.length; i += batchSize) {
       const batch = reviews.slice(i, i + batchSize);
@@ -225,8 +305,23 @@ export async function batchGenerateReplies(
       // Process batch in parallel
       const batchPromises = batch.map(async (review) => {
         try {
-          // Use server-side OpenAI service directly (no fetch call)
-          const aiResult = await generateAIReply(review, finalBrandVoice, finalBusinessInfo);
+          // Combine database avoid phrases with this batch's phrases
+          const combinedAvoidPhrases = [...avoidPhrases, ...thisBatchPhrases];
+
+          // Use server-side OpenAI service directly with anti-repetition context
+          const aiResult = await generateAIReply(review, finalBrandVoice, finalBusinessInfo, {
+            avoidPhrases: combinedAvoidPhrases.length > 0 ? combinedAvoidPhrases : undefined
+          });
+
+          // Extract opening phrase from this reply to avoid immediate repetition
+          const words = aiResult.reply.toLowerCase().split(/\s+/);
+          if (words.length >= 4) {
+            thisBatchPhrases.push(words.slice(0, 4).join(' '));
+            // Keep only recent phrases to avoid memory bloat
+            if (thisBatchPhrases.length > 20) {
+              thisBatchPhrases.splice(0, 5);
+            }
+          }
 
           result.results.push({
             reviewId: review.id,
@@ -275,7 +370,7 @@ export async function batchGenerateReplies(
 
     // Mark any remaining reviews as failed
     for (const review of reviews) {
-      const existing = result.results.find(r => r.reviewId === review.id);
+      const existing = result.results.find((r) => r.reviewId === review.id);
       if (!existing) {
         result.results.push({
           reviewId: review.id,
@@ -331,8 +426,10 @@ export async function generateBulkReplies(
  */
 export async function retryFailedReplies(
   businessId: string,
-  _maxRetries: number = 3
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  maxRetries: number = 3
 ): Promise<BatchGenerateResult> {
+  // Note: maxRetries parameter available for future retry logic implementation
   try {
     // Get reviews that failed automation
     const { data: failedReviews, error } = await supabaseAdmin

@@ -8,7 +8,8 @@ import {
   X,
   RotateCcw
 } from 'lucide-react';
-import type { ReviewFiltersProps } from '@/types/reviews';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { ReviewFiltersProps, SelectionState } from '@/types/reviews';
 import { REVIEW_STATUSES, RATING_FILTERS } from '@/types/reviews';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,13 +29,20 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+interface ExtendedReviewFiltersProps extends ReviewFiltersProps {
+  selection: SelectionState;
+  onSelectAll: () => void;
+}
+
 export default function ReviewFilters({
   filters,
   onFiltersChange,
   onReset,
   isLoading = false,
-  resultCount
-}: ReviewFiltersProps) {
+  resultCount,
+  selection,
+  onSelectAll
+}: ExtendedReviewFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
@@ -82,9 +90,10 @@ export default function ReviewFilters({
   return (
     <div className="bg-card rounded-xl p-4 border border-border">
       {/* Search and Filter Toggle Row */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          {/* Search */}
+          <div className="relative flex-grow max-w-xs">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
@@ -104,6 +113,21 @@ export default function ReviewFilters({
               <X className="h-4 w-4" />
             </Button>
           )}
+          </div>
+
+          {/* Select All Checkbox */}
+          <div className="flex items-center border-l border-border pl-4">
+            <Checkbox
+              checked={selection.isAllSelected}
+              onCheckedChange={onSelectAll}
+              className="h-4 w-4"
+            />
+            <span className="ml-3 text-sm font-medium text-muted-foreground whitespace-nowrap">
+              {selection.selectedIds.size > 0
+                ? `${selection.selectedIds.size} selected`
+                : 'Select all'}
+            </span>
+          </div>
         </div>
 
         {/* Filter Controls */}
@@ -131,11 +155,12 @@ export default function ReviewFilters({
             variant={hasActiveFilters ? "pillActive" : "pill"}
             className="flex items-center gap-2"
             disabled={isLoading}
+            size="sm"
           >
             <Filter className="h-4 w-4" />
             Filters
             {hasActiveFilters && (
-              <span className="bg-foreground/10 text-foreground px-1.5 py-0.5 rounded text-xs font-semibold">
+              <span className="bg-foreground/10 text-foreground px-1 py-0.5 rounded text-xs font-semibold">
                 {[
                   filters.rating !== null,
                   filters.status !== 'all',
@@ -217,8 +242,9 @@ export default function ReviewFilters({
                   <PopoverTrigger asChild>
                     <Button
                       variant="outlineDefault"
+                      size="sm"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal bg-input border border-border rounded-lg",
                         !filters.dateRange.from && "text-muted-foreground"
                       )}
                       disabled={isLoading}
@@ -247,8 +273,9 @@ export default function ReviewFilters({
                   <PopoverTrigger asChild>
                     <Button
                       variant="outlineDefault"
+                      size="sm"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal bg-input border border-border rounded-lg",
                         !filters.dateRange.to && "text-muted-foreground"
                       )}
                       disabled={isLoading}

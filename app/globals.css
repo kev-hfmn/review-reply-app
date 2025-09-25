@@ -147,9 +147,9 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 98.8235%;
+    --background: 210 16.6667% 97.6471%;
     --foreground: 222.2222 47.3684% 11.1765%;
-    --card: 0 0% 100%;
+    --card: 0 0% 99.2157%;
     --card-foreground: 222.2222 47.3684% 11.1765%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2222 47.3684% 11.1765%;
@@ -164,7 +164,7 @@ body {
     --destructive: 0 84.2365% 60.1961%;
     --destructive-foreground: 0 0% 100%;
     --border: 214.2857 31.8182% 91.3725%;
-    --input: 221.5385 25.4902% 90%;
+    --input:0 0% 99.2157%;
     --ring: 201.1765 100% 30%;
     --chart-1: 201.1765 100% 30%;
     --chart-2: 35.0588 100% 50%;

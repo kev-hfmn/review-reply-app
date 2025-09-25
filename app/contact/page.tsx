@@ -80,7 +80,6 @@ export default function ContactPage() {
   const navigationSections = [
     { id: "home", title: "Home" },
     { id: "features", title: "Features" },
-    { id: "benefits", title: "Benefits" },
     { id: "pricing", title: "Pricing" },
     { id: "faq", title: "FAQ" },
     { id: "contact", title: "Contact" },

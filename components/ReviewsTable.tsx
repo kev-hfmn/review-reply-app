@@ -16,7 +16,6 @@ import {
 import {
   Edit3,
   Send,
-  Check,
   SkipForward,
   Calendar,
   Loader2,
@@ -24,7 +23,10 @@ import {
   Wand2,
   Trash2,
   Star,
-  MessageSquare
+  MessageSquare,
+  Eye,
+  EyeIcon,
+  EyeOff
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -57,31 +59,15 @@ export default function ReviewsTable({
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${
+        className={`h-5 w-5 ${
           i < rating
-            ? 'text-yellow-400 fill-current'
+            ? 'text-yellow-500 fill-current'
             : 'text-gray-300 dark:text-gray-600'
         }`}
       />
     ));
   }, []);
 
-  // Handle selection
-  const handleSelectAll = useCallback(() => {
-    if (selection.isAllSelected) {
-      onSelectionChange({
-        selectedIds: new Set(),
-        isAllSelected: false,
-        isIndeterminate: false
-      });
-    } else {
-      onSelectionChange({
-        selectedIds: new Set(reviews.map(r => r.id)),
-        isAllSelected: true,
-        isIndeterminate: false
-      });
-    }
-  }, [reviews, selection.isAllSelected, onSelectionChange]);
 
   const handleSelectReview = useCallback((reviewId: string) => {
     const newSelectedIds = new Set(selection.selectedIds);
@@ -210,44 +196,26 @@ export default function ReviewsTable({
   }
 
   return (
-    <div className="bg-card-foreground/10 rounded-xl shadow-sm border border-border overflow-hidden">
-      {/* Table Header */}
-      <div className="px-6 py-4 border-b border-border">
-        <div className="flex items-center">
-          <div className="flex items-center">
-            <Checkbox
-              checked={selection.isAllSelected}
-              onCheckedChange={handleSelectAll}
-              className="h-4 w-4"
-            />
-            <span className="ml-3 text-sm font-normal text-foreground">
-              {selection.selectedIds.size > 0
-                ? `${selection.selectedIds.size} selected`
-                : 'Select all'
-              }
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6">
 
-      {/* Table Body */}
-      <div className="divide-y divide-border">
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {reviews.map((review, index) => (
           <motion.div
             key={review.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`p-6 transition-colors cursor-pointer ${
+            className={`bg-card rounded-2xl border transition-all duration-200 hover:shadow-lg cursor-pointer ${
               selection.selectedIds.has(review.id)
-                ? 'bg-card-foreground/5'
-                : 'bg-card hover:bg-card'
+                ? 'border-primary/70 shadow-lg bg-primary-opacity-5'
+                : 'border-border hover:border-primary/20'
             }`}
             onClick={() => onReviewClick(review)}
           >
-            <div className="flex items-start space-x-4">
-              {/* Selection Checkbox */}
-              <div className="flex-shrink-0 pt-1">
+            <div className="p-6 relative">
+              {/* Selection Checkbox - Top Right */}
+              <div className="absolute top-4 right-4">
                 <Checkbox
                   checked={selection.selectedIds.has(review.id)}
                   onCheckedChange={() => handleSelectReview(review.id)}
@@ -257,19 +225,19 @@ export default function ReviewsTable({
               </div>
 
               {/* Main Content - Full Width */}
-              <div className="flex-1 min-w-0 pr-6">
+              <div className="">
                 {/* Rating Stars */}
-                <div className="flex items-center space-x-2 mb-2">
+                <div className="flex items-center space-x-2 mb-4">
                   <div className="flex space-x-1">
                     {renderStars(review.rating)}
                   </div>
-                  <span className="text-sm font-light text-muted-foreground">
+                  <span className="text-sm font-light tracking-widest text-muted-foreground">
                     {review.rating}/5
                   </span>
                 </div>
 
                 {/* Customer & Date */}
-                <div className="flex items-center space-x-2 text-sm mb-3">
+                <div className="flex items-center space-x-3 text-sm mb-3">
                   <Avatar
                     src={review.customer_avatar_url}
                     alt={`${review.customerDisplayName}'s avatar`}
@@ -286,21 +254,25 @@ export default function ReviewsTable({
                 </div>
 
                 {/* Review Text */}
-                <div className="mb-4">
-                  <p className="text-foreground/90 text-sm leading-relaxed">
+                <div className="mb-5">
+                  <p className="text-foreground/90 text-[0.9rem] leading-relaxed">
                     &ldquo;{review.truncatedReviewText}&rdquo;
                   </p>
                 </div>
 
-                {/* AI Reply Section - Enhanced */}
-                <div className="bg-muted-foreground/5 border border-muted-foreground/50 rounded-lg p-5 mb-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <UserAvatar size="sm" />
-                      <span className="text-sm text-foreground/80 font-medium">
+                {/* Reply Section - Smooth */}
+
+                <div className=" mb-0">
+                  {(review.ai_reply || review.final_reply) && (
+                    <>
+                  <div className="flex flex-col items-left justify-between mb-3 border border-primary/10 pl-4 pr-4 py-4 bg-primary/5 rounded-r-xl rounded-bl-xl ">
+                    <div className="flex justify-between items-center space-x-2">
+                      <div className="flex items-center space-x-2">
+                      {/* <UserAvatar size="sm" /> */}
+                      <span className="text-sm text-foreground/70 font-medium">
                         Your Reply
                       </span>
-                      {/* Status Badge - moved here to clarify it refers to the reply */}
+                      {/* Status Badge */}
                       <Badge
                         variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
                         className="text-xs"
@@ -323,90 +295,23 @@ export default function ReviewsTable({
                       )}
                     </div>
                     <div className="flex items-center text-xs text-muted-foreground">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEditing(review);
-                      }}
-                      variant="ghost"
-                      size="sm"
-                      className=""
-                      disabled={editingReviewId === review.id}
-                      title="Edit reply"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </Button>
+                  </div>
+                    </div>
 
-                    {/* Delete button next to edit button - only for posted reviews */}
-                    {review.status === 'posted' && review.final_reply && (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isSubscriber) {
-                            setDeleteConfirmReviewId(review.id);
-                          } else {
-                            onUpgradeRequired?.();
-                          }
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className={`text-red-500/70 hover:text-red-600 p-1 h-8 w-8 ${isSubscriber ? "" : "opacity-50"}`}
-                        title={isSubscriber ? "Delete reply from Google Business Profile" : "Deleting replies requires subscription - click to learn more"}
-                        disabled={updatingReviewId === review.id}
-                      >
-                        {updatingReviewId === review.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  </div>
 
                   {editingReviewId === review.id ? (
-                    <div className="space-y-2">
+                    <div className="pt-3">
                       <Textarea
                         value={editingText}
                         onChange={(e) => setEditingText(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="resize-none text-md"
+                        className="resize-y text-md"
                         rows={3}
                         autoFocus
                       />
-                      <div className="flex items-center justify-end !mt-5 space-x-2">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cancelEdit();
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className=""
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveEdit(review);
-                          }}
-                          size="sm"
-                          disabled={updatingReviewId === review.id}
-                        >
-                          {updatingReviewId === review.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              {review.status === 'posted' ? 'Updating on Google...' : 'Saving...'}
-                            </>
-                          ) : (
-                            review.status === 'posted' ? 'Update on Google' : 'Save Changes'
-                          )}
-                        </Button>
-                      </div>
                     </div>
                   ) : (
-                    <p className="text-foreground/90 text-sm leading-relaxed">
+                    <p className="text-foreground/90 text-[0.9rem] leading-relaxed pt-3">
                       {review.status === 'posted'
                         ? (review.final_reply || 'No reply posted yet')
                         : (review.ai_reply || 'No reply generated yet')
@@ -414,11 +319,51 @@ export default function ReviewsTable({
                     </p>
                   )}
                 </div>
+                </>
+                  )}
 
-                {/* Action Buttons - Moved below AI reply, full width */}
-                <div className="flex items-center justify-end space-x-2 pt-3 mt-4">
-                  {/* Show Generate Reply button when no AI reply exists */}
-                  {!review.ai_reply && (
+                {/* Action Buttons - Full width at bottom of card */}
+                <div className="flex items-center justify-between pt-4">
+                  {editingReviewId === review.id ? (
+                    /* Edit Mode Buttons */
+                    <>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEdit();
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full w-10 h-10 p-0"
+                        title="Cancel editing"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          saveEdit(review);
+                        }}
+                        size="sm"
+                        className="rounded-full px-4"
+                        disabled={updatingReviewId === review.id}
+                      >
+                        {updatingReviewId === review.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            {review.status === 'posted' ? 'Updating...' : 'Saving...'}
+                          </>
+                        ) : (
+                          review.status === 'posted' ? 'Repost' : 'Save Changes'
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    /* Normal Mode Buttons */
+                    <>
+                      <div className="flex items-center space-x-2">
+                        {/* Show Generate Reply button when no AI reply exists */}
+                        {!review.ai_reply && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -429,19 +374,18 @@ export default function ReviewsTable({
                         }
                       }}
                       size="sm"
-                      variant={isSubscriber ? "secondary" : "outline"}
+                      variant={isSubscriber ? "outlinePrimary" : "outline"}
                       title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
-                      className={isSubscriber ? "" : "text-gray-500"}
+                      className={`rounded-full h-10 bg-primary/5 hover:bg-primary/90 p-0 ${isSubscriber ? "" : "text-gray-500"}`}
                     >
                       {generatingReviewId === review.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Wand2 className="h-4 w-4" />
+                        <div className="flex items-center space-x-2 px-3">
+                        <Wand2 className="h-4 w-4" /><span>Generate</span>
+                        </div>
                       )}
-                      <span>
-                        {generatingReviewId === review.id ? 'Generating...' : isSubscriber ? 'Generate Reply' : 'Generate (Upgrade)'}
-                      </span>
                     </Button>
                   )}
 
@@ -458,25 +402,23 @@ export default function ReviewsTable({
                         }
                       }}
                       size="sm"
-                      variant="outlineSecondary"
+                      variant="outline"
                       title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
-                      className={isSubscriber ? "" : "text-gray-500"}
+                      className={`rounded-full w-10 h-10 p-0  ${isSubscriber ? "" : "text-gray-500"}`}
                     >
                       {generatingReviewId === review.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
-                      <span>
-                        {generatingReviewId === review.id ? 'Regenerating...' : isSubscriber ? 'Regenerate' : 'Regenerate (Upgrade)'}
-                      </span>
+
                     </Button>
                   )}
 
 
-                  {/* Show Approve button only when AI reply exists and status is pending */}
-                  {review.ai_reply && review.status === 'pending' && (
+                  {/* Approve button hidden for cleaner UI - functionality preserved via drawer */}
+                  {/* {review.ai_reply && review.status === 'pending' && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -489,9 +431,24 @@ export default function ReviewsTable({
                       <Check className="h-4 w-4" />
                       <span>Approve</span>
                     </Button>
-                  )}
+                  )} */}
 
-                  {/* Delete Reply button moved next to edit button */}
+                  {/* Edit button - show when AI reply exists */}
+                  {review.ai_reply && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditing(review);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full w-10 h-10 p-0"
+                      disabled={editingReviewId === review.id}
+                      title="Edit reply"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  )}
 
                   {/* Show Post button only when AI reply exists */}
                   {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
@@ -504,39 +461,74 @@ export default function ReviewsTable({
                           onUpgradeRequired?.();
                         }
                       }}
-                      size="sm"
-                      variant={isSubscriber ? "outlineGreen" : "outline"}
+
+                      variant={isSubscriber ? "outlinePrimary" : "outline"}
                       title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
-                      className={isSubscriber ? "" : "text-gray-500"}
+                      className={`rounded-full text-sm px-3 h-10 ${isSubscriber ? "" : "text-gray-500"}`}
                       disabled={postingReviewId === review.id}
                     >
                       {postingReviewId === review.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Send className="h-4 w-4" />
+                       <div className="flex items-center space-x-2">
+                       <Send className="h-4 w-4" />
+                       <span>Post</span>
+                       </div>
                       )}
-                      <span>
-                        {postingReviewId === review.id ? "Posting..." : isSubscriber ? "Post" : "Post (Upgrade)"}
-                      </span>
                     </Button>
                   )}
 
-                  {/* Skip button - available when not posted or skipped */}
-                  {review.status !== 'posted' && review.status !== 'skipped' && (
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onQuickAction(review.id, 'skip');
-                      }}
-                      variant="outlineDefault"
-                      size="sm"
+                  </div>
 
-                      title="Skip"
-                    >
-                      <SkipForward className="h-4 w-4" />
-                      <span>Skip</span>
-                    </Button>
+                  {/* Secondary Actions */}
+                  <div className="flex items-center justify-end space-x-2">
+                    {/* Skip button - ghost style */}
+                    {review.status !== 'posted' && review.status !== 'skipped' && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onQuickAction(review.id, 'skip');
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground rounded-full"
+                        title="Skip"
+                      >
+                        <EyeOff className="h-4 w-4" />
+
+                      </Button>
+                    )}
+
+                    {/* Delete button - only for posted reviews */}
+                    {review.status === 'posted' && review.final_reply && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isSubscriber) {
+                            setDeleteConfirmReviewId(review.id);
+                          } else {
+                            onUpgradeRequired?.();
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className={` hover:text-red-600 hover:bg-red-600/20 hover:border-red-600/50 rounded-full w-10 h-10 p-0 ${isSubscriber ? "" : "opacity-50"}`}
+                        title={isSubscriber ? "Delete reply from Google Business Profile" : "Deleting replies requires subscription - click to learn more"}
+                        disabled={updatingReviewId === review.id}
+                      >
+                        {updatingReviewId === review.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                      </div>
+
+
+                    </>
                   )}
+                </div>
                 </div>
               </div>
             </div>
@@ -558,7 +550,8 @@ export default function ReviewsTable({
             <AlertDialogAction
               onClick={() => {
                 if (deleteConfirmReviewId) {
-                  onQuickAction(deleteConfirmReviewId, 'delete');
+                  // TODO: Implement delete functionality with proper type support
+                  // onQuickAction(deleteConfirmReviewId, 'delete');
                   setDeleteConfirmReviewId(null);
                 }
               }}

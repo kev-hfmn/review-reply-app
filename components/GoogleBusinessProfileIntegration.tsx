@@ -68,7 +68,7 @@ export default function GoogleBusinessProfileIntegration({
   onShowToast,
   onStatusChange
 }: GoogleBusinessProfileIntegrationProps) {
-  const { user, businesses } = useAuth();
+  const { user, businesses, isLoading: authLoading } = useAuth();
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
     connected: false,
     status: 'disconnected'
@@ -140,6 +140,9 @@ export default function GoogleBusinessProfileIntegration({
   const handleConnect = async () => {
     if (!user?.id) return;
 
+    // Don't start connecting if auth is still loading
+    if (authLoading) return;
+
     setIsLoading(true);
     try {
       console.log('🚀 Initiating platform OAuth connection...');
@@ -183,6 +186,9 @@ export default function GoogleBusinessProfileIntegration({
 
   const handleDisconnect = async () => {
     if (!user?.id) return;
+
+    // Don't start disconnecting if auth is still loading
+    if (authLoading) return;
 
     setIsDisconnecting(true);
     try {
@@ -237,6 +243,9 @@ export default function GoogleBusinessProfileIntegration({
   const handleTestConnection = async () => {
     if (!user?.id) return;
 
+    // Don't start testing if auth is still loading
+    if (authLoading) return;
+
     setIsLoading(true);
     try {
       console.log('🧪 Testing Google Business Profile connections...');
@@ -283,6 +292,9 @@ export default function GoogleBusinessProfileIntegration({
 
   const handleRemoveBusiness = async (businessId: string, businessName: string) => {
     if (!user?.id) return;
+
+    // Don't start removing if auth is still loading - prevents undefined userId
+    if (authLoading) return;
 
     setRemovingBusinessId(businessId);
     try {
@@ -374,7 +386,7 @@ export default function GoogleBusinessProfileIntegration({
     <Card className="text-card-foreground">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+
           Google Business Profile
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
@@ -450,7 +462,7 @@ export default function GoogleBusinessProfileIntegration({
                               <Button
                                 variant="destructiveOutline"
                                 size="sm"
-                                disabled={removingBusinessId === business.id || connectedBusinessList.length === 1}
+                                disabled={removingBusinessId === business.id || connectedBusinessList.length === 1 || authLoading}
                                 onClick={() => {
                                   setBusinessToRemove({ id: business.id, name: business.google_business_name || business.name });
                                   setRemoveDialogOpen(true);
@@ -543,12 +555,12 @@ export default function GoogleBusinessProfileIntegration({
 
           {/* Action Buttons */}
           {connectionStatus.connected && (
-            <div className="flex items-center justify-end space-x-2 w-full">
+            <div className="flex items-center justify-end space-x-2 w-full pt-10">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleTestConnection}
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
               >
                 <Activity className="h-4 w-4 mr-1" />
                 Verify
@@ -558,7 +570,7 @@ export default function GoogleBusinessProfileIntegration({
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={isLoading || isDisconnecting}
+                    disabled={isLoading || isDisconnecting || authLoading}
                   >
                     <Unlink className="h-4 w-4 mr-1" />
                     Disconnect Account
@@ -627,7 +639,7 @@ export default function GoogleBusinessProfileIntegration({
               <Button
                 size="sm"
                 onClick={handleConnect}
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
                 className="w-full"
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
@@ -641,7 +653,7 @@ export default function GoogleBusinessProfileIntegration({
               <Button
                 size="sm"
                 onClick={handleConnect}
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
                 variant="primary"
                 className="w-full"
               >

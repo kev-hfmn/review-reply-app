@@ -148,140 +148,141 @@ export default function ReviewDrawer({
 
   return (
     <Dialog open={data.isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background text-foreground">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Review Details
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto bg-background text-foreground !p-0">
 
-        <div className="space-y-6">
-          {/* Review Info */}
-          <div className="space-y-4">
-            {/* Customer & Rating */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Avatar
-                  src={review.customer_avatar_url}
-                  alt={`${review.customer_name}'s avatar`}
-                  size="lg"
-                />
-                <div>
-                  <h3 className="font-medium text-foreground">
-                    {review.customer_name}
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(review.review_date)}
-                    </span>
-                  </div>
-                </div>
+
+        <div className="space-y-8">
+          {/* Review Card - Matching ReviewsTable styling */}
+          <div className="bg-card rounded-2xl  p-6">
+            {/* Rating Stars */}
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="flex space-x-1">
+                {renderStars(review.rating)}
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  {renderStars(review.rating)}
-                </div>
-                <span className="text-lg font-light text-muted-foreground">
-                  {review.rating}/5
-                </span>
-              </div>
+              <span className="text-sm font-light tracking-widest text-muted-foreground">
+                {review.rating}/5
+              </span>
             </div>
 
-            {/* Status */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Status:
+            {/* Customer & Date */}
+            <div className="flex items-center  space-x-3 text-sm mb-4">
+              <Avatar
+                src={review.customer_avatar_url}
+                alt={`${review.customer_name}'s avatar`}
+                size="md"
+              />
+              <span className="font-medium text-foreground text-lg">
+                {review.customer_name}
               </span>
+              <span className="text-muted-foreground">•</span>
+              <Calendar className="h-4 w-4 text-slate-400" />
+              <span className="text-muted-foreground">
+                {new Date(review.review_date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+
+
+            {/* Status Badge */}
+            <div className="flex items-center space-x-3">
               <Badge
                 variant={review.status as 'default' | 'secondary' | 'destructive' | 'outline'}
+                className="text-sm "
               >
                 {review.status === 'needs_edit' ? 'Needs Edit' :
                  review.status.charAt(0).toUpperCase() + review.status.slice(1)}
               </Badge>
               {/* Posted timestamp - show when reply was posted to Google */}
               {review.status === 'posted' && review.posted_at && (
-                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-
+                <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                   <span>
-                   on {formatDate(review.posted_at)}
+                    Posted on {new Date(review.posted_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </span>
                 </div>
               )}
             </div>
-
+            </div>
             {/* Review Text */}
-            <div className="bg-muted rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-muted-foreground">
-                  Customer Review
-                </span>
-              </div>
-              <p className="text-foreground !text-base">
+            <div className="mb-6">
+              <p className="text-foreground/90 text-base leading-relaxed">
                 &ldquo;{review.review_text}&rdquo;
               </p>
             </div>
-          </div>
 
-          {/* AI Reply Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-md font-medium text-foreground/80">
-                Your Reply
-              </span>
-              <div className="flex items-center space-x-2">
-{/*                 <Select value={selectedTone} onValueChange={setSelectedTone}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REPLY_TONES.map(tone => (
-                      <SelectItem key={tone.id} value={tone.id}>
-                        {tone.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select> */}
+            {/* Reply Section - Matching card styling */}
+            {(review.ai_reply || review.final_reply || editedReply) && (
+              <div className="border border-primary/10 pl-6 pr-6 py-6 bg-primary/5 rounded-r-xl rounded-bl-xl">
+                <div className="flex justify-between items-center space-x-2 mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-md text-foreground/70 font-medium">
+                      Your Reply
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Textarea
+                    value={editedReply}
+                    onChange={(e) => setEditedReply(e.target.value)}
+                    className="resize-y !text-base leading-relaxed min-h-[150px] border-primary/20 focus:border-primary/40"
+                    placeholder="Your reply will appear here..."
+                    disabled={data.isLoading || isRegenerating}
+                  />
+                </div>
               </div>
+            )}
+
+            {/* Empty state when no reply */}
+            {!review.ai_reply && !review.final_reply && !editedReply && (
+              <div className="border border-dashed border-muted-foreground/30 rounded-xl p-8 text-center">
+                <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground text-lg">
+                  No reply generated yet. Click "Generate Reply" to create one.
+                </p>
+              </div>
+            )}
+
+                      {/* Tone Selection */}
+          <div className="py-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-base font-medium text-foreground">
+                Reply Tone
+              </span>
             </div>
-
-            <div className="space-y-2">
-              <Textarea
-                value={editedReply}
-                onChange={(e) => setEditedReply(e.target.value)}
-                className="resize-none !text-base"
-                rows={6}
-                placeholder="AI reply will appear here..."
-                disabled={data.isLoading || isRegenerating}
-              />
-
-              {/* Tone Description */}
-{/*               <p className="text-sm text-muted-foreground">
-                {REPLY_TONES.find(t => t.id === selectedTone)?.description}
-              </p> */}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-3">
-              {hasChanges && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {REPLY_TONES.map(tone => (
                 <Button
-                  onClick={handleSave}
-                  disabled={isSaving || data.isLoading}
-                  variant="secondary"
-                  className="flex items-center space-x-2"
+                  key={tone.id}
+                  size="sm"
+                  variant={selectedTone === tone.id ? "default" : "outline"}
+                  onClick={() => setSelectedTone(tone.id)}
+                  className={`text-center  ${selectedTone === tone.id ? "rounded-full bg-primary/80" : "rounded-full border-muted-foreground/20"}`}
+                  disabled={data.isLoading || isRegenerating}
                 >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  <span>Save Changes</span>
+                  {tone.label}
                 </Button>
-              )}
+              ))}
+            </div>
+            <p className="text-muted-foreground mt-4 text-sm">
+              {REPLY_TONES.find(t => t.id === selectedTone)?.description}
+            </p>
+          </div>
+
+
+
+
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+            <div className="flex items-center space-x-3">
+
             </div>
 
             <div className="flex items-center space-x-3">
@@ -290,16 +291,19 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  variant={isSubscriber ? "secondary" : "outline"}
-                  className={isSubscriber ? "" : "text-gray-500"}
+                  size="sm"
+                  variant={isSubscriber ? "outlinePrimary" : "outline"}
+                  className={`rounded-full h-10 bg-primary/5 hover:bg-primary/90 p-0 ${isSubscriber ? "" : "text-gray-500"}`}
                   title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                 >
                   {isRegenerating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Wand2 className="h-4 w-4" />
+                    <div className="flex items-center space-x-2 px-3">
+                      <Wand2 className="h-4 w-4" />
+                      <span>{isSubscriber ? 'Generate' : 'Generate (Upgrade)'}</span>
+                    </div>
                   )}
-                  <span>{isRegenerating ? 'Generating...' : isSubscriber ? 'Generate Reply' : 'Generate (Upgrade)'}</span>
                 </Button>
               )}
 
@@ -308,8 +312,8 @@ export default function ReviewDrawer({
                 <Button
                   onClick={handleRegenerate}
                   disabled={isRegenerating || data.isLoading}
-                  variant={isSubscriber ? "outlineSecondary" : "outline"}
-                  className={isSubscriber ? "" : "text-gray-500"}
+                  variant="outline"
+                  className={`rounded-full w-12 h-12 p-0 ${isSubscriber ? "" : "text-gray-500"}`}
                   title={isSubscriber ? "Regenerate AI reply" : "Regenerating replies requires subscription - click to learn more"}
                 >
                   {isRegenerating ? (
@@ -317,47 +321,48 @@ export default function ReviewDrawer({
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  <span>{isRegenerating ? 'Regenerating...' : isSubscriber ? 'Regenerate' : 'Regenerate (Upgrade)'}</span>
                 </Button>
               )}
 
               {/* Only show Approve/Post buttons when there's an AI reply */}
-              {review.ai_reply && review.status === 'pending' && (
+{/*               {review.ai_reply && review.status === 'pending' && (
                 <Button
                   onClick={handleApprove}
                   disabled={data.isLoading}
+                  size="sm"
                   variant="outlinePrimary"
+                  className="rounded-full text-sm px-3 h-10"
                 >
-                  <Check className="h-4 w-4" />
-                  <span>Approve</span>
+                  <div className="flex items-center space-x-2">
+                    <Check className="h-4 w-4" />
+                    <span>Approve</span>
+                  </div>
                 </Button>
-              )}
+              )} */}
 
               {review.ai_reply && (review.status === 'approved' || review.status === 'pending') && (
                 <Button
                   onClick={handlePost}
                   disabled={data.isLoading || isPosting}
-                  variant={isSubscriber ? "outlineGreen" : "outline"}
-                  className={`${
-                    isSubscriber
-                      ? ""
-                      : "bg-gray-600 hover:bg-gray-700"
-                  }`}
+                  variant={isSubscriber ? "outlinePrimary" : "outline"}
+                  className={`rounded-full h-12 ${isSubscriber ? "" : "text-gray-500"}`}
                   title={isSubscriber ? "Post reply" : "Posting requires subscription - click to learn more"}
                 >
                   {isPosting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <div className="flex items-center space-x-2">
+                      <Send className="h-5 w-5" />
+                      <span>{isSubscriber ? "Post" : "Post (Upgrade)"}</span>
+                    </div>
                   )}
-                  <span>{isPosting ? "Posting..." : isSubscriber ? "Post Reply" : "Post (Upgrade)"}</span>
                 </Button>
               )}
-
-
+            </div>
+            </div>
             </div>
           </div>
-        </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

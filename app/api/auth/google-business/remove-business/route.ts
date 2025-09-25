@@ -10,8 +10,15 @@ export async function DELETE(request: NextRequest) {
     const { businessId, userId } = await request.json();
 
     if (!businessId || !userId) {
+      console.error('Invalid request data:', { businessId: !!businessId, userId: !!userId });
       return NextResponse.json(
-        { error: 'Business ID and User ID are required' },
+        { 
+          error: !businessId && !userId 
+            ? 'Business ID and User ID are required' 
+            : !businessId 
+            ? 'Business ID is required'
+            : 'User authentication required. Please refresh the page and try again.'
+        },
         { status: 400 }
       );
     }
@@ -32,7 +39,7 @@ export async function DELETE(request: NextRequest) {
       .from('businesses')
       .select('id, name, google_business_name')
       .eq('id', businessId)
-      .eq('user_id', user.id)
+      .eq('user_id', user.user.id)
       .single();
 
     if (verifyError || !business) {
@@ -47,7 +54,7 @@ export async function DELETE(request: NextRequest) {
       .from('businesses')
       .delete()
       .eq('id', businessId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.user.id);
 
     if (deleteError) {
       console.error('Error deleting business:', deleteError);
@@ -72,7 +79,7 @@ export async function DELETE(request: NextRequest) {
         },
       });
 
-    console.log(`✅ Successfully removed business ${businessId} for user ${user.id}`);
+    console.log(`✅ Successfully removed business ${businessId} for user ${user.user.id}`);
 
     return NextResponse.json({
       success: true,

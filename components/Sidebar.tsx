@@ -11,14 +11,14 @@ import {
   HelpCircle,
   Menu,
   X,
-  Moon,
-  Sun,
-  Building2,
+  // Moon, // Commented out - used for theme toggle
+  // Sun, // Commented out - used for theme toggle
+  // Building2, // Commented out - unused
   User
 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+// import { Switch } from '@/components/ui/switch'; // Commented out - used for theme toggle
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { useTheme } from '@/contexts/ThemeContext';
+// import { useTheme } from '@/contexts/ThemeContext'; // Commented out - used for theme toggle
 import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
@@ -34,7 +34,7 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  // const { theme, toggleTheme } = useTheme(); // Commented out - used for theme toggle
   const { businesses, selectedBusinessId, setSelectedBusinessId } = useAuth();
 
   return (
@@ -62,22 +62,22 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-40 h-full
+        fixed shadow-md lg:static inset-y-0 left-0 z-40 h-full
         w-64 bg-sidebar border-r border-border
         transition-transform duration-300 ease-in-out flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex h-full flex-col">
           {/* Logo area - hidden on mobile since it's in TopBar */}
-          <div className="hidden lg:flex h-16 items-center pl-6 pr-2 border-b border-border">
+          <div className="hidden lg:flex h-16 items-center pl-3 pr-3 border-b border-border">
             <div className="flex items-center gap-1 w-full min-w-0">
-              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mr-1" />
+
               {businesses.length > 1 ? (
                 <Select
                   value={selectedBusinessId || ''}
                   onValueChange={setSelectedBusinessId}
                 >
-                  <SelectTrigger className="h-8 text-sm font-normal border-0 bg-transparent shadow-none px-2 py-1 hover:bg-muted min-w-0 w-full flex-1">
+                  <SelectTrigger className="h-10 text-base font-medium border-0 bg-transparent shadow-none px-2 py-1 hover:bg-muted min-w-0 w-full flex-1">
                     <div className="truncate text-left">
                       {selectedBusinessId
                         ? businesses.find(b => b.id === selectedBusinessId)?.name
@@ -116,10 +116,10 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors
                     ${isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground'
+                      ? 'bg-primary/10'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -133,8 +133,8 @@ export function Sidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-border space-y-3">
-            {/* Theme Toggle */}
-            <div className="flex items-center justify-between">
+            {/* Theme Toggle - Commented out for now */}
+            {/* <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sun className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-foreground">Theme</span>
@@ -150,7 +150,7 @@ export function Sidebar() {
                 />
                 <Moon className="h-4 w-4 text-card-foreground/75" />
               </div>
-            </div>
+            </div> */}
 
             <div className="text-xs text-muted-foreground">
               © 2025 RepliFast

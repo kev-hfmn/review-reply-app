@@ -246,8 +246,12 @@ export const helpTopics: HelpTopic[] = [
               description: 'Read the generated response carefully. Edit any parts that need adjustment to better match your preferred messaging. You can always click "Regenerate Reply" to generate a new response based on your current settings.'
             },
             {
-              title: 'Approve and Post',
-              description: 'When satisfied with the response, click "Post" to publish directly to your Google Business Profile. Changed your mind? No problem, you can always edit or delete the reply later.'
+              title: 'Approve the Response',
+              description: 'When satisfied with the response, click "Approve" to mark it as ready for posting. This changes the status from "pending" to "approved" but does not post the reply yet. You\'ve confirmed the response is ready to be sent.'
+            },
+            {
+              title: 'Post to Google',
+              description: 'After approval, click "Post Reply" to actually publish the response to your Google Business Profile. This is when the reply becomes visible to customers. With Pro plan automation enabled, approved replies post automatically during daily automation cycles.'
             },
             {
               title: 'Review reply appearance on Google',
@@ -365,23 +369,27 @@ export const helpTopics: HelpTopic[] = [
         },
         {
           title: 'Approval & Publishing Process',
-          content: 'Streamlined workflow for approving and posting responses to Google.',
+          content: 'Understanding the two-step workflow: approving responses for readiness, then posting them to Google.',
           steps: [
             {
-              title: 'Individual Approval',
-              description: 'Approve responses one by one for maximum control, especially useful for negative reviews or complex situations requiring careful handling.'
+              title: 'Step 1: Approval (Review Ready)',
+              description: 'Clicking "Approve" changes the review status from "pending" to "approved," confirming the AI response is ready for publication. This does NOT post the reply yet - it simply marks it as approved for posting.'
             },
             {
-              title: 'Bulk Approval',
-              description: 'Select multiple reviewed responses and approve them simultaneously. Perfect for processing positive reviews or catching up during busy periods.'
+              title: 'Step 2A: Manual Posting',
+              description: 'In manual mode (default), you must click "Post Reply" after approval to actually send the response to Google Business Profile. This gives you complete control over timing and final review before publication.'
             },
             {
-              title: 'Direct Posting',
-              description: 'Approved responses post directly to your Google Business Profile within seconds, appearing publicly for all potential customers to see.'
+              title: 'Step 2B: Auto-Posting (Pro Plan)',
+              description: 'With auto-posting enabled, approved responses automatically post during the next automation cycle (12:00 PM UTC or 12:00 AM UTC). This enables hands-off management for positive reviews while you focus on negative feedback.'
+            },
+            {
+              title: 'Bulk Operations',
+              description: 'Select multiple reviews to approve or post simultaneously. Filter by status to efficiently process groups: bulk approve positive reviews, then bulk post approved responses, or let automation handle the posting.'
             },
             {
               title: 'Status Tracking',
-              description: 'Monitor posting status and receive notifications if any responses fail to post due to Google API issues or connectivity problems.'
+              description: 'Monitor the complete workflow: Pending → Approved → Posted. Track which responses are ready for posting versus actually published, and receive notifications if any posting attempts fail.'
             }
           ]
         },
@@ -909,11 +917,11 @@ export const helpTopics: HelpTopic[] = [
             },
             {
               title: 'Smart Auto-Approval Rules',
-              description: 'Configure which reviews get automatically approved and posted. Typically 4-5 star reviews are safe for auto-approval, while 1-3 star reviews are held for manual review to ensure proper issue resolution.'
+              description: 'Configure which reviews get automatically approved (status changes from "pending" to "approved"). Typically 4-5 star reviews are safe for auto-approval, while 1-3 star reviews are held for manual review to ensure proper issue resolution. Auto-approval only marks reviews as ready - posting happens in the next step.'
             },
             {
-              title: 'Direct Google Posting',
-              description: 'Approved responses are automatically posted directly to your Google Business Profile, appearing publicly for customers and prospects to see your professional engagement.'
+              title: 'Automatic Google Posting',
+              description: 'During each automation cycle (12:00 PM UTC or 12:00 AM UTC), the system finds all approved reviews and automatically posts their responses to Google Business Profile. This is when replies actually become visible to customers. Only reviews with "approved" status get posted - manually approved reviews and auto-approved reviews both get posted during automation runs.'
             },
             {
               title: 'Email Notification System',
@@ -1346,6 +1354,13 @@ export const faqItems: FAQItem[] = [
     answer: 'Yes, we have the available function that you can edit replies that have been already posted. So you can update a review reply and also delete them if you do not like them anymore or if they\'re not suitable. This gives you full control over your review responses even after they\'ve been published on Google.',
     category: 'workflow',
     seoKeywords: ['edit posted replies', 'delete replies', 'update responses', 'post-publication control']
+  },
+  {
+    id: 'approve-button-workflow',
+    question: 'What exactly happens when I click "Approve" on a review?',
+    answer: 'When you click "Approve," the review status changes from "pending" to "approved" in your dashboard. This means you\'ve confirmed the AI-generated response is ready to be sent to Google. However, clicking "Approve" does NOT automatically post the reply. What happens next depends on your settings: In Manual Mode (default): You must click "Post Reply" to actually send the response to Google Business Profile. In Auto-Post Mode (Pro plan): Approved reviews will automatically be posted during the next automation cycle (12:00 PM UTC or 12:00 AM UTC). The complete workflow is: Review comes in → AI generates reply → You click "Approve" → Either you manually click "Post" OR the system auto-posts during automation (if enabled).',
+    category: 'workflow',
+    seoKeywords: ['approve button', 'approval workflow', 'manual vs auto posting', 'review status', 'automation posting']
   },
   {
     id: 'analytics-insights',

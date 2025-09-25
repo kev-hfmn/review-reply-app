@@ -35,6 +35,11 @@ export function useReviewsData(options = { useCache: true }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filteredReviews, setFilteredReviews] = useState<ReviewTableItem[]>([]);
   const [filters, setFilters] = useState<ReviewFilters>(DEFAULT_FILTERS);
+
+  // Memoize arrays and objects to prevent recreation on every render
+  const memoizedBusinesses = useMemo(() => businesses, [businesses]);
+  const memoizedFilters = useMemo(() => filters, [filters]);
+  
   const [pagination, setPagination] = useState<PaginationData>({
     currentPage: 1,
     totalPages: 1,
@@ -45,8 +50,6 @@ export function useReviewsData(options = { useCache: true }) {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Debug logging
-  console.log('useReviewsData loading states:', { isLoading, authLoading, user: !!user, selectedBusinessId });
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -84,7 +87,7 @@ export function useReviewsData(options = { useCache: true }) {
     }, newToast.duration);
   }, []);
 
-  // Transform review data for table display
+  // Transform review data for table display - memoized to prevent recreation
   const transformReviewForTable = useCallback((review: Review): ReviewTableItem => {
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
@@ -122,7 +125,7 @@ export function useReviewsData(options = { useCache: true }) {
     };
   }, []);
 
-  // Fetch businesses with sync status
+  // Fetch businesses with sync status - removed reviews.length dependency to prevent loops
   const fetchBusinesses = useCallback(async () => {
     if (!user?.id) return;
 
@@ -139,7 +142,7 @@ export function useReviewsData(options = { useCache: true }) {
 
       // Update sync status based on current business
       const currentBusiness = data?.find(b =>
-        filters.businessId === 'all' ? true : b.id === filters.businessId
+        memoizedFilters.businessId === 'all' ? true : b.id === memoizedFilters.businessId
       ) || data?.[0];
 
       if (currentBusiness) {
@@ -147,7 +150,7 @@ export function useReviewsData(options = { useCache: true }) {
           syncType: currentBusiness.initial_backfill_complete ? 'incremental' : 'initial_backfill',
           isBackfillComplete: currentBusiness.initial_backfill_complete || false,
           lastSyncTime: currentBusiness.last_review_sync,
-          totalReviews: reviews.length, // Will be updated when reviews are fetched
+          totalReviews: 0, // Will be updated separately when reviews are fetched
           isFirstTime: !currentBusiness.last_review_sync
         });
       }
@@ -155,7 +158,7 @@ export function useReviewsData(options = { useCache: true }) {
       console.error('Error fetching businesses:', err);
       setError('Failed to load businesses');
     }
-  }, [user?.id, filters.businessId, reviews.length]);
+  }, [user?.id, memoizedFilters.businessId]);
 
   // Fetch reviews with sync status update
   const fetchReviews = useCallback(async () => {
@@ -179,7 +182,6 @@ export function useReviewsData(options = { useCache: true }) {
           hasNextPage: false,
           hasPrevPage: false
         }));
-        console.log('fetchReviews: No business selected, setting isLoading to false');
         setIsLoading(false);
         return;
       }
@@ -192,21 +194,21 @@ export function useReviewsData(options = { useCache: true }) {
         .order('review_date', { ascending: false });
 
       // Apply rating filter
-      if (filters.rating !== null) {
-        query = query.eq('rating', filters.rating);
+      if (memoizedFilters.rating !== null) {
+        query = query.eq('rating', memoizedFilters.rating);
       }
 
       // Apply status filter
-      if (filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+      if (memoizedFilters.status !== 'all') {
+        query = query.eq('status', memoizedFilters.status);
       }
 
       // Apply date range filter
-      if (filters.dateRange.from) {
-        query = query.gte('review_date', filters.dateRange.from.toISOString());
+      if (memoizedFilters.dateRange.from) {
+        query = query.gte('review_date', memoizedFilters.dateRange.from.toISOString());
       }
-      if (filters.dateRange.to) {
-        query = query.lte('review_date', filters.dateRange.to.toISOString());
+      if (memoizedFilters.dateRange.to) {
+        query = query.lte('review_date', memoizedFilters.dateRange.to.toISOString());
       }
 
       const { data, error } = await query;
@@ -224,8 +226,8 @@ export function useReviewsData(options = { useCache: true }) {
       let processedReviews = data || [];
 
       // Apply text search filter (client-side for simplicity)
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
+      if (memoizedFilters.search) {
+        const searchTerm = memoizedFilters.search.toLowerCase();
         processedReviews = processedReviews.filter(
           (review) =>
             review.customer_name.toLowerCase().includes(searchTerm) ||
@@ -258,10 +260,9 @@ export function useReviewsData(options = { useCache: true }) {
       console.error('Failed to fetch reviews:', err);
       setError(err instanceof Error ? err.message : 'Failed to load reviews');
     } finally {
-      console.log('fetchReviews: Setting isLoading to false');
       setIsLoading(false);
     }
-  }, [user?.id, businesses, selectedBusinessId, filters, pagination.currentPage, transformReviewForTable, authLoading]);
+  }, [user?.id, memoizedBusinesses, selectedBusinessId, memoizedFilters, pagination.currentPage, transformReviewForTable, authLoading]);
 
   // Fetch reviews from Google Business Profile
   const fetchReviewsFromGoogle = useCallback(async (options: { timePeriod: string; reviewCount: number }) => {
@@ -352,22 +353,15 @@ export function useReviewsData(options = { useCache: true }) {
   // Fetch reviews when dependencies change (only if cache is disabled)
   useEffect(() => {
     // Don't fetch if auth is still loading
-    if (authLoading) {
-      console.log('Skipping reviews fetch - auth still loading');
-      return;
-    }
+    if (authLoading) return;
 
     // Skip if cache is enabled
-    if (options.useCache) {
-      console.log('Skipping reviews fetch - cache enabled');
-      return;
-    }
+    if (options.useCache) return;
 
-    console.log('Starting reviews fetch...');
     fetchReviews();
   }, [fetchReviews, authLoading, options.useCache]);
 
-  // Sync cache data with local state when cache is enabled (after function definitions)
+  // Optimized cache data sync - only sync when data actually changes
   useEffect(() => {
     if (options.useCache && cachedBusinesses.data) {
       setBusinesses(cachedBusinesses.data);
@@ -378,30 +372,41 @@ export function useReviewsData(options = { useCache: true }) {
     }
   }, [options.useCache, cachedBusinesses.data, cachedBusinesses.isLoading, cachedBusinesses.error]);
 
+  // Memoize processed reviews to prevent unnecessary recalculations
+  const processedCacheReviews = useMemo(() => {
+    if (!options.useCache || !cachedReviews.data) return null;
+    
+    const { reviews: rawReviews, totalCount } = cachedReviews.data;
+    const tableReviews = rawReviews.map(transformReviewForTable);
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+    return {
+      reviews: rawReviews,
+      filteredReviews: tableReviews,
+      totalCount,
+      totalPages,
+      hasNextPage: pagination.currentPage < totalPages,
+      hasPrevPage: pagination.currentPage > 1
+    };
+  }, [options.useCache, cachedReviews.data, transformReviewForTable, pagination.currentPage]);
+
   useEffect(() => {
-    if (options.useCache && cachedReviews.data) {
-      const { reviews: rawReviews, totalCount } = cachedReviews.data;
-      setReviews(rawReviews);
-
-      // Transform for table display and apply pagination
-      const tableReviews = rawReviews.map(transformReviewForTable);
-      const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-      setFilteredReviews(tableReviews);
+    if (processedCacheReviews) {
+      setReviews(processedCacheReviews.reviews);
+      setFilteredReviews(processedCacheReviews.filteredReviews);
       setPagination(prev => ({
         ...prev,
-        totalItems: totalCount,
-        totalPages,
-        hasNextPage: pagination.currentPage < totalPages,
-        hasPrevPage: pagination.currentPage > 1
+        totalItems: processedCacheReviews.totalCount,
+        totalPages: processedCacheReviews.totalPages,
+        hasNextPage: processedCacheReviews.hasNextPage,
+        hasPrevPage: processedCacheReviews.hasPrevPage
       }));
-
       setIsLoading(cachedReviews.isLoading);
       if (cachedReviews.error) {
         setError(cachedReviews.error.message);
       }
     }
-  }, [options.useCache, cachedReviews.data, cachedReviews.isLoading, cachedReviews.error, transformReviewForTable, pagination.currentPage]);
+  }, [processedCacheReviews, cachedReviews.isLoading, cachedReviews.error]);
 
   // Helper function to update a review in local state
   const updateReviewInState = useCallback((reviewId: string, updates: Partial<Review>) => {

@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+    import { NextResponse } from 'next/server';
 import { checkUserSubscription, hasFeature } from '@/lib/utils/subscription';
 import { generateAIReply } from '@/lib/services/openaiService';
 import type { BrandVoiceSettings, BusinessInfo, ReviewData } from '@/lib/types/aiTypes';
 
 export async function POST(request: Request) {
   try {
-    const { review, brandVoice, businessInfo, userId } = await request.json();
+    const { review, brandVoice, businessInfo, userId, avoidPhrases } = await request.json();
 
     // Validate required fields
     if (!review || !review.text || !brandVoice || !businessInfo) {
@@ -62,8 +62,10 @@ export async function POST(request: Request) {
       phone: businessInfo.phone,
     };
 
-    // Use the centralized OpenAI service
-    const result = await generateAIReply(reviewData, brandVoiceSettings, businessInfoData);
+    // Use the centralized OpenAI service with optional avoidPhrases
+    const result = await generateAIReply(reviewData, brandVoiceSettings, businessInfoData, {
+      avoidPhrases: avoidPhrases || undefined
+    });
 
     // Return the generated reply
     return NextResponse.json({
