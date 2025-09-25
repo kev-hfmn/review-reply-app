@@ -146,7 +146,7 @@ export default function Dashboard() {
           {businesses.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
               {businesses.length > 1 ? (
-                selectedBusinessId 
+                selectedBusinessId
                   ? `Viewing: ${businesses.find(b => b.id === selectedBusinessId)?.name || 'Selected Business'}`
                   : `Managing ${businesses.length} businesses`
               ) : (
@@ -232,7 +232,7 @@ export default function Dashboard() {
       })()}
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 pt-6">
         {dashboardMetrics.map((metric, index) => (
           <motion.div
             key={metric.title}
@@ -243,7 +243,7 @@ export default function Dashboard() {
             <Card>
               <CardContent>
             <div className="flex items-center justify-between pt-6">
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-xl">
                 {metric.icon}
               </div>
               <span className={`text-sm font-medium ${
@@ -309,7 +309,7 @@ export default function Dashboard() {
                   transition={{ delay: index * 0.05 }}
                   className="flex items-start space-x-3 text-sm"
                 >
-                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0 mt-0.5">
+                  <div className="p-2 bg-primary/10 rounded-xl flex-shrink-0 mt-0.5">
                     {activity.icon}
                   </div>
                   <div className="flex-1 min-w-0">

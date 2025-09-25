@@ -89,6 +89,9 @@ export async function POST(request: Request) {
     // Generate insights using the service
     const insights = await generateWeeklyInsights(businessId, startDate, endDate);
 
+    // NOTE: TanStack Query cache invalidation is handled by useInsightsData hook
+    // after receiving the successful response from this API
+
     // Return the insights with success status
     return NextResponse.json({
       success: true,

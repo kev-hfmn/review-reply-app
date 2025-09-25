@@ -219,7 +219,7 @@ export default function ReviewDrawer({
 
             {/* Reply Section - Matching card styling */}
             {(review.ai_reply || review.final_reply || editedReply) && (
-              <div className="border border-primary/10 pl-6 pr-6 py-6 bg-primary/5 rounded-r-xl rounded-bl-xl">
+              <div className="border border-primary/20 pl-6 pr-6 py-6 bg-background/50 shadow-sm rounded-r-xl rounded-bl-xl">
                 <div className="flex justify-between items-center space-x-2 mb-2">
                   <div className="flex items-center space-x-2">
                     <span className="text-md text-foreground/70 font-medium">

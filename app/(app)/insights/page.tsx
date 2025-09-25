@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Star,
@@ -27,38 +27,145 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInsightsData, downloadBlob, type TimePeriodType } from '@/hooks/useInsightsData';
-import { supabase } from '@/utils/supabase';
+import { useWeeklyInsightsQuery } from '@/hooks/queries/useInsightsQueries';
+import { useUserBusinessesQuery } from '@/hooks/queries/useSettingsQueries';
 import { format } from 'date-fns';
-import type { Business } from '@/types/dashboard';
 import { useSubscriptionQuery } from '@/hooks/queries/useSubscriptionQuery';
 import { hasFeature } from '@/lib/utils/subscription-client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+// Helper function to calculate period dates
+function getTimePeriodSelection(date: Date, type: TimePeriodType) {
+  let start: Date, end: Date, label: string;
+
+  switch (type) {
+    case 'weekly':
+      start = new Date(date);
+      const dayOfWeek = date.getDay();
+      start.setDate(date.getDate() - dayOfWeek);
+      start.setHours(0, 0, 0, 0);
+
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+
+      label = 'This Week'; // Simplified for now
+      break;
+
+    case 'monthly':
+      start = new Date(date.getFullYear(), date.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+
+      end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+
+      label = 'This Month';
+      break;
+
+    case 'quarterly':
+      const quarter = Math.floor(date.getMonth() / 3);
+      start = new Date(date.getFullYear(), quarter * 3, 1);
+      start.setHours(0, 0, 0, 0);
+
+      end = new Date(date.getFullYear(), (quarter + 1) * 3, 0);
+      end.setHours(23, 59, 59, 999);
+
+      const quarterNames = ['Q1', 'Q2', 'Q3', 'Q4'];
+      label = `${quarterNames[quarter]} ${date.getFullYear()}`;
+      break;
+
+    case 'yearly':
+      start = new Date(date.getFullYear(), 0, 1);
+      start.setHours(0, 0, 0, 0);
+
+      end = new Date(date.getFullYear(), 11, 31);
+      end.setHours(23, 59, 59, 999);
+
+      label = date.getFullYear().toString();
+      break;
+
+    default:
+      start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      label = date.toLocaleDateString();
+      break;
+  }
+
+  return { type, start, end, label };
+}
 
 export default function InsightsPage() {
   const { user } = useAuth();
   const subscriptionQuery = useSubscriptionQuery(user?.id || null);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
+
+  // Business management with TanStack Query
+  const userBusinessesQuery = useUserBusinessesQuery(user?.id || null);
+  const businesses = useMemo(() => userBusinessesQuery.data || [], [userBusinessesQuery.data]);
+  const isLoadingBusinesses = userBusinessesQuery.isLoading;
+
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
-  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
   const [showPeriodSelector, setShowPeriodSelector] = useState(false);
   const [currentPeriodType, setCurrentPeriodType] = useState<TimePeriodType>('monthly');
+  const [selectedPeriod, setSelectedPeriod] = useState(() =>
+    getTimePeriodSelection(new Date(), 'monthly')
+  );
 
+  // NEW: Use TanStack Query for insights caching (no auto-generation)
+  const weeklyInsightsQuery = useWeeklyInsightsQuery(
+    selectedBusinessId,
+    selectedPeriod.start,
+    selectedPeriod.end,
+    user?.id || null,
+    currentPeriodType
+  );
+
+  // Fallback to old hook for manual generation functionality
   const {
-    insights,
-    selectedPeriod,
-    isLoading,
-    isGenerating,
-    error,
-    hasData,
-    lastGenerated,
-    selectPeriod,
     regenerateInsights,
     getAvailablePeriods,
     exportInsights,
     sendEmail,
-  } = useInsightsData(selectedBusinessId || undefined, undefined, currentPeriodType);
+    isGenerating,
+    error: generationError
+  } = useInsightsData(selectedBusinessId || undefined, selectedPeriod.start, currentPeriodType);
+
+  // Derived state from TanStack Query
+  const insights = weeklyInsightsQuery.data?.insights || null;
+  const isLoading = weeklyInsightsQuery.isLoading && !insights; // Show loading only when no cached data
+  const error = weeklyInsightsQuery.error?.message || generationError;
+  const hasData = !!insights && (insights.stats?.totalReviews > 0);
+  const lastGenerated = insights?.generated_at ? new Date(insights.generated_at) : null;
 
   const [isSending, setIsSending] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Period selection functions
+  const selectPeriod = (start: Date, type: TimePeriodType) => {
+    const newPeriod = getTimePeriodSelection(start, type);
+    setSelectedPeriod(newPeriod);
+  };
+
+  // Auto-select first business when businesses load
+  useEffect(() => {
+    if (businesses.length > 0 && !selectedBusinessId) {
+      setSelectedBusinessId(businesses[0].id);
+    }
+  }, [businesses, selectedBusinessId]);
+
+  // Update period when period type changes
+  useEffect(() => {
+    if (selectedBusinessId) {
+      selectPeriod(new Date(), currentPeriodType);
+    }
+  }, [currentPeriodType, selectedBusinessId]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -73,50 +180,6 @@ export default function InsightsPage() {
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [showPeriodSelector]);
-
-  // Regenerate insights when period type changes
-  useEffect(() => {
-    if (selectedBusinessId) {
-      // When period type changes, select current period for the new type
-      selectPeriod(new Date(), currentPeriodType);
-    }
-  }, [currentPeriodType, selectedBusinessId, selectPeriod]);
-
-  // Load businesses on mount
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      if (!user?.id) {
-        setIsLoadingBusinesses(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching businesses:', error);
-          return;
-        }
-
-        setBusinesses(data || []);
-
-        // Auto-select first business if available
-        if (data && data.length > 0 && !selectedBusinessId) {
-          setSelectedBusinessId(data[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading businesses:', error);
-      } finally {
-        setIsLoadingBusinesses(false);
-      }
-    };
-
-    loadBusinesses();
-  }, [user?.id, selectedBusinessId]);
 
   const handleSendEmail = async () => {
     if (!user?.email || !insights) return;
@@ -224,7 +287,7 @@ export default function InsightsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4 mx-auto"></div>
             <p className="text-muted-foreground">
               {isLoadingBusinesses ? 'Loading businesses...' :
-               isGenerating ? 'Generating AI insights...' : 'Loading weekly insights...'}
+               isGenerating ? 'Generating AI insights...' : 'Loading AI insights...'}
             </p>
           </div>
         </div>
@@ -238,7 +301,7 @@ export default function InsightsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Weekly Insights
+               Insights
           </h1>
         </div>
 
@@ -267,7 +330,7 @@ export default function InsightsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">
-            Weekly Insights
+            Insights
           </h1>
         </div>
 
@@ -298,7 +361,7 @@ export default function InsightsPage() {
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-2" />
                 )}
-                Try Again
+                {insights ? 'Try Again' : 'Generate Insights'}
               </Button>
             )}
           </CardContent>
@@ -311,38 +374,60 @@ export default function InsightsPage() {
   if (!hasData && insights) {
     return (
       <div className="space-y-6">
-        {/* Always-visible Filter Bar */}
+        {/* Header */}
+        <div className="flex items-center justify-between pb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {currentPeriodType.charAt(0).toUpperCase() + currentPeriodType.slice(1)} Insights
+            </h1>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-muted-foreground">
+                {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
+              </p>
+
+              {lastGenerated && (
+                <span className="text-xs text-muted-foreground">
+                  Generated {lastGenerated.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-left gap-4">
                 <div className="flex flex-col items-left gap-2">
                   <label className="text-sm font-light text-muted-foreground">Business</label>
-                  <select
+                  <Select
                     value={selectedBusinessId || ''}
-                    onChange={(e) => setSelectedBusinessId(e.target.value || null)}
-                    className="px-3 py-1 border rounded-md bg-background text-sm"
+                    onValueChange={(value) => setSelectedBusinessId(value || null)}
                     disabled={isLoadingBusinesses}
                   >
-                    <option value="">Select business...</option>
-                    {businesses.map((business) => (
-                      <option key={business.id} value={business.id}>
-                        {business.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue placeholder="Select business..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {businesses.map((business) => (
+                        <SelectItem key={business.id} value={business.id}>
+                          {business.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex flex-col items-left gap-2">
                   <label className="text-sm font-light text-muted-foreground">Time Period</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 h-full">
                     {(['weekly', 'monthly', 'quarterly', 'yearly'] as const).map((type) => (
                       <Button
                         key={type}
                         variant={currentPeriodType === type ? "pillActive" : "pill"}
-
                         onClick={() => setCurrentPeriodType(type)}
-                        className="h-8 px-3 text-xs"
+                        className=" px-3 text-xs"
                       >
                         {type.charAt(0).toUpperCase() + type.slice(1)}
                       </Button>
@@ -389,7 +474,7 @@ export default function InsightsPage() {
                 </div>
 
                 <Button
-                  variant="outline"
+                  variant="outlinePrimary"
                   size="sm"
                   onClick={() => regenerateInsights()}
                   disabled={isGenerating || !selectedBusinessId}
@@ -399,32 +484,12 @@ export default function InsightsPage() {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  {isGenerating ? 'Analyzing...' : 'Refresh'}
+                  {isGenerating ? 'Analyzing...' : (insights ? 'Refresh' : 'Generate Insights')}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {currentPeriodType.charAt(0).toUpperCase() + currentPeriodType.slice(1)} Insights
-            </h1>
-            <div className="flex items-center gap-4 mt-1">
-              <p className="text-muted-foreground">
-                {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
-              </p>
-
-              {lastGenerated && (
-                <span className="text-xs text-muted-foreground">
-                  Generated {lastGenerated.toLocaleTimeString()}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
 
         <Card>
           <CardContent className="py-12 text-center">
@@ -447,26 +512,80 @@ export default function InsightsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Always-visible Filter Bar */}
+      {/* Header */}
+      <div className="flex items-center justify-between pb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            {currentPeriodType.charAt(0).toUpperCase() + currentPeriodType.slice(1)} Insights
+          </h1>
+          <div className="flex items-center gap-4 mt-1">
+            <p className="text-muted-foreground">
+              {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
+            </p>
+
+            {lastGenerated && (
+              <span className="text-xs text-muted-foreground">
+                Generated {lastGenerated.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Export Actions */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSendEmail}
+            disabled={isSending}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            {isSending ? 'Sending...' : 'Send Email'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            {isDownloading ? 'Generating...' : 'Download PDF'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadCSV}
+            disabled={!insights}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-left gap-4">
               <div className="flex flex-col items-left gap-2">
                 <label className="text-sm font-light text-muted-foreground">Business</label>
-                <select
+                <Select
                   value={selectedBusinessId || ''}
-                  onChange={(e) => setSelectedBusinessId(e.target.value || null)}
-                  className="px-3 py-1 border rounded-md bg-background text-sm"
+                  onValueChange={(value) => setSelectedBusinessId(value || null)}
                   disabled={isLoadingBusinesses}
                 >
-                  <option value="">Select business...</option>
-                  {businesses.map((business) => (
-                    <option key={business.id} value={business.id}>
-                      {business.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select business..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex flex-col items-left gap-2">
@@ -525,7 +644,7 @@ export default function InsightsPage() {
               </div>
 
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
                 onClick={() => regenerateInsights()}
                 disabled={isGenerating || !selectedBusinessId}
@@ -541,57 +660,6 @@ export default function InsightsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {currentPeriodType.charAt(0).toUpperCase() + currentPeriodType.slice(1)} Insights
-          </h1>
-          <div className="flex items-center gap-4 mt-1">
-            <p className="text-muted-foreground">
-              {insights ? `${format(new Date(insights.week_start), 'MMM dd, yyyy')} - ${format(new Date(insights.week_end), 'MMM dd, yyyy')}` : selectedPeriod.label}
-            </p>
-
-            {lastGenerated && (
-              <span className="text-xs text-muted-foreground">
-                Generated {lastGenerated.toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Export Actions */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSendEmail}
-            disabled={isSending}
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            {isSending ? 'Sending...' : 'Send Email'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadPDF}
-            disabled={isDownloading}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            {isDownloading ? 'Generating...' : 'Download PDF'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadCSV}
-            disabled={!insights}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download CSV
-          </Button>
-        </div>
-      </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

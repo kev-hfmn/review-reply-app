@@ -2,10 +2,12 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  MessageSquare,
+  MessageSquareText,
   BarChart3,
   Settings,
   HelpCircle,
@@ -18,12 +20,15 @@ import {
 } from 'lucide-react';
 // import { Switch } from '@/components/ui/switch'; // Commented out - used for theme toggle
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
+import { useSubscription } from '@/hooks/useSubscription';
 // import { useTheme } from '@/contexts/ThemeContext'; // Commented out - used for theme toggle
 import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Reviews', href: '/reviews', icon: MessageSquare },
+  { name: 'Reviews', href: '/reviews', icon: MessageSquareText },
   { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Profile', href: '/profile', icon: User },
@@ -33,9 +38,74 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   // const { theme, toggleTheme } = useTheme(); // Commented out - used for theme toggle
-  const { businesses, selectedBusinessId, setSelectedBusinessId } = useAuth();
+  const { user, businesses, selectedBusinessId, setSelectedBusinessId } = useAuth();
+  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle user logout with proper server-side session invalidation
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // Prevent double-clicks
+
+    try {
+      setIsLoggingOut(true);
+      setIsDropdownOpen(false);
+
+      console.log('Starting logout process...');
+
+      // Call our logout API route for proper server-side session invalidation
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+      });
+
+      if (!response.ok) {
+        console.error('Logout API failed:', response.status);
+      } else {
+        console.log('Server-side logout successful');
+      }
+
+      // Clear all client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear any remaining cookies manually
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
+      console.log('Cleared all client-side data, redirecting...');
+
+      // Force hard redirect to login page (this breaks any React state)
+      window.location.replace('/login');
+
+    } catch (error) {
+      console.error('Logout failed:', error);
+
+      // Fallback: force redirect even if API call fails
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace('/login');
+    } finally {
+      // Don't reset loading state since we're redirecting anyway
+    }
+  };
 
   return (
     <>
@@ -62,52 +132,48 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={`
-        fixed shadow-md lg:static inset-y-0 left-0 z-40 h-full
-        w-64 bg-sidebar border-r border-border
-        transition-transform duration-300 ease-in-out flex-shrink-0
+        fixed shadow-xl shadow-slate-200/70 lg:static inset-y-0 left-0 z-40 h-full
+        w-64 bg-sidebar-primary-foreground/95 backdrop-blur-sm border-r border-border/50
+        transition-all duration-300 ease-out flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex h-full flex-col">
-          {/* Logo area - hidden on mobile since it's in TopBar */}
-          <div className="hidden lg:flex h-16 items-center pl-3 pr-3 border-b border-border">
-            <div className="flex items-center gap-1 w-full min-w-0">
-
-              {businesses.length > 1 ? (
-                <Select
-                  value={selectedBusinessId || ''}
-                  onValueChange={setSelectedBusinessId}
-                >
-                  <SelectTrigger className="h-10 text-base font-medium border-0 bg-transparent shadow-none px-2 py-1 hover:bg-muted min-w-0 w-full flex-1">
-                    <div className="truncate text-left">
-                      {selectedBusinessId
-                        ? businesses.find(b => b.id === selectedBusinessId)?.name
-                        : "Select Business"
-                      }
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {businesses.map((business) => (
-                      <SelectItem key={business.id} value={business.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{business.name}</span>
-                          {business.industry && (
-                            <span className="text-xs text-muted-foreground">{business.industry}</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="font-medium leading-tighter text-foreground/90 truncate min-w-0 flex-1">
-                  {businesses[0]?.name || 'Your Business'}
-                </span>
-              )}
-            </div>
+          {/* Logo and Brand Area */}
+          <div className="hidden lg:flex h-16 items-center px-4 ">
+            <Link href="/dashboard" className="flex items-center gap-2 w-full hover:opacity-80 transition-opacity">
+              <Image
+                src="/icons/icon.png"
+                alt="RepliFast"
+                width={32}
+                height={32}
+                className="rounded-lg flex-shrink-0"
+              />
+              <span className="text-lg font-semibold text-foreground/75 tracking-tight truncate">
+                RepliFast
+              </span>
+            </Link>
           </div>
 
+          {/* Mobile Logo Area - Shows when mobile menu is open */}
+          <div className="lg:hidden flex h-14 items-center px-4">
+            <Link href="/dashboard" className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+              <Image
+                src="/icons/icon.png"
+                alt="RepliFast"
+                width={28}
+                height={28}
+                className="rounded-lg flex-shrink-0"
+              />
+              <span className="text-lg font-bold text-foreground/90 tracking-tighter truncate">
+                RepliFast
+              </span>
+            </Link>
+          </div>
+<div className="flex-1 py-5  -translate-y-3 content-center space-y-1">
+
+
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-5 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
 
@@ -116,43 +182,141 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-base font-medium transition-colors
+                    group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                    transition-all duration-200 ease-out relative overflow-hidden
                     ${isActive
-                      ? 'bg-primary/10'
-                      : 'text-muted-foreground hover:bg-primary/10 hover:text-foreground'
+                      ? 'bg-primary/5 text-primary shadow-sm border border-primary/20'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/40 hover:shadow-sm border border-transparent hover:border-border/30'
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
+                  <div className={`
+                    flex items-center justify-center w-5 h-5 transition-transform duration-200
+                    ${isActive ? 'scale-110' : 'group-hover:scale-105'}
+                  `}>
+                    <item.icon className="w-full h-full" />
+                  </div>
+                  <span className="relative">
+                    {item.name}
+                    {/* {isActive && (
+                      <div className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-primary/70 rounded-full"></div>
+                    )} */}
+                  </span>
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 rounded-xl -z-10"></div>
+                  )}
                 </Link>
               );
             })}
           </nav>
+          </div>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-border space-y-3">
-            {/* Theme Toggle - Commented out for now */}
-            {/* <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sun className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">Theme</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground/75">
-                  <Sun className="h-4 w-4 text-card-foreground/75" />
-                </span>
-                <Switch
-                  checked={theme === 'dark'}
-                  onCheckedChange={toggleTheme}
-                  aria-label="Toggle theme"
-                />
-                <Moon className="h-4 w-4 text-card-foreground/75" />
-              </div>
-            </div> */}
 
-            <div className="text-xs text-muted-foreground">
+          {/* Business Selector Area */}
+          <div className="flex h-16 items-center px-4 pb-10">
+            <div className="w-full min-w-0">
+              {businesses.length > 1 ? (
+                <Select
+                  value={selectedBusinessId || ''}
+                  onValueChange={setSelectedBusinessId}
+                >
+                  <SelectTrigger className="h-12 text-foreground/90 text-sm font-semibold border border-primary/20 bg-card/70 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 px-3 py-3 rounded-xl min-w-0 w-full group">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-2 h-2 rounded-full bg-primary/80 group-hover:bg-primary transition-colors duration-200"></div>
+                      <div className="truncate text-left text-foreground/90">
+                        {selectedBusinessId
+                          ? businesses.find(b => b.id === selectedBusinessId)?.name
+                          : "Select Business"
+                        }
+                      </div>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="w-56 border-border/40 bg-card/95 backdrop-blur-sm shadow-xl">
+                    {businesses.map((business) => (
+                      <SelectItem
+                        key={business.id}
+                        value={business.id}
+                        className="hover:bg-primary/5 focus:bg-primary/10 transition-colors duration-150"
+                      >
+                        <div className="flex flex-col gap-1 py-1">
+                          <span className="font-semibold text-sm">{business.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-3 h-12 px-4 py-3 rounded-xl bg-card/80 border border-border/30">
+                  <div className="w-2 h-2 rounded-full bg-primary/60"></div>
+                  <span className="font-semibold text-sm text-foreground/90 truncate min-w-0 flex-1">
+                    {businesses[0]?.name || 'Your Business'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+
+          {/* User Controls Footer */}
+          <div className="px-4 py-4 border-t border-border/80 bg-card/30 space-y-4">
+            {/* Subscription Button */}
+            {user && !isLoadingSubscription && (
+              !subscription ||
+              subscription.status === 'canceled' ||
+              (subscription.cancel_at_period_end && new Date(subscription.current_period_end) > new Date())
+            ) && (
+              <Button
+                onClick={() => router.push('/profile')}
+                className="w-full rounded-xl text-sm"
+                variant="default"
+                size="sm"
+              >
+                View Subscription
+              </Button>
+            )}
+
+
+            {/* User Profile Dropdown */}
+            {user && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-3 w-full p-3 hover:bg-card/60 rounded-xl transition-all duration-200 group"
+                  disabled={isLoggingOut}
+                >
+                  <UserAvatar size="md" />
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-xs font-base text-muted-foreground truncate">
+                      {user.user_metadata?.full_name || user.email || 'User'}
+                    </div>
+
+                  </div>
+                </button>
+
+                {isDropdownOpen && !isLoggingOut && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-card/95 backdrop-blur-sm rounded-xl shadow-xl py-2 z-[60] border border-border/40">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-3 text-sm text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Profile & Subscription
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="block w-full text-left px-4 py-3 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
+                    >
+                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Copyright */}
+            <div className="text-xs text-muted-foreground/70 font-medium text-left pt-2">
               © 2025 RepliFast
             </div>
           </div>

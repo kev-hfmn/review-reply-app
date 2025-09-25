@@ -81,7 +81,7 @@ export default function TopBar() {
   };
 
   return (
-    <div className="w-full bg-sidebar border-b border-border shadow-subtle">
+    <div className="w-full bg-sidebar-primary-foreground border-b border-border shadow-subtle">
       <div className="mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-foreground flex items-center gap-1 hover:opacity-80 transition-opacity">
           <Image
@@ -91,7 +91,7 @@ export default function TopBar() {
             height={40}
             className="rounded-md"
           />
-          <span className="text-xl font-bold text-foreground tracking-tight">RepliFast</span>
+          <span className="text-xl font-bold text-foreground/90 tracking-tighter">RepliFast</span>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -121,10 +121,10 @@ export default function TopBar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-primary hover:text-foreground px-3 py-2 rounded-full transition-colors"
+                  className="flex items-center gap-2 hover:bg-primary hover:text-foreground px-3 py-1 rounded-full transition-colors"
                   disabled={isLoggingOut}
                 >
-                  <UserAvatar size="sm" />
+                  <UserAvatar size="lg" />
                 </button>
 
                 {isDropdownOpen && !isLoggingOut && (

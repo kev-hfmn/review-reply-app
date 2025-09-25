@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, MessageSquare, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -221,19 +221,8 @@ export default function ReviewsPage() {
   const filteredCount = reviews.length;
 
 
-  // Force loading screen to show for at least 500ms to prevent flicker
-  const [minLoadingTime, setMinLoadingTime] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinLoadingTime(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading screen while page is initializing or during minimum loading time
-  if (isPageLoading || minLoadingTime) {
+  // NEW: Show cached data immediately, only show loading when no cache available
+  if (isPageLoading) {
     return (
       <div className="space-y-6">
         {/* Header */}
@@ -344,6 +333,7 @@ export default function ReviewsPage() {
       {/* Review Fetch Controls moved to header */}
 
       {/* Filters */}
+      <div className="pt-6">
       <ReviewFilters
         filters={filters}
         businesses={businesses}
@@ -354,6 +344,7 @@ export default function ReviewsPage() {
         selection={selection}
         onSelectAll={handleSelectAll}
       />
+      </div>
 
       {/* Empty State for Basic Users */}
       {!isSubscriber && (
@@ -396,6 +387,7 @@ export default function ReviewsPage() {
 
       {/* Reviews Table */}
       {isSubscriber && (
+        <div className="">
         <ReviewsTable
           reviews={reviews}
           isLoading={dataLoading}
@@ -413,6 +405,7 @@ export default function ReviewsPage() {
             title: 'Subscription Required'
           })}
         />
+        </div>
       )}
 
       {/* Pagination */}

@@ -38,7 +38,7 @@ body {
   }
 
   .badge-posted {
-    background-color: #D1FAE5 !important; /* green-100 */
+    background-color: rgba(209, 250, 229, 0.5) !important; /* green-100 */
     color: #065F46 !important; /* green-800 */
     border-color: #6EE7B7 !important; /* green-300 */
   }
@@ -154,10 +154,10 @@ body {
     --popover: 0 0% 100%;
     --popover-foreground: 222.2222 47.3684% 11.1765%;
     --primary: 201.1765 100% 30%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 98.0392%;
     --secondary: 219.8658 65.0655% 44.9020%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 216.9231 31.7073% 91.9608%;
+    --muted: 240 4.7619% 95.8824%;
     --muted-foreground: 220.0000 14.7059% 40%;
     --accent: 35.0588 100% 50%;
     --accent-foreground: 35.1563 100% 25.0980%;
@@ -174,7 +174,7 @@ body {
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 215.2941 25.0000% 26.6667%;
     --sidebar-primary: 201.1765 100% 30%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 98.0392%;
     --sidebar-accent: 36.0000 100.0000% 95.0980%;
     --sidebar-accent-foreground: 35.1563 100% 25.0980%;
     --sidebar-border: 214.2857 31.8182% 91.3725%;

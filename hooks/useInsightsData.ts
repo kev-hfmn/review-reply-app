@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInsightsCacheInvalidation } from '@/hooks/queries/useInsightsQueries';
 import type { 
   WeeklyDigestInsights,
   DigestStats,
@@ -21,6 +22,7 @@ export interface TimePeriodSelection {
 
 export function useInsightsData(businessId?: string, initialPeriod?: Date, initialType: TimePeriodType = 'monthly') {
   const { user } = useAuth();
+  const { invalidateInsightsCache } = useInsightsCacheInvalidation();
   
   // State management
   const [insights, setInsights] = useState<WeeklyDigestInsights | null>(null);
@@ -68,6 +70,10 @@ export function useInsightsData(businessId?: string, initialPeriod?: Date, initi
 
       if (data.success && data.insights) {
         setInsights(data.insights);
+        // Invalidate TanStack Query cache so other components get fresh data
+        if (businessId) {
+          invalidateInsightsCache(businessId, selectedPeriod.start);
+        }
       } else {
         throw new Error(data.message || 'No insights received');
       }
@@ -204,12 +210,8 @@ export function useInsightsData(businessId?: string, initialPeriod?: Date, initi
     }
   }, [insights]);
 
-  // Auto-load insights when dependencies change
-  useEffect(() => {
-    if (user?.id && businessId) {
-      generateInsights();
-    }
-  }, [user?.id, businessId, selectedPeriod, generateInsights]);
+  // NOTE: Automatic generation removed - insights are now loaded via TanStack Query cache
+  // Manual generation still available via regenerateInsights() function
 
   return {
     // Data

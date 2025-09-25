@@ -265,7 +265,7 @@ export default function ReviewsTable({
                 <div className=" mb-0">
                   {(review.ai_reply || review.final_reply) && (
                     <>
-                  <div className="flex flex-col items-left justify-between mb-3 border border-primary/10 pl-4 pr-4 py-4 bg-primary/5 rounded-r-xl rounded-bl-xl ">
+                  <div className="flex flex-col items-left justify-between mb-3 border border-primary/30 pl-4 pr-4 py-4 bg-background/50 shadow-sm rounded-r-xl rounded-bl-xl ">
                     <div className="flex justify-between items-center space-x-2">
                       <div className="flex items-center space-x-2">
                       {/* <UserAvatar size="sm" /> */}
