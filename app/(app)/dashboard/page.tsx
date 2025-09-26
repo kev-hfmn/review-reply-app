@@ -247,7 +247,7 @@ export default function Dashboard() {
                 {metric.icon}
               </div>
               <span className={`text-sm font-medium ${
-                metric.trend === 'up' ? 'text-green-500' :
+                metric.trend === 'up' ? 'text-green-600' :
                 metric.trend === 'down' ? 'text-red-500' :
                 'text-muted-foreground'
               }`}>

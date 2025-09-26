@@ -282,6 +282,7 @@ function ProfileContent() {
       </div>
 
       {/* Account Management Card */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="border-slate-200 dark:border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -468,6 +469,8 @@ function ProfileContent() {
           </CardContent>
         </Card>
       )}
+
+      </div>
 
         {/* Promo Code Banner */}
         <PromoCodeBanner />

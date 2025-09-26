@@ -1,6 +1,7 @@
 import { Noto_Sans, Indie_Flower } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Theme } from '@radix-ui/themes';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import Providers from './providers';
 
@@ -83,16 +84,20 @@ export default function RootLayout({
         <GoogleAnalytics />
         <Providers>
           <ThemeProvider>
-            {/* <PostHogErrorBoundary>
-              <PostHogProvider> */}
-                <AuthProvider>
-                  <main>{children}</main>
-                </AuthProvider>
-              {/* </PostHogProvider>
-            </PostHogErrorBoundary> */}
+            <Theme accentColor="blue" grayColor="slate" radius="large" appearance="light" hasBackground={false} style={{
+                fontFamily: 'var(--font-sans)',
+              }}>
+              {/* <PostHogErrorBoundary>
+                <PostHogProvider> */}
+                  <AuthProvider>
+                    <main>{children}</main>
+                  </AuthProvider>
+                {/* </PostHogProvider>
+              </PostHogErrorBoundary> */}
 
-            {/* Cookie Consent Banner */}
-            <CookieConsent />
+              {/* Cookie Consent Banner */}
+              <CookieConsent />
+            </Theme>
           </ThemeProvider>
         </Providers>
       </body>

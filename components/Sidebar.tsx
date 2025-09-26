@@ -31,7 +31,7 @@ const navigation = [
   { name: 'Reviews', href: '/reviews', icon: MessageSquareText },
   { name: 'Insights', href: '/insights', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Profile', href: '/profile', icon: User },
+ // { name: 'Profile', href: '/profile', icon: User },
   { name: 'Help', href: '/help', icon: HelpCircle },
 
 ];
@@ -133,7 +133,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div className={`
         fixed shadow-xl shadow-slate-200/70 lg:static inset-y-0 left-0 z-40 h-full
-        w-64 bg-sidebar-primary-foreground/95 backdrop-blur-sm border-r border-border/50
+        w-64 bg-slate-50 bg-gradient-to-br from-slate-50 via-slate-100/80 to-slate-50 backdrop-blur-sm border-r border-sidebar-border
         transition-all duration-300 ease-out flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -148,7 +148,7 @@ export function Sidebar() {
                 height={32}
                 className="rounded-lg flex-shrink-0"
               />
-              <span className="text-lg font-semibold text-foreground/75 tracking-tight truncate">
+              <span className="text-lg font-semibold text-foreground/90 tracking-tight truncate">
                 RepliFast
               </span>
             </Link>
@@ -160,8 +160,8 @@ export function Sidebar() {
               <Image
                 src="/icons/icon.png"
                 alt="RepliFast"
-                width={28}
-                height={28}
+                width={32}
+                height={32}
                 className="rounded-lg flex-shrink-0"
               />
               <span className="text-lg font-bold text-foreground/90 tracking-tighter truncate">
@@ -259,7 +259,7 @@ export function Sidebar() {
 
 
           {/* User Controls Footer */}
-          <div className="px-4 py-4 border-t border-border/80 bg-card/30 space-y-4">
+          <div className="px-4 pb-4 pt-6 border-t border-sidebar-border  space-y-4">
             {/* Subscription Button */}
             {user && !isLoadingSubscription && (
               !subscription ||
@@ -282,12 +282,12 @@ export function Sidebar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-3 w-full p-3 hover:bg-card/60 rounded-xl transition-all duration-200 group"
+                  className="flex hover:bg-primary/10 hover:scale-[1.01] !rounded-full items-center gap-2 w-full pr-2 hover:bg-card/60 rounded-xl transition-all duration-200 group"
                   disabled={isLoggingOut}
                 >
-                  <UserAvatar size="md" />
+                  <UserAvatar size="lg" />
                   <div className="flex-1 text-left min-w-0">
-                    <div className="text-xs font-base text-muted-foreground truncate">
+                    <div className="text-xs font-medium text-foreground/75 truncate">
                       {user.user_metadata?.full_name || user.email || 'User'}
                     </div>
 

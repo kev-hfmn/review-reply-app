@@ -206,10 +206,10 @@ export default function ReviewsTable({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`bg-card rounded-2xl border transition-all duration-200 hover:shadow-lg cursor-pointer ${
+            className={`bg-card rounded-2xl shadow-lg shadow-slate-200/70 border border-border/80 transition-all duration-200 hover:shadow-sm cursor-pointer ${
               selection.selectedIds.has(review.id)
                 ? 'border-primary/70 shadow-lg bg-primary-opacity-5'
-                : 'border-border hover:border-primary/20'
+                : 'border-border/80 hover:border-primary/30'
             }`}
             onClick={() => onReviewClick(review)}
           >
@@ -265,7 +265,7 @@ export default function ReviewsTable({
                 <div className=" mb-0">
                   {(review.ai_reply || review.final_reply) && (
                     <>
-                  <div className="flex flex-col items-left justify-between mb-3 border border-primary/30 pl-4 pr-4 py-4 bg-background/50 shadow-sm rounded-r-xl rounded-bl-xl ">
+                  <div className="flex flex-col items-left justify-between mb-3 border border-primary/30 pl-4 pr-4 py-4 bg-background/30 shadow-sm rounded-r-xl rounded-bl-xl ">
                     <div className="flex justify-between items-center space-x-2">
                       <div className="flex items-center space-x-2">
                       {/* <UserAvatar size="sm" /> */}
@@ -377,7 +377,7 @@ export default function ReviewsTable({
                       variant={isSubscriber ? "outlinePrimary" : "outline"}
                       title={isSubscriber ? "Generate AI reply" : "Generating replies requires subscription - click to learn more"}
                       disabled={generatingReviewId === review.id}
-                      className={`rounded-full h-10 bg-primary/5 hover:bg-primary/90 p-0 ${isSubscriber ? "" : "text-gray-500"}`}
+                      className={`rounded-full min-w-10 h-10 bg-primary/5 hover:bg-primary/90 p-0 ${isSubscriber ? "" : "text-gray-500"}`}
                     >
                       {generatingReviewId === review.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

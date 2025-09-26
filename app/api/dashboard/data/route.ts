@@ -108,7 +108,8 @@ export async function GET(request: NextRequest) {
         return {
           date: date.toISOString().split('T')[0],
           reviews: 0,
-          avgRating: 0
+          avgRating: 0,
+          ratingBreakdown: {}
         };
       });
 
@@ -336,10 +337,18 @@ export async function GET(request: NextRequest) {
           ? dayReviews.reduce((sum, r) => sum + r.rating, 0) / dayReviews.length
           : 0;
 
+        // Calculate rating breakdown
+        const ratingBreakdown: { [key: number]: number } = {};
+        dayReviews.forEach(review => {
+          const rating = review.rating;
+          ratingBreakdown[rating] = (ratingBreakdown[rating] || 0) + 1;
+        });
+
         return {
           date,
           reviews: dayReviews.length,
-          avgRating: Math.round(avgRating * 10) / 10
+          avgRating: Math.round(avgRating * 10) / 10,
+          ratingBreakdown
         };
       });
     };

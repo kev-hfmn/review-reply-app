@@ -121,6 +121,9 @@ export interface ChartDataPoint {
   date: string;
   reviews: number;
   avgRating?: number;
+  ratingBreakdown?: {
+    [key: number]: number; // rating (1-5) -> count
+  };
 }
 
 // API response interfaces

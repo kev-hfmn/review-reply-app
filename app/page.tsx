@@ -33,6 +33,7 @@ import ReviewShowcase from '@/components/ReviewShowcase'
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection'
 import { Button } from '@/components/ui/button'
 import { PromoCodeBanner } from '@/components/PromoCodeBanner'
+import HeroReviewsBackground from '@/components/HeroReviewsBackground'
 import Link from 'next/link'
 
 const toPlain = (s: string) =>
@@ -150,9 +151,11 @@ export default function LandingPage() {
 
       <NavigationWrapper navigationSections={publicNavigationSections}>
         {/* Hero Section with Extended Particles Background */}
-        <section id="home" className="relative overflow-hidden bg-secondary/20 dark:bg-slate-800 bg-gradient-to-br from-primary/50 via-accent/25 to-secondary/70 ">
-        <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" />
-        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
+        <section id="home" className="relative overflow-hidden !bg-card dark:bg-slate-800 bg-gradient-to-br from-primary/20 via-primary/10  to-primary/30 ">
+      {/* <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" /> */}
+        <div className="absolute inset-0 bg-grid-slate-50 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
+        {/* Rolling review cards background animation */}
+        <HeroReviewsBackground />
         {/* Darker overlay for light mode */}
 
         <div className="relative z-10">

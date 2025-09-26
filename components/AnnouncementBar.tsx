@@ -33,7 +33,7 @@ export default function AnnouncementBar() {
             <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
             <span className="text-sm sm:text-base font-medium">
               <span className="hidden sm:inline">🎉 Early Bird Special: </span>
-              <span className="font-bold">33% OFF</span> for the first 100 customers
+              <span className="font-bold">33% OFF</span> for the first 33 users
             </span>
             <button
               onClick={(e) => {

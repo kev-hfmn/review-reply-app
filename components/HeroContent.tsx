@@ -8,7 +8,7 @@ export default function HeroContent() {
       <div className="pt-5 pb-20 sm:pt-24 sm:pb-16">
         <div className="text-center">
           {/* SEO Badge - Static for server rendering */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100/30 dark:bg-blue-900/30 backdrop-blur-sm text-blue-800 dark:text-blue-300 text-sm font-medium mb-8">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-slate-50/50 dark:bg-blue-900/30 backdrop-blur-sm text-primary/85 dark:text-blue-300 text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4 mr-2" />
             Your Reputation, On Autopilot
           </div>

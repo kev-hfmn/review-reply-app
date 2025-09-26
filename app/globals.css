@@ -1,3 +1,5 @@
+@import '@radix-ui/themes/styles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -147,7 +149,7 @@ body {
 
 @layer base {
   :root {
-    --background: 210 16.6667% 97.6471%;
+    --background: 209.9994 40.5528% 96.0495%;
     --foreground: 222.2222 47.3684% 11.1765%;
     --card: 0 0% 99.2157%;
     --card-foreground: 222.2222 47.3684% 11.1765%;
@@ -177,9 +179,9 @@ body {
     --sidebar-primary-foreground: 0 0% 98.0392%;
     --sidebar-accent: 36.0000 100.0000% 95.0980%;
     --sidebar-accent-foreground: 35.1563 100% 25.0980%;
-    --sidebar-border: 214.2857 31.8182% 91.3725%;
+    --sidebar-border: 240 5.8824% 90%;
     --sidebar-ring: 201.1765 100% 30%;
-    --font-sans: Inter, sans-serif;
+    --font-sans: 'Noto Sans', sans-serif;
     --font-serif: Georgia, serif;
     --font-mono: JetBrains Mono, monospace;
     --radius: 0.5rem;

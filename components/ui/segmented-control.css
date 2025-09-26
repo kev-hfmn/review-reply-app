@@ -1,0 +1,57 @@
+.rt-SegmentedControlRoot {
+  position: relative;
+  display: inline-flex;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
+  padding: 4px;
+  gap: 6px;
+}
+
+.rt-SegmentedControlRoot-blue {
+  background-color: #e6f3ff;
+}
+
+.rt-SegmentedControlRoot-primary {
+  background-color: #f0f7ff;
+}
+
+.rt-SegmentedControlItem {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 1;
+  color: #4b5563;
+  user-select: none;
+  border-radius: 9999px;
+  outline: none;
+  border: none;
+  position: relative;
+  cursor: pointer;
+}
+
+.rt-SegmentedControlRoot-blue .rt-SegmentedControlItem[data-state="on"] {
+  color: white;
+  background-color: #005996;
+}
+
+.rt-SegmentedControlRoot-primary .rt-SegmentedControlItem[data-state="on"] {
+  color: white;
+  background-color: #005996;
+}
+
+.rt-SegmentedControlRoot[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rt-SegmentedControlItem:hover:not([data-disabled]) {
+  background-color: rgba(0, 89, 150, 0.1);
+}
+
+.rt-SegmentedControlItem[data-state="on"]:hover:not([data-disabled]) {
+  background-color: #0077c9;
+}

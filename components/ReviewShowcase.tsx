@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import * as SegmentedControl from '@/components/ui/segmented-control';
 import { useInView } from 'react-intersection-observer'
 import { useState } from 'react'
 import { GoogleReviewCard } from '@/components/GoogleReviewCard'
@@ -18,7 +19,7 @@ const sampleReviews = [
     rating: 5,
     reviewText: "Love this shop! Bought my first surfboard from here, and they were super helpful making sure I found the right one. Also got a bag for the board and they went to their stock room to double check as we thought there weren't any in stock but they found it for me.",
     reviewDate: "a month ago",
-    replyText: "Thanks for dropping by, Tommy. Glad we could help you pick out your first board and track down that bag in the stock room. Hope the board's treating you well! Enjoy the waves.",
+    replyText: "Thanks, Tommy! Happy we could help with your first board and find that bag. Enjoy the waves!",
     replyDate: "a month ago"
   },
 
@@ -30,7 +31,7 @@ const sampleReviews = [
     "rating": 3,
     "reviewText": "The staff was friendly and helpful, but my order took much longer than expected and one item wasn't quite right. I appreciate the effort, but I was hoping for a smoother experience.",
     "reviewDate": "2 weeks ago",
-    "replyText": "Hi Karen. We appreciate you sharing both the positives and what didn’t go quite right. Waiting too long and getting the wrong item isn’t the experience we aim to give. We’ll take this as a reminder to do better, and we hope to welcome you back for a smoother visit.",
+    "replyText": "Hi Karen. Waiting too long and getting the wrong item isn’t the experience we aim to give. We’ll take this as a reminder to do better, and we hope to welcome you back for a smoother visit.",
     "replyDate": "2 weeks ago"
   },
   {
@@ -64,7 +65,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
       <div className=" mx-auto max-w-6xl">
         {/* Toggle Section */}
         <div className="relative text-center mb-5 w-[250px] md:w-[350px] mx-auto">
-          <div className="relative !z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="relative !z-50 inline-flex items-center bg-white dark:bg-slate-800 rounded-full p-1 shadow-sm border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setShowReplies(false)}
               className={`px-3 md:px-6 py-1 md:py-2  rounded-full text-sm font-medium transition-all duration-200 ${
@@ -86,6 +87,7 @@ export default function ReviewShowcase({ heroInView }: ReviewShowcaseProps) {
               With Replies
             </button>
           </div>
+
 
           {/* Arrow pointing to toggle */}
           <div className="absolute -top-4 -translate-y-full left-0 sm:left-auto right-0 sm:translate-x-full flex flex-col items-center">
