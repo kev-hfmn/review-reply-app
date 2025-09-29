@@ -259,4 +259,27 @@ body {
   html {
     scroll-behavior: smooth;
   }
+  
+  /* Force light mode - override any dark styles */
+  html, html.dark {
+    --background: 209.9994 40.5528% 96.0495% !important;
+    --foreground: 222.2222 47.3684% 11.1765% !important;
+    --card: 0 0% 99.2157% !important;
+    --card-foreground: 222.2222 47.3684% 11.1765% !important;
+    --popover: 0 0% 100% !important;
+    --popover-foreground: 222.2222 47.3684% 11.1765% !important;
+    --primary: 201.1765 100% 30% !important;
+    --primary-foreground: 0 0% 98.0392% !important;
+    --secondary: 219.8658 65.0655% 44.9020% !important;
+    --secondary-foreground: 0 0% 100% !important;
+    --muted: 240 4.7619% 95.8824% !important;
+    --muted-foreground: 220.0000 14.7059% 40% !important;
+    --accent: 35.0588 100% 50% !important;
+    --accent-foreground: 35.1563 100% 25.0980% !important;
+    --destructive: 0 84.2365% 60.1961% !important;
+    --destructive-foreground: 0 0% 100% !important;
+    --border: 214.2857 31.8182% 91.3725% !important;
+    --input: 0 0% 99.2157% !important;
+    --ring: 201.1765 100% 30% !important;
+  }
 }

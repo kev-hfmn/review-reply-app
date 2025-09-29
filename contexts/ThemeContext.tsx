@@ -20,6 +20,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
     setTheme('light');
     updateTheme('light');
+    
+    // Ensure dark class is never added by watching for changes
+    const observer = new MutationObserver(() => {
+      const root = document.documentElement;
+      if (root.classList.contains('dark')) {
+        root.classList.remove('dark');
+      }
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
   }, []);
 
   const updateTheme = (newTheme: Theme) => {
