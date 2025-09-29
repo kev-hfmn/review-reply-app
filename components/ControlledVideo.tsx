@@ -77,7 +77,7 @@ export function ControlledVideo({
   }, [shouldPlay, src]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="object-cover">
       <video
         ref={videoRef}
         poster={poster}

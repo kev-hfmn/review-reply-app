@@ -190,7 +190,7 @@ function SimpleStep({
           {/* Video Section */}
           <div className="lg:col-span-4 relative p-4">
             <motion.div
-              className="relative aspect-video rounded-xl overflow-hidden bg-slate-800/50 border-muted border"
+              className="relative aspect-video rounded-xl overflow-hidden object-cover "
               animate={{
                 scale: isActive ? 1 : 0.95,
                 opacity: isActive ? 1 : 0.4,
@@ -199,7 +199,7 @@ function SimpleStep({
             >
               <ControlledVideo
                 src={step.videoSrc}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-fill"
                 isActive={isActive}
               />
             </motion.div>
