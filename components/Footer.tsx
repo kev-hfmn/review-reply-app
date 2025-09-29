@@ -51,7 +51,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-sidebar text-foreground py-12 md:py-16 border-t border-muted-foreground/15 shadow-inner">
+    <footer className="bg-slate-200/50 text-foreground py-12 md:py-16 border-t border-muted-foreground/15 shadow-inner">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Section - Company Info and Main Links */}
         <div className="flex flex-col lg:flex-row lg:justify-between gap-12 mb-8">

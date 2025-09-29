@@ -194,26 +194,26 @@ export default function HeroReviewsBackground() {
   })
 
   // Transform scroll progress to Y positions - both move down
-  const topRightY = useTransform(scrollYProgress, [0, 1], [-100, 150])
-  const bottomLeftY = useTransform(scrollYProgress, [0, 1], [0, 200])
+  const topRightY = useTransform(scrollYProgress, [0, 1], [-250, 300])
+  const bottomLeftY = useTransform(scrollYProgress, [0, 1], [0, 300])
 
   // Generate review stacks for different positions
   const topRightReviews = useMemo(() => {
-    return backgroundReviews.slice(0, 4).map((review, index) => ({
+    return backgroundReviews.slice(0, 5).map((review, index) => ({
       ...review,
       id: `top-right-${review.userName}-${index}`,
     }))
   }, [])
 
   const bottomLeftReviews = useMemo(() => {
-    return backgroundReviews.slice(4, 8).map((review, index) => ({
+    return backgroundReviews.slice(3, 8).map((review, index) => ({
       ...review,
       id: `bottom-left-${review.userName}-${index}`,
     }))
   }, [])
 
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div ref={containerRef} className="absolute hidden lg:block inset-0 overflow-hidden pointer-events-none">
       {/* Top Right Reviews - Scroll down moves them up */}
       <motion.div
         className="absolute right-8 md:right-16 lg:right-24 top-0"
@@ -225,7 +225,7 @@ export default function HeroReviewsBackground() {
             y: [-5, 5, -5],
           }}
           transition={{
-            duration: 8,
+            duration: 5,
             ease: 'easeInOut',
             repeat: Infinity,
           }}
@@ -255,7 +255,7 @@ export default function HeroReviewsBackground() {
             y: [3, -3, 3],
           }}
           transition={{
-            duration: 7,
+            duration: 5,
             delay: 2,
             ease: 'easeInOut',
             repeat: Infinity,

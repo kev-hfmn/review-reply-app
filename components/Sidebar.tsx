@@ -133,7 +133,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div className={`
         fixed shadow-xl shadow-slate-200/70 lg:static inset-y-0 left-0 z-40 h-full
-        w-64 bg-slate-50 bg-gradient-to-br from-slate-50 via-slate-100/80 to-slate-50 backdrop-blur-sm border-r border-sidebar-border
+        w-64 bg-slate-50 bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 backdrop-blur-sm border-r border-sidebar-border
         transition-all duration-300 ease-out flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>

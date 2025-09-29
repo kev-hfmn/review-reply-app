@@ -18,6 +18,7 @@ import {
   Clock3Icon,
   PenTool
 } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -839,7 +840,7 @@ function SettingsPage() {
               <Card className="text-card-foreground">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <MessageSquare className="h-5 w-5" />
+
                     Voice Preset
                   </CardTitle>
                 </CardHeader>
@@ -880,7 +881,7 @@ function SettingsPage() {
                       )}
                       {brandVoice.preset === 'custom' && (
                         <p className="text-muted-foreground">
-                          <span className="font-medium text-foreground">Custom:</span> User-defined tone based on your specific brand instructions below. Perfect for unique brand voices and specialized messaging.
+                          <span className="font-medium text-foreground">Custom:</span> User-defined tone based on your specific brand instructions below in Custom Instructions. Perfect for unique brand voices and specialized messaging. You can also paste existing review reply templates you have already been using.
                         </p>
                       )}
                     </div>
@@ -892,7 +893,7 @@ function SettingsPage() {
               <Card className="text-card-foreground pb-5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <SettingsIcon className="h-5 w-5" />
+
                     Tone Adjustments
                   </CardTitle>
                 </CardHeader>
@@ -901,13 +902,13 @@ function SettingsPage() {
                     <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Formality Level: {brandVoice.formality}
                     </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={brandVoice.formality}
-                      onChange={(e) => setBrandVoice(prev => ({ ...prev, formality: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    <Slider
+                      value={[brandVoice.formality]}
+                      onValueChange={(value) => setBrandVoice(prev => ({ ...prev, formality: value[0] }))}
+                      max={5}
+                      min={1}
+                      step={1}
+                      className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <span>Very Casual</span>
@@ -922,13 +923,13 @@ function SettingsPage() {
                     <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Warmth Level: {brandVoice.warmth}
                     </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={brandVoice.warmth}
-                      onChange={(e) => setBrandVoice(prev => ({ ...prev, warmth: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    <Slider
+                      value={[brandVoice.warmth]}
+                      onValueChange={(value) => setBrandVoice(prev => ({ ...prev, warmth: value[0] }))}
+                      max={5}
+                      min={1}
+                      step={1}
+                      className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <span>Minimal</span>
@@ -943,13 +944,13 @@ function SettingsPage() {
                     <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Brevity Level: {brandVoice.brevity}
                     </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={brandVoice.brevity}
-                      onChange={(e) => setBrandVoice(prev => ({ ...prev, brevity: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-muted-foreground/20 rounded-lg appearance-none cursor-pointer"
+                    <Slider
+                      value={[brandVoice.brevity]}
+                      onValueChange={(value) => setBrandVoice(prev => ({ ...prev, brevity: value[0] }))}
+                      max={5}
+                      min={1}
+                      step={1}
+                      className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <span>Very Detailed</span>
@@ -966,10 +967,14 @@ function SettingsPage() {
               <Card className="text-card-foreground lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Zap className="h-5 w-5" />
+
                     Custom Instructions
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                  These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
+                </p>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
                   <Textarea
                     value={brandVoice.customInstruction || ''}
@@ -978,9 +983,7 @@ function SettingsPage() {
                     className="w-full min-h-[100px] px-3 py-2 border resize-vertical"
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    These instructions will be included in every AI-generated reply to ensure consistency with your brand voice and messaging.
-                  </p>
+
                 </CardContent>
               </Card>
             </div>
@@ -1024,7 +1027,9 @@ function SettingsPage() {
               </div>
             )}
 
-            {/* Automated Review Sync Card */}
+            {/* Grid layout for Automated Review Sync and Approval Mode Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Automated Review Sync Card */}
             <Card className="text-card-foreground">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -1139,7 +1144,83 @@ function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Automation Pipeline Card */}
+
+
+              {/* Approval Mode Card */}
+              <Card className="text-card-foreground">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <SettingsIcon className="h-5 w-5 " />
+                  Approval Mode
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      id: 'manual',
+                      title: 'Manual Approval',
+                      description: 'Review and approve every reply before posting'
+                    },
+                    {
+                      id: 'auto_4_plus',
+                      title: 'Auto-approve 4+ Stars',
+                      description: 'Automatically post replies to 4 and 5-star reviews'
+                    },
+                    {
+                      id: 'auto_except_low',
+                      title: 'Auto-approve Except Low Ratings',
+                      description: 'Automatically post replies except for 1 and 2-star reviews'
+                    }
+                  ].map((mode) => {
+                    const isProFeature = mode.id !== 'manual';
+                    const hasAutoApproval = hasFeature(subscriptionQuery.data?.planId || 'basic', 'autoApproval');
+                    const isDisabled = isProFeature && !hasAutoApproval;
+
+                    return (
+                    <div
+                      key={mode.id}
+                      className={`p-4 rounded-lg border-2 transition-colors ${
+                        isDisabled
+                          ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
+                          : approvalSettings.mode === mode.id
+                            ? 'border-primary bg-primary/5 dark:bg-primary/10 cursor-pointer'
+                            : 'border-border hover:border-border/80 cursor-pointer'
+                      }`}
+                      onClick={() => !isDisabled && setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
+                          approvalSettings.mode === mode.id
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground'
+                        }`}>
+                          {approvalSettings.mode === mode.id && (
+                            <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-card-foreground">{mode.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveApproval} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Approval Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            </div>
+
+            {/* Automation Pipeline Card - Full Width */}
             <Card className="text-card-foreground">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -1325,79 +1406,6 @@ function SettingsPage() {
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {isSaving ? 'Saving...' : 'Save Automation Settings'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Approval Mode Card */}
-            <Card className="text-card-foreground">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <SettingsIcon className="h-5 w-5 " />
-                  Approval Mode
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: 'manual',
-                      title: 'Manual Approval',
-                      description: 'Review and approve every reply before posting'
-                    },
-                    {
-                      id: 'auto_4_plus',
-                      title: 'Auto-approve 4+ Stars',
-                      description: 'Automatically post replies to 4 and 5-star reviews'
-                    },
-                    {
-                      id: 'auto_except_low',
-                      title: 'Auto-approve Except Low Ratings',
-                      description: 'Automatically post replies except for 1 and 2-star reviews'
-                    }
-                  ].map((mode) => {
-                    const isProFeature = mode.id !== 'manual';
-                    const hasAutoApproval = hasFeature(subscriptionQuery.data?.planId || 'basic', 'autoApproval');
-                    const isDisabled = isProFeature && !hasAutoApproval;
-
-                    return (
-                    <div
-                      key={mode.id}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        isDisabled
-                          ? 'border-border bg-muted/30 cursor-not-allowed opacity-60'
-                          : approvalSettings.mode === mode.id
-                            ? 'border-primary bg-primary/5 dark:bg-primary/10 cursor-pointer'
-                            : 'border-border hover:border-border/80 cursor-pointer'
-                      }`}
-                      onClick={() => !isDisabled && setApprovalSettings({ mode: mode.id as ApprovalSettings['mode'] })}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${
-                          approvalSettings.mode === mode.id
-                            ? 'border-primary bg-primary'
-                            : 'border-muted-foreground'
-                        }`}>
-                          {approvalSettings.mode === mode.id && (
-                            <div className="w-full h-full rounded-full bg-primary-foreground scale-50"></div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-card-foreground">{mode.title}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveApproval} disabled={isSaving}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save Approval Settings'}
                   </Button>
                 </div>
               </CardContent>

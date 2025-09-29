@@ -15,7 +15,7 @@ export default function HeroContent() {
 
           {/* SEO Critical Content - Server Rendered */}
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-6xl lg:text-6xl font-bold text-slate-900 dark:text-white !leading-[1.2]">
+            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white !leading-[1.2]">
               Automatic Replies for Your Google Reviews
             </h1>
             <p className="mt-4 lg:mt-6 text-lg lg:text-[1.375rem] lg:leading-normal text-foreground/80">

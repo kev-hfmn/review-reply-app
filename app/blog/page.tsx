@@ -39,18 +39,19 @@ export default async function BlogPage() {
       {/* Hero Section */}
       <div className="relative bg-muted/50 overflow-hidden">
         {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-primary/20 to-accent/20 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
-        <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-accent/20 to-primary/45 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
+        <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-80" />
+        <div className="absolute inset-0 bg-[length:40px_40px] bg-slate-500/50" />
 
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               RepliFast{' '}
-              <span className="bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+              <span className="">
                 Blog
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+            <p className="text-xl text-slate-100 mb-8 leading-relaxed font-medium">
               Smart Reputation Tips for Small Businesses. Our blog covers everything from customer trust to local SEO: short, clear, and actionable content built for busy business owners who don’t have hours to spare.
             </p>
           </div>
@@ -63,7 +64,7 @@ export default async function BlogPage() {
           {/* Featured Post */}
           {featuredPost && (
             <div className="mb-16">
-              <div className="relative bg-muted/30 rounded-2xl border border-border/50 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+              <div className="relative bg-card rounded-2xl border border-border/50 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <Link href={`/blog/${featuredPost.slug}`}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[400px]">
                     {/* Left Column - Content */}

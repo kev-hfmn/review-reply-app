@@ -151,7 +151,7 @@ export default function LandingPage() {
 
       <NavigationWrapper navigationSections={publicNavigationSections}>
         {/* Hero Section with Extended Particles Background */}
-        <section id="home" className="relative overflow-hidden !bg-card dark:bg-slate-800 bg-gradient-to-br from-primary/20 via-primary/10  to-primary/30 ">
+        <section id="home" className="relative overflow-hidden !bg-card dark:bg-slate-800 bg-gradient-to-br from-primary/30 via-primary/5  to-primary/40 ">
       {/* <div id="particles-js" className="absolute inset-0 z-0 dark:opacity-30" /> */}
         <div className="absolute inset-0 bg-grid-slate-50 dark:bg-grid-slate-800/40 bg-[length:40px_40px] opacity-30" />
         {/* Rolling review cards background animation */}
@@ -168,10 +168,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 ">
+      <section id="features" className="py-24 bg-slate-50 ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-10 lg:mb-16">
-            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
+            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300 text-sm font-medium mb-6">
               ⚡ Key Features
             </AnimatedSection>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
@@ -245,10 +245,10 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section id="benefits" className="py-24 bg-muted/25">
+      <section id="benefits" className="py-24 bg-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-10 lg:mb-16">
-            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
+            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 dark:text-blue-300 text-sm font-medium mb-6">
               💬 Customer Engagement
             </AnimatedSection>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
@@ -347,31 +347,12 @@ export default function LandingPage() {
             </div>
           </AnimatedGrid>
 
-          {/* Testimonial */}
-          <AnimatedSection className="mt-16 lg:mt-20  bg-card rounded-2xl border border-border p-6 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-lg hover:shadow-none hover:bg-background/20 transition-all duration-300">
-            <div className="flex justify-center md:mb-6 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
-              ))}
-            </div>
-            <blockquote className="text-md lg:text-xl font-light text-slate-900 dark:text-white mb-6">
-              &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
-            </blockquote>
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                <Image src="/icons/jahshaka.avif" alt="Jah Shaka Surf Shop" width={40} height={40} />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-slate-900 dark:text-white">Griff</div>
-                <div className="text-slate-600 font-thin text-sm dark:text-slate-300">Jah Shaka Surf Shop</div>
-              </div>
-            </div>
-          </AnimatedSection>
+
         </div>
       </section>
 
       {/* How it works Section */}
-      <section id="how-it-works" className="py-24 bg-background">
+      <section id="how-it-works" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-10 lg:mb-10">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
@@ -392,7 +373,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-muted/50">
+      <section id="pricing" className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center md:mb-10">
             <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium mb-6">
@@ -453,7 +434,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="why-replifast" className="py-24 bg-background">
+      <section id="why-replifast" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection delay={0.1} className="text-center mb-10 lg:mb-16">
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white mb-4">
@@ -481,6 +462,26 @@ export default function LandingPage() {
                 </div>
               ))}
             </AnimatedGrid>
+             {/* Testimonial */}
+          <AnimatedSection className="mt-10 lg:mt-16  bg-card rounded-2xl border border-border p-6 md:p-8 lg:p-12 text-center max-w-4xl mx-auto shadow-lg hover:shadow-none hover:bg-white transition-all duration-300">
+            <div className="flex justify-center md:mb-6 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
+              ))}
+            </div>
+            <blockquote className="text-md lg:text-xl font-light text-slate-900 dark:text-white mb-6">
+              &ldquo;RepliFast has completely taken the stress out of reviews for us. We are replying faster, our customers notice, and our search ranking has gone up too.&rdquo;
+            </blockquote>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                <Image src="/icons/jahshaka.avif" alt="Jah Shaka Surf Shop" width={40} height={40} />
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-slate-900 dark:text-white">Griff</div>
+                <div className="text-slate-600 font-thin text-sm dark:text-slate-300">Jah Shaka Surf Shop</div>
+              </div>
+            </div>
+          </AnimatedSection>
           </div>
 
           {/* Mobile: Horizontal scroll */}
@@ -521,11 +522,11 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-primary/80 to-secondary/50 via-accent/70 relative overflow-hidden">
-        <div className="absolute inset-0 dark:bg-grid-white/10 bg-[length:40px_40px] bg-slate-700/50" />
+      <section className="py-16 bg-gradient-to-br from-primary/40 to-primary/45 via-accent/30 relative overflow-hidden">
+        <div className="absolute inset-0 dark:bg-grid-white/10 bg-[length:40px_40px] bg-slate-500/50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-4">
-            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6">
+            <AnimatedSection direction="scale" delay={0.1} className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-4">
               🚀 Get Started Now
             </AnimatedSection>
           </div>
@@ -577,7 +578,7 @@ export default function LandingPage() {
       />
 
       {/* FAQ Section */}
-      <section id="faq" className="py-24 bg-slate-50 dark:bg-slate-900">
+      <section id="faq" className="py-24 bg-background dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-16">
             {/* Left Sidebar */}

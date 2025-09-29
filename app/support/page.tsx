@@ -70,18 +70,19 @@ export default function SupportPage() {
         {/* Hero Section */}
         <div className="relative bg-muted/50 overflow-hidden">
           {/* Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-secondary/30 via-primary/20 to-accent/20 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
-          <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-accent/20 to-primary/45 dark:from-secondary/10 dark:via-primary/5 dark:to-accent/10" />
+        <div className="absolute inset-0 bg-[url(/backgrounds/gentle-stars.svg)] bg-contain invert dark:invert-0 bg-repeat-round opacity-80" />
+        <div className="absolute inset-0 bg-[length:40px_40px] bg-slate-500/50" />
 
           <div className="relative container mx-auto px-4 py-16 md:py-24">
             <div className="text-center max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
                 RepliFast{' '}
-                <span className="bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+                <span className="">
                   Support Center
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-xl text-slate-100 mb-8 leading-relaxed font-medium">
                 Stuck on something or getting started? Browse our extensive knowledge base to find answers to your questions. Our support is also available to help you with any questions you may have.
               </p>
 
@@ -169,7 +170,7 @@ export default function SupportPage() {
                 return (
                   <div key={category}>
                     <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-secondary/80 via-secondary/60 to-secondary/80 rounded-lg flex items-center justify-center text-secondary-foreground">
+                      <div className="w-8 h-8 bg-slate-500 bg-gradient-to-br from-primary/50 to-primary/50 rounded-full flex items-center justify-center text-secondary-foreground">
                         <CategoryIcon className="h-4 w-4" />
                       </div>
                       {categoryDisplayName}
