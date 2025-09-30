@@ -108,7 +108,7 @@ function ScreenshotPlaceholder({ alt, isActive }: { alt: string; isActive: boole
 // Step Number Component
 function StepNumber({ number }: { number: number }) {
   return (
-    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/80 text-foreground/80 flex items-center justify-center font-normal text-lg">
+    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 text-blue-500 flex items-center justify-center font-semibold text-lg">
       {number}
     </div>
   );
@@ -149,7 +149,7 @@ function SimpleStep({
           transform: 'translateZ(0)',
           willChange: 'transform, opacity',
         }}
-        className="bg-gradient-to-br from-card/80 to-card/70 backdrop-blur-lg border border-muted rounded-2xl shadow-xl overflow-hidden mx-4 lg:mx-8"
+        className="bg-gradient-to-br from-card/80 to-card/70 backdrop-blur-lg border border-muted rounded-2xl shadow-xl overflow-hidden mx-2 lg:mx-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-0 items-center min-h-[500px]">
           {/* Content Section */}
@@ -165,7 +165,7 @@ function SimpleStep({
 
               </motion.div>
               <motion.h4
-                className="text-xl lg:text-2xl font-medium"
+                className="text-xl lg:text-2xl font-medium leading-snug"
                 animate={{
                   color: isActive ? 'var(--foreground/80)' : 'var(--muted-foreground)',
                   opacity: isActive ? 0.9 : 0.5,
@@ -176,7 +176,7 @@ function SimpleStep({
               </motion.h4>
             </div>
             <motion.p
-              className="text-lg leading-tight"
+              className="text-md leading-snug"
               animate={{
                 color: isActive ? 'var(--foreground/60)' : 'var(--muted-foreground)',
                 opacity: isActive ? 0.7 : 0.4,
@@ -231,30 +231,23 @@ export function HowItWorksSteps() {
 
       </div>
 
-      {/* Mobile: Horizontal Scroll (unchanged) */}
+      {/* Mobile: Horizontal Scroll */}
       <div className="block lg:hidden">
         <div
-          className="mobile-scroll-container overflow-x-auto overflow-y-hidden h-full scrollbar-hide pb-4 -mx-4 px-4"
+          className="mobile-scroll-container overflow-x-auto overflow-y-hidden h-full scrollbar-hide pb-4 -mx-2 pl-4 pr-0"
           style={{
             scrollSnapType: 'x mandatory',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <div className="flex space-x-6" style={{ width: 'max-content' }}>
-            {stepsData.map((step, index) => (
+          <div className="flex space-x-4" style={{ width: 'max-content' }}>
+            {stepsData.map((step) => (
               <motion.div
                 key={step.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{
-                  delay: index * 0.1,
-                  duration: 0.5,
-                  ease: "easeOut"
-                }}
-                className="relative flex-shrink-0 w-[calc(100vw-48px)] sm:w-[400px] scroll-snap-align-center bg-card p-5 px-4 rounded-2xl shadow-lg border border-border"
-                style={{ scrollSnapAlign: 'center' }}
+                initial={false}
+                className="relative flex-shrink-0 w-[82vw] sm:w-[400px] bg-card p-5 px-4 rounded-2xl shadow-lg border border-border"
+                style={{ scrollSnapAlign: 'start' }}
               >
 
                 <div className="mb-6 -mx-4 -mt-5 top-0 left-0 right-0 ">
@@ -265,36 +258,18 @@ export function HowItWorksSteps() {
                 </div>
 
                 <div className="flex items-start space-x-4 mb-6">
-                  <StepNumber number={step.id} />
-                  <h4 className="flex-1 text-xl font-semibold text-slate-900 dark:text-white">
+                  <div className="flex items-start space-x-2">
+
+                  <h4 className="flex-1 !text-2xl font-bold text-slate-900 dark:text-white leading-tight">
                     {step.title}
                   </h4>
+                  <StepNumber number={step.id} />
+                  </div>
                 </div>
 
-                <p className="text-slate-600 dark:text-slate-300 leading-normal mb-6">
+                <p className="text-slate-600 dark:text-slate-300 leading-normal mb-6 !text-sm">
                   {step.description}
                 </p>
-
-                {step.hasExpandable && step.expandableContent && (
-                  <details className="group/details">
-                    <summary className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium flex items-center gap-2 transition-colors">
-                      <span>Why Google approval is required</span>
-                      <svg
-                        className="w-4 h-4 transition-transform group-open/details:rotate-180"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className="mt-3 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {step.expandableContent}
-                      </p>
-                    </div>
-                  </details>
-                )}
               </motion.div>
             ))}
           </div>

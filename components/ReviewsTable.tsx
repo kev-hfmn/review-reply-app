@@ -26,7 +26,8 @@ import {
   MessageSquare,
   Eye,
   EyeIcon,
-  EyeOff
+  EyeOff,
+  MessageSquareText
 } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -183,7 +184,7 @@ export default function ReviewsTable({
     return (
       <div className="bg-card rounded-xl shadow-sm border border-border p-12">
         <div className="text-center">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <MessageSquareText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">
             No reviews found
           </h3>

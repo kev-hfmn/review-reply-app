@@ -15,12 +15,12 @@ interface AuthContextType {
   isLoading: boolean;
   supabase: SupabaseClient;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<{
+  signInWithEmail: (email: string, password: string, captchaToken?: string) => Promise<{
     user: User | null;
     session: Session | null;
   }>;
   signOut: () => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<{
+  signUpWithEmail: (email: string, password: string, captchaToken?: string) => Promise<{
     data: { user: User | null } | null;
     error: Error | null;
   }>;
@@ -267,11 +267,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
     },
-    signInWithEmail: async (email: string, password: string) => {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    signInWithEmail: async (email: string, password: string, captchaToken?: string) => {
+      const authOptions: any = {
         email,
         password
-      });
+      };
+      
+      // Add captcha token if provided - for signInWithPassword, it goes directly in the object
+      if (captchaToken) {
+        authOptions.captchaToken = captchaToken;
+        console.log('🔥 AUTH CONTEXT signIn - Using captcha token:', captchaToken.substring(0, 20) + '...', 'Full token length:', captchaToken.length);
+        console.log('🔥 AUTH CONTEXT signIn - Full authOptions:', JSON.stringify(authOptions, null, 2));
+      } else {
+        console.log('🔥 AUTH CONTEXT signIn - No captcha token provided');
+      }
+      
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword(authOptions);
 
       if (authError) throw authError;
 
@@ -315,15 +326,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error signing out:', error);
       }
     },
-    signUpWithEmail: async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signUp({
+    signUpWithEmail: async (email: string, password: string, captchaToken?: string) => {
+      const signUpOptions: any = {
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`
           // No business_name metadata - businesses created during Google connection
         }
-      });
+      };
+      
+      // Add captcha token if provided - for signUp, it goes in the options object
+      if (captchaToken) {
+        signUpOptions.options.captchaToken = captchaToken;
+        console.log('🔥 AUTH CONTEXT signUp - Using captcha token:', captchaToken.substring(0, 20) + '...', 'Full token length:', captchaToken.length);
+        console.log('🔥 AUTH CONTEXT signUp - Full signUpOptions:', JSON.stringify(signUpOptions, null, 2));
+      } else {
+        console.log('🔥 AUTH CONTEXT signUp - No captcha token provided');
+      }
+      
+      const { data, error } = await supabase.auth.signUp(signUpOptions);
       if (error) throw error;
 
       // Business records will be created when users connect their Google Business Profile

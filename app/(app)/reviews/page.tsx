@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, MessageSquare, ArrowLeft, ArrowRight } from 'lucide-react';
+import { RefreshCw, MessageSquare, ArrowLeft, ArrowRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviewsData } from '@/hooks/useReviewsData';
 import ReviewFilters from '@/components/ReviewFilters';
@@ -410,30 +410,146 @@ export default function ReviewsPage() {
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex flex-col gap-y-5 pt-10 items-center justify-between  p-4  border-slate-200 dark:border-slate-700">
+        <div className="flex flex-col gap-y-5 pt-10 items-center p-4">
+          {/* Pagination Controls */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {/* First Page */}
+            <Button
+              onClick={() => goToPage(1)}
+              disabled={pagination.currentPage === 1}
+              variant="pill"
+              className="h-10 w-10 bg-card shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              title="First page"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
 
-          <div className="flex items-center space-x-2">
+            {/* Previous Page */}
             <Button
               onClick={() => goToPage(pagination.currentPage - 1)}
               disabled={!pagination.hasPrevPage}
               variant="pill"
-              className="h-12 w-12 bg-card shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              className="h-10 w-10 bg-card shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              title="Previous page"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <span className="px-3 py-1 text-sm font-medium">
-              Page {pagination.currentPage} of {pagination.totalPages}
-            </span>
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {(() => {
+                const current = pagination.currentPage;
+                const total = pagination.totalPages;
+                const pages: (number | string)[] = [];
+
+                if (total <= 7) {
+                  // Show all pages if 7 or fewer
+                  for (let i = 1; i <= total; i++) {
+                    pages.push(i);
+                  }
+                } else {
+                  // Always show first page
+                  pages.push(1);
+
+                  if (current > 3) {
+                    pages.push('...');
+                  }
+
+                  // Show current page and neighbors
+                  const start = Math.max(2, current - 1);
+                  const end = Math.min(total - 1, current + 1);
+
+                  for (let i = start; i <= end; i++) {
+                    pages.push(i);
+                  }
+
+                  if (current < total - 2) {
+                    pages.push('...');
+                  }
+
+                  // Always show last page
+                  pages.push(total);
+                }
+
+                return pages.map((page, idx) => {
+                  if (page === '...') {
+                    return (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    );
+                  }
+
+                  const pageNum = page as number;
+                  const isActive = pageNum === current;
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      variant={isActive ? 'pillActive' : 'pill'}
+                      className={`h-10 w-10 ${
+                        isActive
+                          ? 'bg-card shadow-md'
+                          : 'bg-card shadow-sm hover:shadow-md'
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Next Page */}
             <Button
               onClick={() => goToPage(pagination.currentPage + 1)}
               disabled={!pagination.hasNextPage}
               variant="pill"
-              className="h-12 w-12 bg-card shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              className="h-10 w-10 bg-card shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              title="Next page"
             >
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-4 w-4" />
             </Button>
+
+            {/* Last Page */}
+            <Button
+              onClick={() => goToPage(pagination.totalPages)}
+              disabled={pagination.currentPage === pagination.totalPages}
+              variant="pill"
+              className="h-10 w-10 bg-card shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              title="Last page"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+
+            {/* Jump to Page Input */}
+            <div className="flex items-center gap-2 ml-4 border-l border-border pl-4">
+              <label htmlFor="jump-to-page" className="text-sm text-muted-foreground whitespace-nowrap">
+                Go to
+              </label>
+              <input
+                id="jump-to-page"
+                type="number"
+                min={1}
+                max={pagination.totalPages}
+                className="h-10 w-16 rounded-lg border border-border bg-card px-2 text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                placeholder={String(pagination.currentPage)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const value = parseInt(e.currentTarget.value);
+                    if (value >= 1 && value <= pagination.totalPages) {
+                      goToPage(value);
+                      e.currentTarget.value = '';
+                    }
+                  }
+                }}
+              />
+            </div>
           </div>
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+
+          {/* Results Info */}
+          <div className="flex items-center text-sm text-muted-foreground">
             <span>
               Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to{' '}
               {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { Eye, EyeOff } from 'lucide-react';
+import { TurnstileWidget, TurnstileWidgetRef } from './TurnstileWidget';
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string, isSignUp: boolean) => Promise<void>;
+  onSubmit: (email: string, password: string, isSignUp: boolean, captchaToken?: string) => Promise<void>;
   onGoogleSignIn: () => Promise<void>;
   isLoading: boolean;
   error?: string;
@@ -25,10 +26,55 @@ export function LoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>('');
+  const [captchaError, setCaptchaError] = useState<string>('');
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(email, password, isSignUp);
+    
+    console.log('🔥 FORM SUBMIT - Current captchaToken:', captchaToken);
+    console.log('🔥 FORM SUBMIT - Token length:', captchaToken?.length);
+    console.log('🔥 FORM SUBMIT - isSignUp:', isSignUp);
+    
+    // Check if Turnstile is required and token is present
+    const requiresCaptcha = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    
+    if (requiresCaptcha && !captchaToken) {
+      console.log('🔥 ERROR: Captcha required but no token present');
+      setCaptchaError('Please complete the security verification');
+      return;
+    }
+    
+    setCaptchaError('');
+    
+    try {
+      console.log('🔥 CALLING onSubmit with token:', captchaToken);
+      await onSubmit(email, password, isSignUp, captchaToken);
+    } catch (error) {
+      console.log('🔥 AUTH ERROR, resetting captcha');
+      // Reset Turnstile on authentication error
+      turnstileRef.current?.reset();
+      setCaptchaToken('');
+    }
+  };
+
+  const handleTurnstileSuccess = (token: string) => {
+    console.log('🔥 TURNSTILE SUCCESS - Token received:', token);
+    console.log('🔥 Token length:', token?.length);
+    setCaptchaToken(token);
+    setCaptchaError('');
+  };
+
+  const handleTurnstileError = (errorCode?: string) => {
+    setCaptchaToken('');
+    console.error('Turnstile error:', errorCode);
+    setCaptchaError(`Security verification failed${errorCode ? ` (${errorCode})` : ''}. Please try again.`);
+  };
+
+  const handleTurnstileExpire = () => {
+    setCaptchaToken('');
+    setCaptchaError('Security verification expired. Please try again.');
   };
 
   return (
@@ -151,10 +197,26 @@ export function LoginForm({
                 </div>
               )}
 
+              {/* Turnstile Widget */}
+              {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                <div className="flex flex-col items-center gap-2">
+                  <TurnstileWidget
+                    ref={turnstileRef}
+                    onSuccess={handleTurnstileSuccess}
+                    onError={handleTurnstileError}
+                    onExpire={handleTurnstileExpire}
+                    className="flex justify-center"
+                  />
+                  {captchaError && (
+                    <p className="text-sm text-red-600 text-center">{captchaError}</p>
+                  )}
+                </div>
+              )}
+
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading || !email || !password}
+                disabled={isLoading || !email || !password || (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken)}
                 className="w-full h-11 text-sm font-medium"
                 variant="default"
               >

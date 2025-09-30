@@ -22,13 +22,20 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = async (email: string, password: string, isSignUp: boolean) => {
+  const handleSubmit = async (email: string, password: string, isSignUp: boolean, captchaToken?: string) => {
     setError('');
     setIsLoading(true);
 
+    console.log('🔥 LOGIN PAGE - handleSubmit called');
+    console.log('🔥 LOGIN PAGE - email:', email);
+    console.log('🔥 LOGIN PAGE - isSignUp:', isSignUp);
+    console.log('🔥 LOGIN PAGE - captchaToken:', captchaToken);
+    console.log('🔥 LOGIN PAGE - captchaToken length:', captchaToken?.length);
+
     try {
       if (isSignUp) {
-        const { data, error } = await signUpWithEmail(email, password);
+        console.log('🔥 LOGIN PAGE - Calling signUpWithEmail');
+        const { data, error } = await signUpWithEmail(email, password, captchaToken);
         if (error) throw error;
 
         // Check if the user needs to verify their email
@@ -39,10 +46,12 @@ export default function LoginPage() {
 
         router.replace('/dashboard');
       } else {
-        await signInWithEmail(email, password);
+        console.log('🔥 LOGIN PAGE - Calling signInWithEmail');
+        await signInWithEmail(email, password, captchaToken);
         router.replace('/dashboard');
       }
     } catch (error) {
+      console.log('🔥 LOGIN PAGE - Auth error:', error);
       setError(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setIsLoading(false);
