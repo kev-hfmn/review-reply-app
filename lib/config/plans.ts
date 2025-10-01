@@ -45,7 +45,7 @@ export const PLAN_CONFIGS = {
       maxBulkActions: 10
     },
     pricing: {
-      basePrice: 19,
+      basePrice: 17,
       additionalLocationPrice: 0,
       currency: 'USD'
     },
@@ -72,7 +72,7 @@ export const PLAN_CONFIGS = {
       maxBulkActions: -1 // Unlimited
     },
     pricing: {
-      basePrice: 39,
+      basePrice: 29,
       additionalLocationPrice: 0,
       currency: 'USD'
     },
@@ -99,8 +99,8 @@ export const PLAN_CONFIGS = {
       maxBulkActions: -1
     },
     pricing: {
-      basePrice: 39,
-      additionalLocationPrice: 19, // $25 per additional location (matches Lemon Squeezy)
+      basePrice: 29,
+      additionalLocationPrice: 17, // $17 per additional location (matches Lemon Squeezy)
       currency: 'USD'
     },
     ui: {

@@ -651,10 +651,10 @@ export default function GoogleBusinessProfileIntegration({
           {!connectionStatus.connected && connectionStatus.status !== 'needs_reconnection' && (
             <div className="w-full max-w-md">
               <Button
-                size="sm"
+
                 onClick={handleConnect}
                 disabled={isLoading || authLoading}
-                variant="primary"
+                variant="default"
                 className="w-full"
               >
                 <svg className="h-5 w-5 mr-1" viewBox="0 0 24 24" fill="currentColor">

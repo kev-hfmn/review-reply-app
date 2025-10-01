@@ -45,7 +45,7 @@ const stepsData = [
 // Optimized scroll hook with throttling for better performance
 function useActiveStep() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(0);
   const lastUpdateRef = useRef(0);
 
   const { scrollYProgress } = useScroll({
@@ -190,12 +190,13 @@ function SimpleStep({
           {/* Video Section */}
           <div className="lg:col-span-4 relative p-4">
             <motion.div
-              className="relative aspect-video rounded-xl overflow-hidden object-cover "
+              className="relative aspect-video rounded-xl overflow-hidden object-cover"
               animate={{
                 scale: isActive ? 1 : 0.95,
                 opacity: isActive ? 1 : 0.4,
               }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: 'transform, opacity' }}
             >
               <ControlledVideo
                 src={step.videoSrc}

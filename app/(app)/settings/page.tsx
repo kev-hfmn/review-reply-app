@@ -119,7 +119,7 @@ function SettingsPage() {
         return tab;
       }
     }
-    return 'profile';
+    return 'integrations';
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
@@ -637,7 +637,7 @@ function SettingsPage() {
           </h1>
         </div>
 
-        <Card className="text-center py-12">
+{/*         <Card className="text-center py-12">
           <CardContent className="space-y-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <Building2 className="h-8 w-8 text-muted-foreground" />
@@ -656,7 +656,7 @@ function SettingsPage() {
               Connect Google Business Profile
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Still show the integrations tab when requested */}
         {activeTab === 'integrations' && (

@@ -183,7 +183,7 @@ export function GoogleReviewCard({
       </div>
 
       {/* Tumbleweed Animation - Positioned absolutely at bottom of card */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {!showReply && showTumbleweed && (
           <div className="absolute bottom-0 left-0 right-0 h-16 overflow-visible pointer-events-none">
             <motion.div
@@ -236,7 +236,7 @@ export function GoogleReviewCard({
           </div>
         )}
       </AnimatePresence>
-
+ */}
       {/* Business Reply */}
       {showReply && replyText && (
         <div className="border-t border-gray-100 py-4">

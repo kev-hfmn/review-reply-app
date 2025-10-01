@@ -63,29 +63,26 @@ export function ControlledVideo({
     if (!videoElement) return;
 
     if (shouldPlay) {
-      // Set the src only when the video should play to lazy-load it
-      if (videoElement.src !== src) {
-        videoElement.src = src;
-      }
       videoElement.play().catch(error => {
         console.warn("Video autoplay was prevented. Ensure the video is muted.", error);
       });
     } else {
       videoElement.pause();
-      videoElement.currentTime = 0; // Optional: restart video when it comes back into view
     }
-  }, [shouldPlay, src]);
+  }, [shouldPlay]);
 
   return (
     <div ref={ref} className="object-cover">
       <video
         ref={videoRef}
+        src={src}
         poster={poster}
         muted
         loop
         playsInline
-        preload="lazy" // Set to none to prevent preloading
+        preload="metadata"
         className={className}
+        style={{ willChange: shouldPlay ? 'auto' : 'transform' }}
       />
     </div>
   );

@@ -19,7 +19,7 @@ export default function AnnouncementBar() {
   if (!isVisible) return null;
 
   return (
-    <div className=" relative top-0 left-0 right-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 text-white z-[9999] pointer-events-auto">
+    <div className=" relative top-0 left-0 right-0 bg-primary/80 bg-gradient-to-r from-primary/80 via-accent/40 to-primary/80 text-white z-[9999] pointer-events-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3">
           {/* Left spacer for centering */}
@@ -30,7 +30,7 @@ export default function AnnouncementBar() {
             className="relative z-20 flex items-center justify-center gap-2 text-center cursor-pointer sm:cursor-default"
             onClick={scrollToPromoCode}
           >
-            <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
+
             <span className="text-sm sm:text-base font-medium">
               <span className="hidden sm:inline">🎉 Early Bird Special: </span>
               <span className="font-bold">33% OFF</span> for the first 33 users
