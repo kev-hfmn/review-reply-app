@@ -1,7 +1,7 @@
 # Multi-Language AI Reply Generation Implementation Plan
 
 ## Overview
-Add support for generating AI replies in multiple languages (starting with German) while keeping the platform interface in English. This enables international expansion, particularly for German markets, where businesses can receive authentic, culturally appropriate replies in their local language.
+Add support for generating AI replies in multiple languages (starting with German) while keeping the platform interface in English. This enables international expansion, particularly for German markets, where businesses can receive authentic, culturally appropriate replies in their local language..
 
 ## Research Findings
 
@@ -13,11 +13,11 @@ Add support for generating AI replies in multiple languages (starting with Germa
 - **Settings UI**: Existing Brand Voice tab in Settings page for customization
 
 ### Technical Feasibility
- **Database**: `business_settings` table can accommodate new language field  
- **AI Integration**: OpenAI GPT-4 has excellent multilingual capabilities  
- **UI Framework**: Settings page already has extensible Brand Voice section  
- **Prompt System**: Dynamic prompt building supports language instructions  
- **Fallback System**: Template system can be extended for multiple languages  
+ **Database**: `business_settings` table can accommodate new language field
+ **AI Integration**: OpenAI GPT-4 has excellent multilingual capabilities
+ **UI Framework**: Settings page already has extensible Brand Voice section
+ **Prompt System**: Dynamic prompt building supports language instructions
+ **Fallback System**: Template system can be extended for multiple languages
 
 ## Implementation Plan
 
@@ -29,12 +29,12 @@ Add support for generating AI replies in multiple languages (starting with Germa
 -- Migration: Add reply language support to business_settings
 -- Allows businesses to set their preferred language for AI-generated replies
 
-ALTER TABLE business_settings 
-ADD COLUMN reply_language TEXT DEFAULT 'en' 
+ALTER TABLE business_settings
+ADD COLUMN reply_language TEXT DEFAULT 'en'
 CHECK (reply_language IN ('en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'sv', 'da', 'no'));
 
 -- Add index for language-based queries
-CREATE INDEX IF NOT EXISTS idx_business_settings_reply_language 
+CREATE INDEX IF NOT EXISTS idx_business_settings_reply_language
 ON business_settings (reply_language);
 
 -- Add comment for documentation
@@ -116,7 +116,7 @@ export const SUPPORTED_LANGUAGES: LanguageConfig[] = [
   {
     code: 'fr',
     name: 'French',
-    nativeName: 'Français',
+    nativeName: 'Franï¿½ais',
     region: 'France, Belgium, Switzerland'
   },
   // Add more languages as needed
@@ -132,8 +132,8 @@ export const getLanguageConfig = (code: string): LanguageConfig | undefined => {
 ```typescript
 export const LANGUAGE_INSTRUCTIONS = {
   en: "Write your reply in English using natural, conversational language.",
-  de: "WICHTIG: Schreiben Sie Ihre Antwort auf Deutsch. Verwenden Sie natürliche, authentische deutsche Ausdrücke und einen angemessenen Geschäftston. Nutzen Sie 'Sie' für formelle Ansprache.",
-  fr: "IMPORTANT: Rédigez votre réponse en français en utilisant des expressions naturelles et un ton commercial approprié.",
+  de: "WICHTIG: Schreiben Sie Ihre Antwort auf Deutsch. Verwenden Sie natï¿½rliche, authentische deutsche Ausdrï¿½cke und einen angemessenen Geschï¿½ftston. Nutzen Sie 'Sie' fï¿½r formelle Ansprache.",
+  fr: "IMPORTANT: Rï¿½digez votre rï¿½ponse en franï¿½ais en utilisant des expressions naturelles et un ton commercial appropriï¿½.",
   // Add more languages
 };
 
@@ -154,21 +154,21 @@ Modify `buildSystemPrompt()` function:
 ```typescript
 function buildSystemPrompt(brandVoice: BrandVoiceSettings, businessInfo: BusinessInfo) {
   const { preset, formality, warmth, brevity, customInstruction, replyLanguage = 'en' } = brandVoice;
-  
+
   // ... existing prompt building logic ...
-  
+
   // Add language-specific instructions
   const languageInstruction = LANGUAGE_INSTRUCTIONS[replyLanguage] || LANGUAGE_INSTRUCTIONS.en;
   const culturalContext = CULTURAL_CONTEXT[replyLanguage] || CULTURAL_CONTEXT.en;
-  
+
   basePrompt += `\n\nLANGUAGE: ${languageInstruction}`;
   basePrompt += `\n\nCULTURAL CONTEXT: ${culturalContext}`;
-  
+
   // Add language-specific forbidden words if needed
   if (replyLanguage !== 'en') {
     basePrompt += `\n\nWrite naturally in ${replyLanguage} - avoid obvious translations or English phrases.`;
   }
-  
+
   return basePrompt;
 }
 ```
@@ -177,10 +177,10 @@ function buildSystemPrompt(brandVoice: BrandVoiceSettings, businessInfo: Busines
 Consider adding language context to review prompt:
 ```typescript
 function buildUserPrompt(review: ReviewData, language: string = 'en') {
-  const languageNote = language !== 'en' 
+  const languageNote = language !== 'en'
     ? `\n\nIMPORTANT: Reply in ${getLanguageConfig(language)?.nativeName || language}.`
     : '';
-    
+
   return `Please write a reply to this ${review.rating}-star review from ${review.customerName}:
 
 "${review.text}"
@@ -205,17 +205,17 @@ export const LOCALIZED_TEMPLATES = {
   de: {
     friendly: {
       5: (name: string) => `Vielen Dank, ${name}! Wir freuen uns sehr, dass Sie eine so wunderbare Erfahrung bei uns gemacht haben...`,
-      4: (name: string) => `Vielen Dank für Ihre positive Bewertung, ${name}! Wir freuen uns, dass Ihnen unser Service gefallen hat...`,
-      3: (name: string) => `Hallo ${name}, vielen Dank für Ihr Feedback. Wir freuen uns, dass Sie eine angemessene Erfahrung hatten...`,
-      2: (name: string) => `Hallo ${name}, vielen Dank für Ihr ehrliches Feedback. Es tut uns leid, dass wir Ihre Erwartungen nicht erfüllt haben...`,
+      4: (name: string) => `Vielen Dank fï¿½r Ihre positive Bewertung, ${name}! Wir freuen uns, dass Ihnen unser Service gefallen hat...`,
+      3: (name: string) => `Hallo ${name}, vielen Dank fï¿½r Ihr Feedback. Wir freuen uns, dass Sie eine angemessene Erfahrung hatten...`,
+      2: (name: string) => `Hallo ${name}, vielen Dank fï¿½r Ihr ehrliches Feedback. Es tut uns leid, dass wir Ihre Erwartungen nicht erfï¿½llt haben...`,
       1: (name: string) => `${name}, es tut uns wirklich leid wegen Ihrer Erfahrung. Das entspricht nicht unseren Standards...`
     },
     professional: {
-      5: (name: string) => `Sehr geehrte/r ${name}, wir bedanken uns herzlich für Ihre ausgezeichnete Bewertung...`,
+      5: (name: string) => `Sehr geehrte/r ${name}, wir bedanken uns herzlich fï¿½r Ihre ausgezeichnete Bewertung...`,
       // ... more German professional templates
     },
     playful: {
-      5: (name: string) => `Wow, ${name}! Sie haben unser ganzes Team zum Freudentanz gebracht! <‰ Vielen Dank für die fantastische Bewertung...`,
+      5: (name: string) => `Wow, ${name}! Sie haben unser ganzes Team zum Freudentanz gebracht! <ï¿½ Vielen Dank fï¿½r die fantastische Bewertung...`,
       // ... more German playful templates
     }
   }
@@ -231,7 +231,7 @@ function getFallbackReply(review: ReviewData, tone: string = 'friendly', languag
   const templates = languageTemplates[tone as keyof typeof languageTemplates] || languageTemplates.friendly;
   const ratingKey = review.rating as keyof typeof templates;
   const template = templates[ratingKey] || templates[3];
-  
+
   return template(review.customerName);
 }
 ```
@@ -285,7 +285,7 @@ const [replyLanguage, setReplyLanguage] = useState('en');
 // Add to form save handler
 const handleSaveBrandVoice = async () => {
   // ... existing save logic ...
-  
+
   const { error } = await supabase
     .from('business_settings')
     .update({
@@ -298,14 +298,14 @@ const handleSaveBrandVoice = async () => {
 // Add to JSX in Brand Voice tab
 <div className="space-y-6">
   {/* Existing voice preset selector */}
-  
+
   {/* Add language selector */}
-  <LanguageSelector 
+  <LanguageSelector
     value={replyLanguage}
     onChange={setReplyLanguage}
     disabled={isSaving}
   />
-  
+
   {/* Existing sliders and custom instruction */}
 </div>
 ```
@@ -345,7 +345,7 @@ Show example replies in selected language:
 - [ ] AI generates authentic German replies
 - [ ] Fallback templates work in German
 - [ ] Cultural appropriateness of German replies
-- [ ] Special characters (ä, ö, ü, ß) handled correctly
+- [ ] Special characters (ï¿½, ï¿½, ï¿½, ï¿½) handled correctly
 - [ ] Existing English functionality unchanged
 - [ ] Error handling for invalid language codes
 
@@ -411,7 +411,7 @@ Show example replies in selected language:
 
 ### Additional Languages
 - French (fr) - France, Belgium, Switzerland markets
-- Spanish (es) - Spain, Latin America markets  
+- Spanish (es) - Spain, Latin America markets
 - Italian (it) - Italy market
 - Dutch (nl) - Netherlands, Belgium markets
 
