@@ -8,13 +8,13 @@ export function PromoCodeBanner() {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText('EARLYADAPTOR25');
+      await navigator.clipboard.writeText('EARLYADOPTOR25');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = 'EARLYADAPTOR25';
+      textArea.value = 'EARLYADOPTOR25';
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -48,7 +48,7 @@ export function PromoCodeBanner() {
           </div>
           <div className="bg-white/30 rounded-lg px-4 py-3 mb-3 border border-white/40">
             <code className="text-white font-bold text-lg md:text-xl tracking-wider">
-              EARLYADAPTOR
+              EARLYADOPTOR
             </code>
           </div>
           <button

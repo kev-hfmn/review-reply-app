@@ -8,6 +8,10 @@ body {
   font-family: 'Noto Sans', sans-serif;
 }
 
+h2 {
+  @apply leading-tight;
+}
+
 /* Add some cooking-themed utility classes */
 @layer components {
 .card {
@@ -259,7 +263,7 @@ body {
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Force light mode - override any dark styles */
   html, html.dark {
     --background: 209.9994 40.5528% 96.0495% !important;

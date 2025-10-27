@@ -389,48 +389,10 @@ export default function LandingPage() {
 
 <div id="promocode">
           {/* Launch Discount Banner */}
-          <AnimatedSection
-            delay={0.2}
-            className="mb-8 md:mb-12 max-w-4xl mx-auto"
-          >
-            <PromoCodeBanner />
-          </AnimatedSection>
+
 </div>
           <PricingSection />
 
-          {/* USP Section */}
-          <AnimatedSection
-            delay={0.3}
-            className="mt-12 lg:mt-20 max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 dark:from-blue-900/10 dark:via-slate-800/20 dark:to-purple-900/10 rounded-3xl p-6 md:p-8 lg:p-12 text-center border border-accent/25"
-          >
-            <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white mb-6">
-              What makes RepliFast different?
-            </h3>
-            <p className="md:text-lg text-left font-light md:text-center text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-8 leading-snug lg:leading-snug">
-              Most other review tools come as part of big, expensive packages filled with features many small businesses never use.
-              RepliFast does one thing well: replying to reviews.<br />
-              That means it&apos;s simple to use and priced fairly: built for small businesses who want results without the heavy monthly fees.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-start justify-start md:items-center text-left md:text-center md:justify-center gap-3 lg:gap-6 text-slate-700 dark:text-slate-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-normal text-left">No bloated feature packs you don&apos;t need</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-normal text-left">Focused only on review replies</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-normal text-left">Priced for small businesses</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-normal text-left">Never miss a review again</span>
-              </div>
-            </div>
-          </AnimatedSection>
         </div>
       </section>
 

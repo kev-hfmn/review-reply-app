@@ -10,7 +10,7 @@ export default function HeroContent() {
           {/* SEO Badge - Static for server rendering */}
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-slate-50/50 dark:bg-blue-900/30 backdrop-blur-sm text-primary/85 dark:text-blue-300 text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4 mr-2" />
-            Your Reputation, On Autopilot
+            For Businesses Who Care About Reviews
           </div>
 
           {/* SEO Critical Content - Server Rendered */}
@@ -32,9 +32,12 @@ export default function HeroContent() {
                   className="px-6 py-4 text-md mb-2 group !font-normal shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   variant="primary"
                 >
-                  Start now
+                  Start within minutes
                   <ArrowRight className="h-5 w-5 ml-0 group-hover:translate-x-2 transition-all duration-200" />
                 </Button>
+                <p className="text-xs text-muted-foreground/70 mt-2">
+                  Safe autopilot • Brand-safe tone • Full control anytime
+                </p>
               </div>
             </div>
           </HeroAnimations>
