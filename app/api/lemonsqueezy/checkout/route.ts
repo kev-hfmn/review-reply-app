@@ -51,68 +51,83 @@ export async function POST(request: NextRequest) {
           subscriptionKeys: Object.keys(activeSubscription)
         });
         
-        // Check if we have the Lemon Squeezy subscription ID
-        if (!activeSubscription.lemonsqueezy_subscription_id) {
-          console.error('No Lemon Squeezy subscription ID found for user subscription:', activeSubscription.id);
-          return NextResponse.json(
-            { error: 'Subscription update not available - missing subscription ID. Please contact support.' },
-            { status: 500 }
+        // Determine if we should update subscription or create new checkout
+        // Always create new checkout for Pro Plus with multiple businesses (graduated pricing limitation)
+        const shouldCreateNewCheckout =
+          !activeSubscription.lemonsqueezy_subscription_id || // No LS subscription ID
+          (customData?.planId === 'pro-plus' && quantity > 1); // Pro Plus with multiple businesses
+
+        if (shouldCreateNewCheckout) {
+          const reason = !activeSubscription.lemonsqueezy_subscription_id
+            ? 'No Lemon Squeezy subscription ID found'
+            : 'Pro Plus with graduated pricing requires new checkout';
+          console.log(`${reason} - creating new checkout instead of updating:`, activeSubscription.id);
+          // Fall through to create new checkout session
+        } else {
+          // Use subscription update for simple plan changes (e.g., Starter → Pro)
+          // Get product_id from environment variable based on plan
+          const productId = customData?.planId === 'pro-plus'
+            ? '621379' // Pro Plus product ID
+            : undefined; // Let Lemon Squeezy infer product for same-product upgrades
+
+          const { data: updatedSubscription, error: updateError } = await LemonSqueezyService.updateSubscription(
+            activeSubscription.lemonsqueezy_subscription_id,
+            {
+              productId,
+              variantId: variantId,
+              // For Pro Plus with quantity > 1, this handles graduated pricing
+              quantity: quantity > 1 ? quantity : undefined,
+            }
           );
-        }
-        
-        // Use subscription update instead of creating new checkout
-        const { data: updatedSubscription, error: updateError } = await LemonSqueezyService.updateSubscription(
-          activeSubscription.lemonsqueezy_subscription_id,
-          {
-            variantId: variantId,
-            // For Pro Plus with quantity > 1, this handles graduated pricing
-            quantity: quantity > 1 ? quantity : undefined,
+
+          if (updateError) {
+            console.error('Subscription update failed:', updateError);
+            return NextResponse.json(
+              { error: `Failed to update subscription: ${updateError}` },
+              { status: 500 }
+            );
           }
-        );
 
-        if (updateError) {
-          console.error('Subscription update failed:', updateError);
-          return NextResponse.json(
-            { error: `Failed to update subscription: ${updateError}` },
-            { status: 500 }
-          );
+          if (!updatedSubscription) {
+            return NextResponse.json(
+              { error: 'Subscription update returned no data' },
+              { status: 500 }
+            );
+          }
+
+          // Update local database with new subscription details
+          // Derive plan_id from customData (passed from frontend)
+          const newPlanId = customData?.planId || activeSubscription.plan_id;
+
+          const { error: dbUpdateError } = await supabaseAdmin
+            .from('subscriptions')
+            .update({
+              lemonsqueezy_variant_id: variantId,
+              plan_id: newPlanId,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', activeSubscription.id);
+
+          if (dbUpdateError) {
+            console.error('Failed to update local subscription record:', dbUpdateError);
+            // Note: Don't return error here as Lemon Squeezy update succeeded
+          }
+
+          console.log('Subscription updated successfully:', {
+            subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
+            userId,
+            newVariantId: variantId,
+            quantity
+          });
+
+          // Return success response with plan change confirmation
+          return NextResponse.json({
+            success: true,
+            action: 'subscription_updated',
+            subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
+            message: 'Subscription plan updated successfully'
+          });
         }
-
-        if (!updatedSubscription) {
-          return NextResponse.json(
-            { error: 'Subscription update returned no data' },
-            { status: 500 }
-          );
-        }
-
-        // Update local database with new subscription details
-        const { error: dbUpdateError } = await supabaseAdmin
-          .from('subscriptions')
-          .update({
-            lemonsqueezy_variant_id: variantId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', activeSubscription.id);
-
-        if (dbUpdateError) {
-          console.error('Failed to update local subscription record:', dbUpdateError);
-          // Note: Don't return error here as Lemon Squeezy update succeeded
-        }
-
-        console.log('Subscription updated successfully:', {
-          subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
-          userId,
-          newVariantId: variantId,
-          quantity
-        });
-
-        // Return success response with plan change confirmation
-        return NextResponse.json({
-          success: true,
-          action: 'subscription_updated',
-          subscriptionId: activeSubscription.lemonsqueezy_subscription_id,
-          message: 'Subscription plan updated successfully'
-        });
       }
     }
 

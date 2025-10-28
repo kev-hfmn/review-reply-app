@@ -66,7 +66,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: "pro-plus",
     name: "Pro Plus - Multiple Locations Add-On",
-    price: "+$17",
+    price: "+$15",
     interval: "/month per additional location",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PLUS_PRICE_ID || 'price_pro_plus',
     lemonSqueezyVariantId: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_PLUS_VARIANT_ID || '',

@@ -100,7 +100,7 @@ export const PLAN_CONFIGS = {
     },
     pricing: {
       basePrice: 29,
-      additionalLocationPrice: 17, // $17 per additional location (matches Lemon Squeezy)
+      additionalLocationPrice: 15, // $15 per additional location (matches Lemon Squeezy)
       currency: 'USD'
     },
     ui: {

@@ -129,12 +129,12 @@ export async function POST(request: NextRequest) {
         let planId = 'pro'; // Default fallback for unknown variants
         const variantId = subscription.attributes.variant_id?.toString();
         
-        // Based on your env file: Pro variant is 962821, Starter is 615994
+        // Based on your env file: Pro variant is 962821, Starter is 615994, Pro Plus is 972617
         if (variantId === '615994') {
           planId = 'starter';
         } else if (variantId === '962821') {
           planId = 'pro';
-        } else if (variantId === '12347') { // Pro Plus (placeholder)
+        } else if (variantId === '972617') { // Pro Plus - actual variant ID
           planId = 'pro-plus';
         }
         

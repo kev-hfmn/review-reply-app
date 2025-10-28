@@ -66,16 +66,19 @@ export class LemonSqueezyService {
         },
       };
 
-      // Add variant quantities for graduated pricing if quantity is specified
+      // For graduated pricing with multiple units, pass variant_quantities
       if (options.quantity && options.quantity > 1) {
         checkoutOptions.checkoutData.variant_quantities = [
           {
             variant_id: parseInt(options.variantId),
-            quantity: options.quantity
-          }
+            quantity: options.quantity,
+          },
         ];
+        console.log('Adding variant_quantities for graduated pricing:', checkoutOptions.checkoutData.variant_quantities);
       }
-      
+
+      console.log('Creating checkout with options:', JSON.stringify(checkoutOptions, null, 2));
+
       const { data, error } = await createCheckout(storeId, options.variantId, checkoutOptions);
 
       if (error) {
@@ -148,8 +151,9 @@ export class LemonSqueezyService {
    * Update a subscription (change plan, billing anchor, etc.)
    */
   static async updateSubscription(
-    subscriptionId: string, 
+    subscriptionId: string,
     updateData: {
+      productId?: string;
       variantId?: string;
       billingAnchor?: number;
       trialEndsAt?: string;
@@ -162,6 +166,7 @@ export class LemonSqueezyService {
         type: 'subscriptions',
         id: subscriptionId,
         attributes: {
+          product_id: updateData.productId ? parseInt(updateData.productId) : undefined,
           variant_id: updateData.variantId ? parseInt(updateData.variantId) : undefined,
           billing_anchor: updateData.billingAnchor,
           trial_ends_at: updateData.trialEndsAt,
